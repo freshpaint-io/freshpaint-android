@@ -1,0 +1,5 @@
+include 'analytics'
+include 'analytics-tests'
+include 'analytics-wear'
+include 'analytics-samples:analytics-sample'
+include 'analytics-samples:analytics-wear-sample'

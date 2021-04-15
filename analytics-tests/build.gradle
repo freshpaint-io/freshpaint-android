@@ -1,0 +1,10 @@
+apply plugin: 'com.android.library'
+
+apply from: rootProject.file('gradle/android.gradle')
+
+dependencies {
+  api project(':analytics')
+}
+
+apply from: rootProject.file('gradle/attach-jar.gradle')
+apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
