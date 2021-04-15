@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android.internal;
+package io.freshpaint.android.internal;
 
 /*
  * Copyright (C) 2011 FasterXML, LLC

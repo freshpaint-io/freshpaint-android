@@ -21,15 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android.sample;
+package io.freshpaint.android.sample;
 
 import android.app.Application;
 import android.net.Uri;
 import android.util.Log;
 
-import com.freshpaint.android.Freshpaint;
-import com.freshpaint.android.ConnectionFactory;
-import com.freshpaint.android.ValueMap;
+import io.freshpaint.android.Freshpaint;
+import io.freshpaint.android.ConnectionFactory;
+import io.freshpaint.android.ValueMap;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;

@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.robolectric.annotation.Config.NONE;

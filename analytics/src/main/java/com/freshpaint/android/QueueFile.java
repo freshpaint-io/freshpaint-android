@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
 import static java.lang.Math.min;
 
-import com.freshpaint.android.internal.Private;
+import io.freshpaint.android.internal.Private;
 
 import java.io.Closeable;
 import java.io.EOFException;

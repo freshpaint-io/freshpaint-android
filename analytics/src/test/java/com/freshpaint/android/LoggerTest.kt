@@ -1,7 +1,7 @@
-package com.freshpaint.android
+package io.freshpaint.android
 
 import android.util.Log
-import com.freshpaint.android.integrations.Logger
+import io.freshpaint.android.integrations.Logger
 import org.assertj.core.api.Assertions
 import org.junit.Test
 import org.junit.runner.RunWith

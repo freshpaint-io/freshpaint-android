@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
 import static android.Manifest.permission.ACCESS_NETWORK_STATE;
 import static android.content.Context.CONNECTIVITY_SERVICE;
@@ -29,7 +29,7 @@ import static android.content.Context.TELEPHONY_SERVICE;
 import static android.net.ConnectivityManager.TYPE_BLUETOOTH;
 import static android.net.ConnectivityManager.TYPE_MOBILE;
 import static android.net.ConnectivityManager.TYPE_WIFI;
-import static com.freshpaint.android.internal.Utils.isNullOrEmpty;
+import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
 import static java.util.Collections.unmodifiableMap;
 
 import android.annotation.SuppressLint;
@@ -44,10 +44,10 @@ import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
 
-import com.freshpaint.android.integrations.Logger;
-import com.freshpaint.android.internal.Private;
-import com.freshpaint.android.internal.Utils;
-import com.freshpaint.android.core.BuildConfig;
+import io.freshpaint.android.integrations.Logger;
+import io.freshpaint.android.internal.Private;
+import io.freshpaint.android.internal.Utils;
+import io.freshpaint.android.core.BuildConfig;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;

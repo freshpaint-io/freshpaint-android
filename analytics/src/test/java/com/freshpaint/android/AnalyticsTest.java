@@ -21,10 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
 import static android.content.Context.MODE_PRIVATE;
-import static com.freshpaint.android.internal.Utils.isNullOrEmpty;
+import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Matchers.*;
@@ -54,14 +54,14 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
-import com.freshpaint.android.integrations.AliasPayload;
-import com.freshpaint.android.integrations.GroupPayload;
-import com.freshpaint.android.integrations.IdentifyPayload;
-import com.freshpaint.android.integrations.Integration;
-import com.freshpaint.android.integrations.Logger;
-import com.freshpaint.android.integrations.ScreenPayload;
-import com.freshpaint.android.integrations.TrackPayload;
-import com.freshpaint.android.internal.Utils;
+import io.freshpaint.android.integrations.AliasPayload;
+import io.freshpaint.android.integrations.GroupPayload;
+import io.freshpaint.android.integrations.IdentifyPayload;
+import io.freshpaint.android.integrations.Integration;
+import io.freshpaint.android.integrations.Logger;
+import io.freshpaint.android.integrations.ScreenPayload;
+import io.freshpaint.android.integrations.TrackPayload;
+import io.freshpaint.android.internal.Utils;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -140,7 +140,7 @@ public class AnalyticsTest {
     when(application.getPackageName()).thenReturn("com.foo");
     when(application.getPackageManager()).thenReturn(packageManager);
 
-    analyticsContext = com.freshpaint.android.Utils.createContext(traits);
+    analyticsContext = io.freshpaint.android.Utils.createContext(traits);
     factory =
         new Integration.Factory() {
           @Override

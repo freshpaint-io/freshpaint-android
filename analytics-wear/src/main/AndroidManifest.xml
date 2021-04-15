@@ -23,6 +23,6 @@
   ~ SOFTWARE.
   -->
 
-<manifest package="com.freshpaint.android.wear">
+<manifest package="io.freshpaint.android.wear">
   <application/>
 </manifest>

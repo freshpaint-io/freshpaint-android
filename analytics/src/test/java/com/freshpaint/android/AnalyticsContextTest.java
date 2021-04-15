@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
 import static android.content.Context.CONNECTIVITY_SERVICE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,7 +33,7 @@ import static org.robolectric.annotation.Config.NONE;
 import android.content.Context;
 import android.net.ConnectivityManager;
 
-import com.freshpaint.android.core.BuildConfig;
+import io.freshpaint.android.core.BuildConfig;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;

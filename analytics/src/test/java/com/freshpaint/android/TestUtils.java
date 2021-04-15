@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
 import static android.Manifest.permission.INTERNET;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
@@ -34,8 +34,8 @@ import static org.mockito.Mockito.when;
 
 import android.app.Application;
 
-import com.freshpaint.android.integrations.TrackPayload;
-import com.freshpaint.android.internal.Utils;
+import io.freshpaint.android.integrations.TrackPayload;
+import io.freshpaint.android.internal.Utils;
 
 import java.io.File;
 import java.lang.reflect.Constructor;

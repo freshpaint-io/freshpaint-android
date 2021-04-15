@@ -21,14 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
-import static com.freshpaint.android.internal.Utils.isNullOrEmpty;
+import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.freshpaint.android.internal.Utils;
+import io.freshpaint.android.internal.Utils;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;

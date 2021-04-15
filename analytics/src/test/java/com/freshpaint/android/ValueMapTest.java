@@ -21,9 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
-import static com.freshpaint.android.TestUtils.PROJECT_SETTINGS_JSON_SAMPLE;
+import static io.freshpaint.android.TestUtils.PROJECT_SETTINGS_JSON_SAMPLE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.spy;

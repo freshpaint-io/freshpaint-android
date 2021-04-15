@@ -21,9 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
-import com.freshpaint.android.integrations.BasePayload;
+import io.freshpaint.android.integrations.BasePayload;
 
 /** Middlewares run for every message after it is built to process it further. */
 public interface Middleware {

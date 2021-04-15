@@ -21,17 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android.integrations;
+package io.freshpaint.android.integrations;
 
 import android.app.Activity;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 
-import com.freshpaint.android.Options;
-import com.freshpaint.android.Properties;
-import com.freshpaint.android.Traits;
-import com.freshpaint.android.Freshpaint;
-import com.freshpaint.android.ValueMap;
+import io.freshpaint.android.Options;
+import io.freshpaint.android.Properties;
+import io.freshpaint.android.Traits;
+import io.freshpaint.android.Freshpaint;
+import io.freshpaint.android.ValueMap;
 
 /**
  * Converts Freshpaint messages to a format a bundled integration understands, and calls those methods.

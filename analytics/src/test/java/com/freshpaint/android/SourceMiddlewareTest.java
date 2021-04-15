@@ -21,17 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
-import static com.freshpaint.android.TestUtils.grantPermission;
+import static io.freshpaint.android.TestUtils.grantPermission;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.Manifest;
 
-import com.freshpaint.android.integrations.BasePayload;
-import com.freshpaint.android.integrations.ScreenPayload;
-import com.freshpaint.android.integrations.TrackPayload;
+import io.freshpaint.android.integrations.BasePayload;
+import io.freshpaint.android.integrations.ScreenPayload;
+import io.freshpaint.android.integrations.TrackPayload;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import java.util.concurrent.atomic.AtomicReference;

@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android.integrations;
+package io.freshpaint.android.integrations;
 
 import android.util.Log;
 
-import com.freshpaint.android.Freshpaint;
+import io.freshpaint.android.Freshpaint;
 
 /** An abstraction for logging messages. */
 public final class Logger {

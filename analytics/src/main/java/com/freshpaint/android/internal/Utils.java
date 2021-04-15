@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android.internal;
+package io.freshpaint.android.internal;
 
 import static android.Manifest.permission.ACCESS_NETWORK_STATE;
 import static android.Manifest.permission.READ_PHONE_STATE;
@@ -46,7 +46,7 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.freshpaint.android.Freshpaint;
+import io.freshpaint.android.Freshpaint;
 
 import java.io.BufferedReader;
 import java.io.Closeable;

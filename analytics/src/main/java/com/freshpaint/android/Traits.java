@@ -21,16 +21,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
-import static com.freshpaint.android.internal.Utils.isNullOrEmpty;
-import static com.freshpaint.android.internal.Utils.toISO8601Date;
+import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
+import static io.freshpaint.android.internal.Utils.toISO8601Date;
 import static java.util.Collections.unmodifiableMap;
 
 import android.content.Context;
 
-import com.freshpaint.android.internal.Private;
-import com.freshpaint.android.internal.Utils;
+import io.freshpaint.android.internal.Private;
+import io.freshpaint.android.internal.Utils;
 
 import java.text.ParseException;
 import java.util.Date;

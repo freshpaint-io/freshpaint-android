@@ -21,15 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android.test;
+package io.freshpaint.android.test;
 
-import static com.freshpaint.android.Utils.createContext;
-import static com.freshpaint.android.Utils.createTraits;
+import static io.freshpaint.android.Utils.createContext;
+import static io.freshpaint.android.Utils.createTraits;
 
-import com.freshpaint.android.AnalyticsContext;
-import com.freshpaint.android.Options;
-import com.freshpaint.android.Traits;
-import com.freshpaint.android.integrations.IdentifyPayload;
+import io.freshpaint.android.AnalyticsContext;
+import io.freshpaint.android.Options;
+import io.freshpaint.android.Traits;
+import io.freshpaint.android.integrations.IdentifyPayload;
 
 @Deprecated
 public class IdentifyPayloadBuilder {

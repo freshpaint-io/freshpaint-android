@@ -24,7 +24,7 @@
   -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.freshpaint.android.core">
+    package="io.freshpaint.android.core">
   <!-- Required for internet. -->
   <uses-permission android:name="android.permission.INTERNET"/>
   <application/>

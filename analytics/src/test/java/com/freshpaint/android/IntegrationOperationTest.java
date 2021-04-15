@@ -21,19 +21,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.robolectric.annotation.Config.NONE;
 
-import com.freshpaint.android.integrations.AliasPayload;
-import com.freshpaint.android.integrations.GroupPayload;
-import com.freshpaint.android.integrations.IdentifyPayload;
-import com.freshpaint.android.integrations.Integration;
-import com.freshpaint.android.integrations.ScreenPayload;
-import com.freshpaint.android.integrations.TrackPayload;
+import io.freshpaint.android.integrations.AliasPayload;
+import io.freshpaint.android.integrations.GroupPayload;
+import io.freshpaint.android.integrations.IdentifyPayload;
+import io.freshpaint.android.integrations.Integration;
+import io.freshpaint.android.integrations.ScreenPayload;
+import io.freshpaint.android.integrations.TrackPayload;
 import com.google.common.collect.ImmutableMap;
 
 import java.io.IOException;

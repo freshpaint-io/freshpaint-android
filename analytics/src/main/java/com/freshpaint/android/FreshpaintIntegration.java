@@ -21,10 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
 import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
-import static com.freshpaint.android.internal.Utils.toISO8601Date;
+import static io.freshpaint.android.internal.Utils.toISO8601Date;
 
 import android.content.Context;
 import android.os.Handler;
@@ -33,16 +33,16 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.JsonWriter;
 
-import com.freshpaint.android.integrations.AliasPayload;
-import com.freshpaint.android.integrations.BasePayload;
-import com.freshpaint.android.integrations.GroupPayload;
-import com.freshpaint.android.integrations.IdentifyPayload;
-import com.freshpaint.android.integrations.Integration;
-import com.freshpaint.android.integrations.Logger;
-import com.freshpaint.android.integrations.ScreenPayload;
-import com.freshpaint.android.integrations.TrackPayload;
-import com.freshpaint.android.internal.Private;
-import com.freshpaint.android.internal.Utils;
+import io.freshpaint.android.integrations.AliasPayload;
+import io.freshpaint.android.integrations.BasePayload;
+import io.freshpaint.android.integrations.GroupPayload;
+import io.freshpaint.android.integrations.IdentifyPayload;
+import io.freshpaint.android.integrations.Integration;
+import io.freshpaint.android.integrations.Logger;
+import io.freshpaint.android.integrations.ScreenPayload;
+import io.freshpaint.android.integrations.TrackPayload;
+import io.freshpaint.android.internal.Private;
+import io.freshpaint.android.internal.Utils;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;

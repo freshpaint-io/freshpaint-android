@@ -21,9 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
-import static com.freshpaint.android.TestUtils.grantPermission;
+import static io.freshpaint.android.TestUtils.grantPermission;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
@@ -35,10 +35,10 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import android.Manifest;
 import androidx.annotation.NonNull;
 
-import com.freshpaint.android.integrations.BasePayload;
-import com.freshpaint.android.integrations.IdentifyPayload;
-import com.freshpaint.android.integrations.Integration;
-import com.freshpaint.android.integrations.TrackPayload;
+import io.freshpaint.android.integrations.BasePayload;
+import io.freshpaint.android.integrations.IdentifyPayload;
+import io.freshpaint.android.integrations.Integration;
+import io.freshpaint.android.integrations.TrackPayload;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import java.util.ArrayList;

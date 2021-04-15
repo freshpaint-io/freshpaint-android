@@ -21,15 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
 import static android.Manifest.permission.ACCESS_NETWORK_STATE;
 import static android.content.Context.CONNECTIVITY_SERVICE;
 import static android.content.pm.PackageManager.PERMISSION_DENIED;
-import static com.freshpaint.android.TestUtils.SynchronousExecutor;
-import static com.freshpaint.android.TestUtils.TRACK_PAYLOAD;
-import static com.freshpaint.android.TestUtils.TRACK_PAYLOAD_JSON;
-import static com.freshpaint.android.TestUtils.mockApplication;
+import static io.freshpaint.android.TestUtils.SynchronousExecutor;
+import static io.freshpaint.android.TestUtils.TRACK_PAYLOAD;
+import static io.freshpaint.android.TestUtils.TRACK_PAYLOAD_JSON;
+import static io.freshpaint.android.TestUtils.mockApplication;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Matchers.any;
@@ -48,9 +48,9 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
-import com.freshpaint.android.integrations.Logger;
-import com.freshpaint.android.integrations.TrackPayload;
-import com.freshpaint.android.internal.Utils;
+import io.freshpaint.android.integrations.Logger;
+import io.freshpaint.android.integrations.TrackPayload;
+import io.freshpaint.android.internal.Utils;
 
 import java.io.File;
 import java.io.IOError;

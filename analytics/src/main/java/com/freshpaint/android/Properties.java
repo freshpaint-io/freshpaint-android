@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
-import com.freshpaint.android.internal.Utils;
+import io.freshpaint.android.internal.Utils;
 
-import static com.freshpaint.android.internal.Utils.isNullOrEmpty;
+import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
 
 import java.util.ArrayList;
 import java.util.Collections;

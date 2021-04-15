@@ -21,22 +21,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android.integrations;
+package io.freshpaint.android.integrations;
 
-import static com.freshpaint.android.internal.Utils.assertNotNull;
-import static com.freshpaint.android.internal.Utils.assertNotNullOrEmpty;
-import static com.freshpaint.android.internal.Utils.immutableCopyOf;
-import static com.freshpaint.android.internal.Utils.isNullOrEmpty;
-import static com.freshpaint.android.internal.Utils.parseISO8601DateWithNanos;
-import static com.freshpaint.android.internal.Utils.toISO8601NanoFormattedString;
-import static com.freshpaint.android.internal.Utils.toISO8601String;
+import static io.freshpaint.android.internal.Utils.assertNotNull;
+import static io.freshpaint.android.internal.Utils.assertNotNullOrEmpty;
+import static io.freshpaint.android.internal.Utils.immutableCopyOf;
+import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
+import static io.freshpaint.android.internal.Utils.parseISO8601DateWithNanos;
+import static io.freshpaint.android.internal.Utils.toISO8601NanoFormattedString;
+import static io.freshpaint.android.internal.Utils.toISO8601String;
 
 import androidx.annotation.CheckResult;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.freshpaint.android.AnalyticsContext;
-import com.freshpaint.android.ValueMap;
-import com.freshpaint.android.internal.NanoDate;
+import io.freshpaint.android.AnalyticsContext;
+import io.freshpaint.android.ValueMap;
+import io.freshpaint.android.internal.NanoDate;
 
 import java.util.Collections;
 import java.util.Date;

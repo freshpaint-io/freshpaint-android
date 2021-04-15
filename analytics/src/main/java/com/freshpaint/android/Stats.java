@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
 import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
 
@@ -31,8 +31,8 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Pair;
 
-import com.freshpaint.android.internal.Private;
-import com.freshpaint.android.internal.Utils;
+import io.freshpaint.android.internal.Private;
+import io.freshpaint.android.internal.Utils;
 
 import java.util.Collections;
 import java.util.HashMap;

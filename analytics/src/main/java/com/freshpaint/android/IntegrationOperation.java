@@ -21,23 +21,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
-import static com.freshpaint.android.Options.ALL_INTEGRATIONS_KEY;
-import static com.freshpaint.android.internal.Utils.isNullOrEmpty;
+import static io.freshpaint.android.Options.ALL_INTEGRATIONS_KEY;
+import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
 
 import android.app.Activity;
 import android.os.Bundle;
 
-import com.freshpaint.android.integrations.AliasPayload;
-import com.freshpaint.android.integrations.BasePayload;
-import com.freshpaint.android.integrations.GroupPayload;
-import com.freshpaint.android.integrations.IdentifyPayload;
-import com.freshpaint.android.integrations.Integration;
-import com.freshpaint.android.integrations.ScreenPayload;
-import com.freshpaint.android.integrations.TrackPayload;
-import com.freshpaint.android.internal.Private;
-import com.freshpaint.android.internal.Utils;
+import io.freshpaint.android.integrations.AliasPayload;
+import io.freshpaint.android.integrations.BasePayload;
+import io.freshpaint.android.integrations.GroupPayload;
+import io.freshpaint.android.integrations.IdentifyPayload;
+import io.freshpaint.android.integrations.Integration;
+import io.freshpaint.android.integrations.ScreenPayload;
+import io.freshpaint.android.integrations.TrackPayload;
+import io.freshpaint.android.internal.Private;
+import io.freshpaint.android.internal.Utils;
 
 import java.util.Collections;
 import java.util.List;

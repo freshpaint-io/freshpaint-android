@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android.sample;
+package io.freshpaint.android.sample;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
@@ -38,8 +38,8 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-import com.freshpaint.android.sample.R;
-import com.freshpaint.android.Freshpaint;
+import io.freshpaint.android.sample.R;
+import io.freshpaint.android.Freshpaint;
 
 import io.github.inflationx.viewpump.ViewPumpContextWrapper;
 

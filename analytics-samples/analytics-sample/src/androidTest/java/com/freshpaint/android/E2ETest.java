@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -29,9 +29,9 @@ import static org.junit.Assert.fail;
 import androidx.test.rule.ActivityTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.freshpaint.android.sample.MainActivity;
-import com.freshpaint.android.sample.BuildConfig;
-import com.freshpaint.android.webhook.WebhookService;
+import io.freshpaint.android.sample.MainActivity;
+import io.freshpaint.android.sample.BuildConfig;
+import io.freshpaint.android.webhook.WebhookService;
 import com.segment.backo.Backo;
 import java.io.IOException;
 import java.util.List;

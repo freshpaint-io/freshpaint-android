@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
 import static android.Manifest.permission.INTERNET;
 import static android.content.pm.PackageManager.PERMISSION_DENIED;
@@ -36,7 +36,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.res.Resources;
 
-import com.freshpaint.android.core.BuildConfig;
+import io.freshpaint.android.core.BuildConfig;
 
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;

@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android;
+package io.freshpaint.android;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -29,7 +29,7 @@ import android.os.AsyncTask;
 import android.provider.Settings.Secure;
 import android.util.Pair;
 
-import com.freshpaint.android.integrations.Logger;
+import io.freshpaint.android.integrations.Logger;
 
 import java.util.concurrent.CountDownLatch;
 

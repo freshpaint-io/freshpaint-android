@@ -24,6 +24,6 @@
   -->
 
 <manifest
-    package="com.freshpaint.android.core.tests">
+    package="io.freshpaint.android.core.tests">
   <application/>
 </manifest>

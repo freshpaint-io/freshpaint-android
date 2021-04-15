@@ -21,16 +21,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.freshpaint.android.integrations;
+package io.freshpaint.android.integrations;
 
-import static com.freshpaint.android.internal.Utils.assertNotNull;
-import static com.freshpaint.android.internal.Utils.assertNotNullOrEmpty;
-import static com.freshpaint.android.internal.Utils.isNullOrEmpty;
+import static io.freshpaint.android.internal.Utils.assertNotNull;
+import static io.freshpaint.android.internal.Utils.assertNotNullOrEmpty;
+import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.freshpaint.android.Traits;
-import com.freshpaint.android.internal.Private;
+import io.freshpaint.android.Traits;
+import io.freshpaint.android.internal.Private;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
