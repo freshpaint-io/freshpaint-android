@@ -149,10 +149,11 @@ class FreshpaintIntegration extends Integration<Void> {
   private final Crypto crypto;
 
   private static final String KEY_SESSION_ID = "$session_id";
-
+  private static final String KEY_IS_FIRST_EVENT_IN_SESSION = "$is_first_event_in_session";
   private final long sessionTimeoutSeconds;
   private String currentSessionId;
   private long sessionStartedSeconds;
+  private boolean isFirstEventInSession;
 
   private static final String PREFS_KEY = "freshpaint_prefs";
   private static final String PREFS_KEY_CURRENT_SESSION_ID   = "freshpaint_current_session_id";
@@ -262,6 +263,7 @@ class FreshpaintIntegration extends Integration<Void> {
     SharedPreferences prefs = 
         context.getSharedPreferences(PREFS_KEY, Context.MODE_PRIVATE);
 
+    isFirstEventInSession = false;
     currentSessionId   = prefs.getString(PREFS_KEY_CURRENT_SESSION_ID, null);
     sessionStartedSeconds = prefs.getLong(PREFS_KEY_SESSION_STARTED_SECONDS, 0);
     long   nowSeconds = System.currentTimeMillis() / 1_000L;
@@ -276,7 +278,7 @@ class FreshpaintIntegration extends Integration<Void> {
         sessionTimeoutSeconds
     ));
 
-    if (currentSessionId == null || currentSessionDuration >= sessionTimeoutSeconds) {
+    if (currentSessionId == null || sessionStartedSeconds == 0 || currentSessionDuration >= sessionTimeoutSeconds) {
       resetSession();
     }
   }
@@ -284,6 +286,7 @@ class FreshpaintIntegration extends Integration<Void> {
   private void resetSession() {
     currentSessionId   = UUID.randomUUID().toString();
     sessionStartedSeconds = System.currentTimeMillis() / 1_000L;
+    isFirstEventInSession = true;
 
     SharedPreferences prefs = context.getSharedPreferences(PREFS_KEY, Context.MODE_PRIVATE);
     prefs.edit()
@@ -343,7 +346,7 @@ class FreshpaintIntegration extends Integration<Void> {
     if (originalProps != null)  eventProps.putAll(originalProps);
     
     eventProps.put(KEY_SESSION_ID, currentSessionId);
-
+    eventProps.put(KEY_IS_FIRST_EVENT_IN_SESSION, isFirstEventInSession);
     payload.put("properties", eventProps);
 
     Log.d("Session", payload.toString());
