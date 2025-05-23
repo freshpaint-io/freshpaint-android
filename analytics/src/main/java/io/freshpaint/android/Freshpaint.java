@@ -132,7 +132,7 @@ public class Freshpaint {
   // todo: use lightweight map implementation.
   private Map<String, Integration<?>> integrations;
   volatile boolean shutdown;
-  protected final long sessionTimeoutSeconds;
+  protected final int sessionTimeoutSeconds;
 
   @Private final boolean nanosecondTimestamps;
 
@@ -206,7 +206,7 @@ public class Freshpaint {
       String writeKey,
       int flushQueueSize,
       long flushIntervalInMillis,
-      long sessionTimeoutSeconds,
+      int sessionTimeoutSeconds,
       final ExecutorService analyticsExecutor,
       final boolean shouldTrackApplicationLifecycleEvents,
       CountDownLatch advertisingIdLatch,
@@ -983,7 +983,7 @@ public class Freshpaint {
     private int flushQueueSize = Utils.DEFAULT_FLUSH_QUEUE_SIZE;
     private long flushIntervalInMillis = Utils.DEFAULT_FLUSH_INTERVAL;
     private Options defaultOptions;
-    private long sessionTimeoutSeconds = Utils.DEFAULT_SESSION_TIMEOUT_SECONDS;
+    private int sessionTimeoutSeconds = Utils.DEFAULT_SESSION_TIMEOUT_SECONDS;
     private String tag;
     private LogLevel logLevel;
     private ExecutorService networkExecutor;
@@ -1089,7 +1089,7 @@ public class Freshpaint {
       return this;
     }
 
-    public Builder sessionTimeoutSeconds(long timeoutSeconds) {
+    public Builder sessionTimeoutSeconds(int timeoutSeconds) {
       if (timeoutSeconds < 0) {
         throw new IllegalArgumentException("Timeout seconds must be greater than or equal to zero.");
       }
