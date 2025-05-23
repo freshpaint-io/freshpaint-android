@@ -150,7 +150,7 @@ class FreshpaintIntegration extends Integration<Void> {
 
   private static final String KEY_SESSION_ID = "$session_id";
   private static final String KEY_IS_FIRST_EVENT_IN_SESSION = "$is_first_event_in_session";
-  private final long sessionTimeoutSeconds;
+  private final int sessionTimeoutSeconds;
   private String currentSessionId;
   private long sessionStartedSeconds;
   private boolean isFirstEventInSession;
@@ -191,7 +191,7 @@ class FreshpaintIntegration extends Integration<Void> {
       int flushQueueSize,
       Logger logger,
       Crypto crypto,
-      long sessionTimeoutSeconds) {
+      int sessionTimeoutSeconds) {
     PayloadQueue payloadQueue;
     try {
       File folder = context.getDir("freshpaint-disk-queue", Context.MODE_PRIVATE);
@@ -228,7 +228,7 @@ class FreshpaintIntegration extends Integration<Void> {
       int flushQueueSize,
       Logger logger,
       Crypto crypto,
-      long sessionTimeoutSeconds) {
+      int sessionTimeoutSeconds) {
     this.context = context;
     this.client = client;
     this.networkExecutor = networkExecutor;
