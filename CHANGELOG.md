@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 1.2.2 (23 May, 2025)
+* [New] SDK now persists `session_id` across launches and renews it automatically after `sessionTimeout` (default 30 min, configurable).
+* [New] Added `$first_event_in_session` flag to every event’s `properties` to indicate the first event in each session.
+
+Change Log from fork base
+==========
 Version 4.8.0 (Jul 13, 2020)
 ============================
 
