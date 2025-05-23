@@ -61,6 +61,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.UUID;
+import android.util.Log;        
+import android.content.SharedPreferences;
 
 /** Entity that queues payloads on disks and uploads them periodically. */
 class FreshpaintIntegration extends Integration<Void> {
@@ -80,7 +83,8 @@ class FreshpaintIntegration extends Integration<Void> {
               freshpaint.flushIntervalInMillis,
               freshpaint.flushQueueSize,
               freshpaint.getLogger(),
-              freshpaint.crypto);
+              freshpaint.crypto,
+              freshpaint.sessionTimeoutSeconds);
         }
 
         @Override
@@ -144,6 +148,17 @@ class FreshpaintIntegration extends Integration<Void> {
 
   private final Crypto crypto;
 
+  private static final String KEY_SESSION_ID = "$session_id";
+  private static final String KEY_IS_FIRST_EVENT_IN_SESSION = "$is_first_event_in_session";
+  private final int sessionTimeoutSeconds;
+  private String currentSessionId;
+  private long sessionStartedSeconds;
+  private boolean isFirstEventInSession;
+
+  private static final String PREFS_KEY = "freshpaint_prefs";
+  private static final String PREFS_KEY_CURRENT_SESSION_ID   = "freshpaint_current_session_id";
+  private static final String PREFS_KEY_SESSION_STARTED_SECONDS = "freshpaint_session_started_seconds";
+
   /**
    * Create a {@link QueueFile} in the given folder with the given name. If the underlying file is
    * somehow corrupted, we'll delete it, and try to recreate the file. This method will throw an
@@ -175,7 +190,8 @@ class FreshpaintIntegration extends Integration<Void> {
       long flushIntervalInMillis,
       int flushQueueSize,
       Logger logger,
-      Crypto crypto) {
+      Crypto crypto,
+      int sessionTimeoutSeconds) {
     PayloadQueue payloadQueue;
     try {
       File folder = context.getDir("freshpaint-disk-queue", Context.MODE_PRIVATE);
@@ -196,7 +212,8 @@ class FreshpaintIntegration extends Integration<Void> {
         flushIntervalInMillis,
         flushQueueSize,
         logger,
-        crypto);
+        crypto,
+        sessionTimeoutSeconds);
   }
 
   FreshpaintIntegration(
@@ -210,7 +227,8 @@ class FreshpaintIntegration extends Integration<Void> {
       long flushIntervalInMillis,
       int flushQueueSize,
       Logger logger,
-      Crypto crypto) {
+      Crypto crypto,
+      int sessionTimeoutSeconds) {
     this.context = context;
     this.client = client;
     this.networkExecutor = networkExecutor;
@@ -222,6 +240,7 @@ class FreshpaintIntegration extends Integration<Void> {
     this.flushQueueSize = flushQueueSize;
     this.flushScheduler = Executors.newScheduledThreadPool(1, new Utils.AnalyticsThreadFactory());
     this.crypto = crypto;
+    this.sessionTimeoutSeconds = sessionTimeoutSeconds;
 
     freshpaintThread = new HandlerThread(FRESHPAINT_THREAD_NAME, THREAD_PRIORITY_BACKGROUND);
     freshpaintThread.start();
@@ -238,6 +257,42 @@ class FreshpaintIntegration extends Integration<Void> {
         initialDelay,
         flushIntervalInMillis,
         TimeUnit.MILLISECONDS);
+  }
+
+  private void validateOrRenewSessionWithTimeout() {
+    SharedPreferences prefs = 
+        context.getSharedPreferences(PREFS_KEY, Context.MODE_PRIVATE);
+
+    isFirstEventInSession = false;
+    currentSessionId   = prefs.getString(PREFS_KEY_CURRENT_SESSION_ID, null);
+    sessionStartedSeconds = prefs.getLong(PREFS_KEY_SESSION_STARTED_SECONDS, 0);
+    long   nowSeconds = System.currentTimeMillis() / 1_000L;
+
+    long currentSessionDuration  = nowSeconds - sessionStartedSeconds;
+
+    Log.d("Session", String.format(
+        "now=%d, started=%d, current=%d s, timeout=%d s",
+        nowSeconds,
+        sessionStartedSeconds,
+        currentSessionDuration,
+        sessionTimeoutSeconds
+    ));
+
+    if (currentSessionId == null || sessionStartedSeconds == 0 || currentSessionDuration >= sessionTimeoutSeconds) {
+      resetSession();
+    }
+  }
+
+  private void resetSession() {
+    currentSessionId   = UUID.randomUUID().toString();
+    sessionStartedSeconds = System.currentTimeMillis() / 1_000L;
+    isFirstEventInSession = true;
+
+    SharedPreferences prefs = context.getSharedPreferences(PREFS_KEY, Context.MODE_PRIVATE);
+    prefs.edit()
+      .putString(PREFS_KEY_CURRENT_SESSION_ID, currentSessionId)
+      .putLong(PREFS_KEY_SESSION_STARTED_SECONDS, sessionStartedSeconds)
+      .apply();
   }
 
   @Override
@@ -270,6 +325,7 @@ class FreshpaintIntegration extends Integration<Void> {
   }
 
   void performEnqueue(BasePayload original) {
+    validateOrRenewSessionWithTimeout();
     // Override any user provided values with anything that was bundled.
     // e.g. If user did Mixpanel: true and it was bundled, this would correctly override it with
     // false so that the server doesn't send that event as well.
@@ -283,6 +339,17 @@ class FreshpaintIntegration extends Integration<Void> {
     ValueMap payload = new ValueMap();
     payload.putAll(original);
     payload.put("integrations", combinedIntegrations);
+
+    ValueMap originalProps = payload.getValueMap("properties");
+    ValueMap eventProps    = new ValueMap();
+
+    if (originalProps != null)  eventProps.putAll(originalProps);
+    
+    eventProps.put(KEY_SESSION_ID, currentSessionId);
+    eventProps.put(KEY_IS_FIRST_EVENT_IN_SESSION, isFirstEventInSession);
+    payload.put("properties", eventProps);
+
+    Log.d("Session", payload.toString());
 
     if (payloadQueue.size() >= MAX_QUEUE_SIZE) {
       synchronized (flushLock) {
