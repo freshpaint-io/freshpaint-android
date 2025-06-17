@@ -831,7 +831,10 @@ public class QueueFileTest {
     assertThat(data).containsOnly((byte) 0x00);
 
     // Read from the last element to the end and make sure it's zeroed.
-    int endOfLastElement = QueueFile.HEADER_LENGTH + firstElementPadding + 4 * (QueueFile.Element.HEADER_LENGTH + 1024);
+    int endOfLastElement =
+        QueueFile.HEADER_LENGTH
+            + firstElementPadding
+            + 4 * (QueueFile.Element.HEADER_LENGTH + 1024);
     int readLength = (int) (queue.raf.length() - endOfLastElement);
     data = new byte[readLength];
     queue.raf.seek(endOfLastElement);

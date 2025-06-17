@@ -116,7 +116,7 @@ public class Options {
    * @return This options object for chaining
    */
   public Options setIntegrationOptions(
-          Freshpaint.BundledIntegration bundledIntegration, Map<String, Object> options) {
+      Freshpaint.BundledIntegration bundledIntegration, Map<String, Object> options) {
     integrations.put(bundledIntegration.key, options);
     return this;
   }

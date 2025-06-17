@@ -24,7 +24,6 @@
 package io.freshpaint.android;
 
 import static android.content.Context.MODE_PRIVATE;
-import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Matchers.*;
@@ -53,7 +52,6 @@ import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
-
 import io.freshpaint.android.integrations.AliasPayload;
 import io.freshpaint.android.integrations.GroupPayload;
 import io.freshpaint.android.integrations.IdentifyPayload;
@@ -62,14 +60,12 @@ import io.freshpaint.android.integrations.Logger;
 import io.freshpaint.android.integrations.ScreenPayload;
 import io.freshpaint.android.integrations.TrackPayload;
 import io.freshpaint.android.internal.Utils;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.assertj.core.api.Assertions;
 import org.assertj.core.data.MapEntry;
 import org.hamcrest.Description;
@@ -102,16 +98,12 @@ public class AnalyticsTest {
           + "}";
 
   @Mock Traits.Cache traitsCache;
-  @Spy
-  Utils.AnalyticsNetworkExecutorService networkExecutor;
+  @Spy Utils.AnalyticsNetworkExecutorService networkExecutor;
   @Spy ExecutorService analyticsExecutor = new TestUtils.SynchronousExecutor();
-  @Mock
-  Client client;
-  @Mock
-  Stats stats;
+  @Mock Client client;
+  @Mock Stats stats;
   @Mock ProjectSettings.Cache projectSettingsCache;
-  @Mock
-  Integration integration;
+  @Mock Integration integration;
   @Mock Lifecycle lifecycle;
   private Options defaultOptions;
   private Integration.Factory factory;
@@ -360,8 +352,10 @@ public class AnalyticsTest {
 
     freshpaint.screen(
         "foo", "bar", null, new Options().setIntegration(Options.ALL_INTEGRATIONS_KEY, false));
-    freshpaint.track("foo", null, new Options().setIntegration(Options.ALL_INTEGRATIONS_KEY, false));
-    freshpaint.group("foo", null, new Options().setIntegration(Options.ALL_INTEGRATIONS_KEY, false));
+    freshpaint.track(
+        "foo", null, new Options().setIntegration(Options.ALL_INTEGRATIONS_KEY, false));
+    freshpaint.group(
+        "foo", null, new Options().setIntegration(Options.ALL_INTEGRATIONS_KEY, false));
     freshpaint.identify(
         "foo", null, new Options().setIntegration(Options.ALL_INTEGRATIONS_KEY, false));
     freshpaint.alias("foo", new Options().setIntegration(Options.ALL_INTEGRATIONS_KEY, false));

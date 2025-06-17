@@ -28,6 +28,7 @@ task androidJavadocs(type: Javadoc) {
             owner.classpath += variant.javaCompileProvider.get().classpath
         }
     }
+    exclude '**/BuildConfig.java'
     exclude '**/R.html', '**/R.*.html', '**/index.html'
 }
 
@@ -53,7 +54,6 @@ publishing {
             // Two artifacts, the `aar` and the sources
             artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
             artifact androidSourcesJar
-            artifact androidJavadocsJar
 
             // Self-explanatory metadata for the most part
             pom {
@@ -122,7 +122,7 @@ signing {
         findProperty("signing.secretKey"),
         findProperty("signing.password")
     )
-    sign configurations.archives
+    sign publishing.publications.release
 }
 
 afterEvaluate {

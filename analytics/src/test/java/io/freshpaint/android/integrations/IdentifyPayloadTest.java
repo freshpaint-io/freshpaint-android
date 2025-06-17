@@ -27,7 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableMap;
-
 import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Test;
@@ -53,7 +52,8 @@ public class IdentifyPayloadTest {
             .traits(ImmutableMap.of("foo", "bar"))
             .build();
     Assertions.assertThat(payload.traits()).isEqualTo(ImmutableMap.of("foo", "bar"));
-    Assertions.assertThat(payload).containsEntry(IdentifyPayload.TRAITS_KEY, ImmutableMap.of("foo", "bar"));
+    Assertions.assertThat(payload)
+        .containsEntry(IdentifyPayload.TRAITS_KEY, ImmutableMap.of("foo", "bar"));
   }
 
   @Test

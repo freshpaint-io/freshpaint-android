@@ -23,9 +23,6 @@
  */
 package io.freshpaint.android;
 
-import static io.freshpaint.android.internal.Utils.immutableCopyOf;
-import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -39,12 +36,10 @@ import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
-
 import io.freshpaint.android.integrations.AliasPayload;
 import io.freshpaint.android.integrations.BasePayload;
 import io.freshpaint.android.integrations.GroupPayload;
@@ -55,7 +50,6 @@ import io.freshpaint.android.integrations.ScreenPayload;
 import io.freshpaint.android.integrations.TrackPayload;
 import io.freshpaint.android.internal.Private;
 import io.freshpaint.android.internal.Utils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -87,8 +81,7 @@ public class Freshpaint {
           throw new AssertionError("Unknown handler message received: " + msg.what);
         }
       };
-  @Private
-  static final String OPT_OUT_PREFERENCE_KEY = "opt-out";
+  @Private static final String OPT_OUT_PREFERENCE_KEY = "opt-out";
   static final String WRITE_KEY_RESOURCE_IDENTIFIER = "analytics_write_key";
   static final List<String> INSTANCES = new ArrayList<>(1);
   /* This is intentional since we're only using the application context. */
@@ -234,7 +227,7 @@ public class Freshpaint {
     this.writeKey = writeKey;
     this.flushQueueSize = flushQueueSize;
     this.flushIntervalInMillis = flushIntervalInMillis;
-    this.sessionTimeoutSeconds   = sessionTimeoutSeconds;
+    this.sessionTimeoutSeconds = sessionTimeoutSeconds;
     this.advertisingIdLatch = advertisingIdLatch;
     this.optOut = optOut;
     this.factories = factories;
@@ -255,9 +248,7 @@ public class Freshpaint {
               defaultProjectSettings.put("integrations", new ValueMap());
             }
             if (!defaultProjectSettings.getValueMap("integrations").containsKey("Freshpaint")) {
-              defaultProjectSettings
-                  .getValueMap("integrations")
-                  .put("Freshpaint", new ValueMap());
+              defaultProjectSettings.getValueMap("integrations").put("Freshpaint", new ValueMap());
             }
             if (!defaultProjectSettings
                 .getValueMap("integrations")
@@ -406,7 +397,9 @@ public class Freshpaint {
    * @param options To configure the call, these override the defaultOptions, to extend use
    *     #getDefaultOptions()
    * @throws IllegalArgumentException if both {@code userId} and {@code newTraits} are not provided
-   * @see <a href="https://docs.freshpaint.io/getting-started/building-out-your-account/setting-up-identify">Identify Documentation</a>
+   * @see <a
+   *     href="https://docs.freshpaint.io/getting-started/building-out-your-account/setting-up-identify">Identify
+   *     Documentation</a>
    */
   public void identify(
       final @Nullable String userId,
@@ -461,7 +454,8 @@ public class Freshpaint {
    * @param options To configure the call, these override the defaultOptions, to extend use
    *     #getDefaultOptions()
    * @throws IllegalArgumentException if groupId is null or an empty string.
-   * @see <a href="https://docs.freshpaint.io/developer-docs/freshpaint-sdk-reference#group">Group Documentation</a>
+   * @see <a href="https://docs.freshpaint.io/developer-docs/freshpaint-sdk-reference#group">Group
+   *     Documentation</a>
    */
   public void group(
       @NonNull final String groupId,
@@ -510,7 +504,8 @@ public class Freshpaint {
    * @param options To configure the call, these override the defaultOptions, to extend use
    *     #getDefaultOptions()
    * @throws IllegalArgumentException if event name is null or an empty string.
-   * @see <a href="https://docs.freshpaint.io/developer-docs/freshpaint-sdk-reference#track">Track Documentation</a>
+   * @see <a href="https://docs.freshpaint.io/developer-docs/freshpaint-sdk-reference#track">Track
+   *     Documentation</a>
    */
   public void track(
       final @NonNull String event,
@@ -631,7 +626,8 @@ public class Freshpaint {
    * @param options To configure the call, these override the defaultOptions, to extend use
    *     #getDefaultOptions()
    * @throws IllegalArgumentException if newId is null or empty
-   * @see <a href="https://docs.freshpaint.io/developer-docs/freshpaint-sdk-reference#alias">Alias Documentation</a>
+   * @see <a href="https://docs.freshpaint.io/developer-docs/freshpaint-sdk-reference#alias">Alias
+   *     Documentation</a>
    */
   public void alias(final @NonNull String newId, final @Nullable Options options) {
     assertNotShutdown();
@@ -1040,8 +1036,8 @@ public class Freshpaint {
 
     /**
      * Set the interval at which the client should flush events. The client will automatically flush
-     * events to Freshpaint every {@code flushInterval} duration, regardless of
-     * {@code flushQueueSize}.
+     * events to Freshpaint every {@code flushInterval} duration, regardless of {@code
+     * flushQueueSize}.
      *
      * @throws IllegalArgumentException if the flushInterval is less than or equal to zero.
      */
@@ -1091,7 +1087,8 @@ public class Freshpaint {
 
     public Builder sessionTimeoutSeconds(int timeoutSeconds) {
       if (timeoutSeconds < 0) {
-        throw new IllegalArgumentException("Timeout seconds must be greater than or equal to zero.");
+        throw new IllegalArgumentException(
+            "Timeout seconds must be greater than or equal to zero.");
       }
 
       this.sessionTimeoutSeconds = timeoutSeconds;
@@ -1260,9 +1257,7 @@ public class Freshpaint {
       return this;
     }
 
-    /**
-     * Set the default project settings to use, if Freshpaint cannot be reached.
-     */
+    /** Set the default project settings to use, if Freshpaint cannot be reached. */
     public Builder defaultProjectSettings(ValueMap defaultProjectSettings) {
       Utils.assertNotNull(defaultProjectSettings, "defaultProjectSettings");
       this.defaultProjectSettings = defaultProjectSettings;
@@ -1318,7 +1313,9 @@ public class Freshpaint {
 
       BooleanPreference optOut =
           new BooleanPreference(
-              Utils.getFreshpaintSharedPreferences(application, tag), OPT_OUT_PREFERENCE_KEY, false);
+              Utils.getFreshpaintSharedPreferences(application, tag),
+              OPT_OUT_PREFERENCE_KEY,
+              false);
 
       Traits.Cache traitsCache = new Traits.Cache(application, cartographer, tag);
       if (!traitsCache.isSet() || traitsCache.get() == null) {

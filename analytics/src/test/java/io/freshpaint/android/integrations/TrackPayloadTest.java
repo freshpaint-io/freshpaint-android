@@ -27,7 +27,6 @@ import static junit.framework.Assert.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
-
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
@@ -93,6 +92,7 @@ public class TrackPayloadTest {
   public void properties() {
     TrackPayload payload = builder.event("event").properties(ImmutableMap.of("foo", "bar")).build();
     Assertions.assertThat(payload.properties()).isEqualTo(ImmutableMap.of("foo", "bar"));
-    Assertions.assertThat(payload).containsEntry(TrackPayload.PROPERTIES_KEY, ImmutableMap.of("foo", "bar"));
+    Assertions.assertThat(payload)
+        .containsEntry(TrackPayload.PROPERTIES_KEY, ImmutableMap.of("foo", "bar"));
   }
 }

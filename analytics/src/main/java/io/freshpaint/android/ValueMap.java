@@ -23,13 +23,9 @@
  */
 package io.freshpaint.android;
 
-import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
-
 import android.content.Context;
 import android.content.SharedPreferences;
-
 import io.freshpaint.android.internal.Utils;
-
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;

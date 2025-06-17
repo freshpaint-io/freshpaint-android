@@ -37,7 +37,6 @@ import androidx.annotation.Nullable;
 import io.freshpaint.android.AnalyticsContext;
 import io.freshpaint.android.ValueMap;
 import io.freshpaint.android.internal.NanoDate;
-
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -246,9 +245,7 @@ public abstract class BasePayload extends ValueMap {
       return self();
     }
 
-    /**
-     * Set whether this message is sent to the specified integration or not.
-     */
+    /** Set whether this message is sent to the specified integration or not. */
     @NonNull
     public B integration(@NonNull String key, boolean enable) {
       assertNotNullOrEmpty(key, "key");
@@ -274,9 +271,7 @@ public abstract class BasePayload extends ValueMap {
       return self();
     }
 
-    /**
-     * Specify a dictionary of options for integrations.
-     */
+    /** Specify a dictionary of options for integrations. */
     @NonNull
     public B integrations(@Nullable Map<String, ?> integrations) {
       if (isNullOrEmpty(integrations)) {
@@ -299,9 +294,7 @@ public abstract class BasePayload extends ValueMap {
       return self();
     }
 
-    /**
-     * The User ID is a persistent unique identifier for a user (such as a database ID).
-     */
+    /** The User ID is a persistent unique identifier for a user (such as a database ID). */
     @NonNull
     public B userId(@NonNull String userId) {
       this.userId = assertNotNullOrEmpty(userId, "userId");

@@ -27,7 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 import android.util.Pair;
-
 import java.io.IOException;
 import org.assertj.core.data.MapEntry;
 import org.junit.Before;
