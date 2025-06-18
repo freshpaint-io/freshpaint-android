@@ -45,9 +45,7 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import io.freshpaint.android.Freshpaint;
-
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
@@ -84,7 +82,7 @@ public final class Utils {
   public static final int DEFAULT_FLUSH_QUEUE_SIZE = 20;
   public static final boolean DEFAULT_COLLECT_DEVICE_ID = true;
   public static final int DEFAULT_SESSION_TIMEOUT_SECONDS = 30 * 60; // 30 minutes
-  
+
   /** Creates a mutable HashSet instance containing the given elements in unspecified order */
   public static <T> Set<T> newSet(T... values) {
     Set<T> set = new HashSet<>(values.length);
@@ -534,9 +532,8 @@ public final class Utils {
   }
 
   /**
-   * A {@link ThreadPoolExecutor} implementation by {@link Freshpaint}
-   * instances. Exists as a custom type so that we can differentiate the use of defaults versus a
-   * user-supplied instance.
+   * A {@link ThreadPoolExecutor} implementation by {@link Freshpaint} instances. Exists as a custom
+   * type so that we can differentiate the use of defaults versus a user-supplied instance.
    */
   public static class AnalyticsNetworkExecutorService extends ThreadPoolExecutor {
 

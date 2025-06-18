@@ -1,12 +1,17 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'com.getkeepsafe.dexcount'
+// apply plugin: 'com.getkeepsafe.dexcount'
 
 apply from: rootProject.file('gradle/android.gradle')
 
 android {
   defaultConfig {
     consumerProguardFiles 'proguard-rules-lib.txt'
+  }
+
+  tasks.withType(Javadoc).all { task ->
+      task.failOnError = false
+      task.exclude '**/R.html', '**/BuildConfig.html'
   }
 }
 

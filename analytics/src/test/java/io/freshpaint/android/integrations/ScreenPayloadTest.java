@@ -27,7 +27,6 @@ import static junit.framework.Assert.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
-
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,7 +80,8 @@ public class ScreenPayloadTest {
   public void properties() {
     ScreenPayload payload = builder.name("name").properties(ImmutableMap.of("foo", "bar")).build();
     Assertions.assertThat(payload.properties()).isEqualTo(ImmutableMap.of("foo", "bar"));
-    Assertions.assertThat(payload).containsEntry(ScreenPayload.PROPERTIES_KEY, ImmutableMap.of("foo", "bar"));
+    Assertions.assertThat(payload)
+        .containsEntry(ScreenPayload.PROPERTIES_KEY, ImmutableMap.of("foo", "bar"));
   }
 
   @Test

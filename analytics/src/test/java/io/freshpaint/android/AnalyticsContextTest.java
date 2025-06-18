@@ -32,10 +32,8 @@ import static org.robolectric.annotation.Config.NONE;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
-
-import io.freshpaint.android.core.BuildConfig;
 import com.google.common.collect.ImmutableMap;
-
+import io.freshpaint.android.core.BuildConfig;
 import java.util.Map;
 import org.assertj.core.data.MapEntry;
 import org.junit.Before;

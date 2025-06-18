@@ -26,15 +26,15 @@ package io.freshpaint.android.integrations;
 import android.app.Activity;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
-
+import io.freshpaint.android.Freshpaint;
 import io.freshpaint.android.Options;
 import io.freshpaint.android.Properties;
 import io.freshpaint.android.Traits;
-import io.freshpaint.android.Freshpaint;
 import io.freshpaint.android.ValueMap;
 
 /**
- * Converts Freshpaint messages to a format a bundled integration understands, and calls those methods.
+ * Converts Freshpaint messages to a format a bundled integration understands, and calls those
+ * methods.
  *
  * @param <T> The type of the backing instance. This isn't strictly necessary (since we return an
  *     object), but serves as documentation for what type to expect with {@link
@@ -76,26 +76,19 @@ public abstract class Integration<T> {
   /** @see android.app.Application.ActivityLifecycleCallbacks */
   public void onActivityDestroyed(Activity activity) {}
 
-  /**
-   * @see Freshpaint#identify(String, Traits, Options)
-   */
+  /** @see Freshpaint#identify(String, Traits, Options) */
   public void identify(IdentifyPayload identify) {}
 
   /** @see Freshpaint#group(String, Traits, Options) */
   public void group(GroupPayload group) {}
 
-  /**
-   * @see Freshpaint#track(String, Properties, Options)
-   */
+  /** @see Freshpaint#track(String, Properties, Options) */
   public void track(TrackPayload track) {}
 
   /** @see Freshpaint#alias(String, Options) */
   public void alias(AliasPayload alias) {}
 
-  /**
-   * @see Freshpaint#screen(String, String, Properties,
-   *     Options)
-   */
+  /** @see Freshpaint#screen(String, String, Properties, Options) */
   public void screen(ScreenPayload screen) {}
 
   /** @see Freshpaint#flush() */

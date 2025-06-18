@@ -23,15 +23,11 @@
  */
 package io.freshpaint.android;
 
-import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
-import static io.freshpaint.android.internal.Utils.toISO8601Date;
 import static java.util.Collections.unmodifiableMap;
 
 import android.content.Context;
-
 import io.freshpaint.android.internal.Private;
 import io.freshpaint.android.internal.Utils;
-
 import java.text.ParseException;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -103,8 +99,8 @@ public class Traits extends ValueMap {
   }
 
   /**
-   * Private API, users should call {@link Freshpaint#identify(String)}
-   * instead. Note that this is unable to enforce it, users can easily do traits.put(id, ..);
+   * Private API, users should call {@link Freshpaint#identify(String)} instead. Note that this is
+   * unable to enforce it, users can easily do traits.put(id, ..);
    */
   Traits putUserId(String id) {
     return putValue(USER_ID_KEY, id);
@@ -265,7 +261,9 @@ public class Traits extends ValueMap {
 
   public String name() {
     String name = getString(NAME_KEY);
-    if (Utils.isNullOrEmpty(name) && Utils.isNullOrEmpty(firstName()) && Utils.isNullOrEmpty(lastName())) {
+    if (Utils.isNullOrEmpty(name)
+        && Utils.isNullOrEmpty(firstName())
+        && Utils.isNullOrEmpty(lastName())) {
       return null;
     }
 

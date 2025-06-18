@@ -28,14 +28,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.robolectric.annotation.Config.NONE;
 
+import com.google.common.collect.ImmutableMap;
 import io.freshpaint.android.integrations.AliasPayload;
 import io.freshpaint.android.integrations.GroupPayload;
 import io.freshpaint.android.integrations.IdentifyPayload;
 import io.freshpaint.android.integrations.Integration;
 import io.freshpaint.android.integrations.ScreenPayload;
 import io.freshpaint.android.integrations.TrackPayload;
-import com.google.common.collect.ImmutableMap;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
@@ -50,8 +49,7 @@ import org.robolectric.annotation.Config;
 @Config(manifest = NONE)
 public class IntegrationOperationTest {
 
-  @Mock
-  Integration<Void> integration;
+  @Mock Integration<Void> integration;
 
   @Before
   public void setUp() {

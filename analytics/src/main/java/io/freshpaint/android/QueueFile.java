@@ -26,7 +26,6 @@ package io.freshpaint.android;
 import static java.lang.Math.min;
 
 import io.freshpaint.android.internal.Private;
-
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.File;

@@ -31,11 +31,10 @@ import static org.mockito.Mockito.when;
 import static org.robolectric.annotation.Config.NONE;
 
 import android.net.Uri;
-
-import io.freshpaint.android.internal.Private;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
+import io.freshpaint.android.internal.Private;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,8 +59,7 @@ public class ClientTest {
   @Rule public TemporaryFolder folder = new TemporaryFolder();
   private Client client;
   private Client mockClient;
-  @Private
-  HttpURLConnection mockConnection;
+  @Private HttpURLConnection mockConnection;
 
   @Before
   public void setUp() {

@@ -30,10 +30,8 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Pair;
-
 import io.freshpaint.android.internal.Private;
 import io.freshpaint.android.internal.Utils;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -103,8 +101,7 @@ class Stats {
 
   private static class StatsHandler extends Handler {
 
-    @Private
-    static final int TRACK_FLUSH = 1;
+    @Private static final int TRACK_FLUSH = 1;
     @Private static final int TRACK_INTEGRATION_OPERATION = 2;
 
     private final Stats stats;

@@ -23,6 +23,7 @@ buildscript {
 
 apply plugin: 'com.vanniktech.android.junit.jacoco'
 
+
 allprojects {
   buildscript {
     repositories {
