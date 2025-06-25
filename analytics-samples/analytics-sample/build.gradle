@@ -15,6 +15,12 @@ if (e2eTestPropertiesFile.exists()) {
 }
 
 android {
+  buildFeatures {
+    buildConfig true
+  }
+
+  namespace 'io.freshpaint.android.sample'
+
   lintOptions {
     // Since this is just a sample app, it's ok to ignore these warnings.
     disable 'IconMissingDensityFolder', 'GoogleAppIndexingWarning', 'AllowBackup'
@@ -37,13 +43,13 @@ dependencies {
   implementation 'com.jakewharton:butterknife:10.2.1'
   annotationProcessor 'com.jakewharton:butterknife-compiler:10.2.1'
 
-  androidTestImplementation 'com.squareup.retrofit2:retrofit:2.8.1'
+  androidTestImplementation 'com.squareup.retrofit2:retrofit:2.9.0'
   androidTestImplementation 'com.squareup.retrofit2:converter-moshi:2.8.1'
 
   androidTestImplementation rootProject.ext.deps.supportAnnotations
-  androidTestImplementation 'androidx.test:runner:1.2.0'
-  androidTestImplementation 'androidx.test:rules:1.2.0'
+  androidTestImplementation 'androidx.test:runner:1.6.2'
+  androidTestImplementation 'androidx.test:rules:1.6.1'
   androidTestImplementation 'com.segment.backo:backo:1.0.0'
 
-  androidTestImplementation 'org.assertj:assertj-core:3.16.1'
+  androidTestImplementation 'org.assertj:assertj-core:3.23.1'
 }

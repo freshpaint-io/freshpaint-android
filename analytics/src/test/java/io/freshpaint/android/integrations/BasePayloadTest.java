@@ -28,10 +28,8 @@ import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
 import java.util.Date;
 import java.util.List;
-
 import org.assertj.core.api.Assertions;
 import org.assertj.core.data.MapEntry;
 import org.junit.Before;
@@ -39,7 +37,8 @@ import org.junit.Test;
 
 public class BasePayloadTest {
 
-  private List<BasePayload.Builder<? extends BasePayload, ? extends BasePayload.Builder<?, ?>>> builders;
+  private List<BasePayload.Builder<? extends BasePayload, ? extends BasePayload.Builder<?, ?>>>
+      builders;
 
   @Before
   public void setUp() {
@@ -56,7 +55,8 @@ public class BasePayloadTest {
   public void channelIsSet() {
     for (BasePayload.Builder builder : builders) {
       BasePayload payload = builder.userId("user_id").build();
-      Assertions.assertThat(payload).containsEntry(BasePayload.CHANNEL_KEY, BasePayload.Channel.mobile);
+      Assertions.assertThat(payload)
+          .containsEntry(BasePayload.CHANNEL_KEY, BasePayload.Channel.mobile);
     }
   }
 
@@ -90,7 +90,12 @@ public class BasePayloadTest {
     for (BasePayload.Builder builder : builders) {
       BasePayload payload = builder.userId("user_id").build();
       assertThat(payload.type())
-          .isIn(BasePayload.Type.alias, BasePayload.Type.track, BasePayload.Type.screen, BasePayload.Type.group, BasePayload.Type.identify);
+          .isIn(
+              BasePayload.Type.alias,
+              BasePayload.Type.track,
+              BasePayload.Type.screen,
+              BasePayload.Type.group,
+              BasePayload.Type.identify);
       Assertions.assertThat(payload).containsKey(BasePayload.TYPE_KEY);
     }
   }
@@ -212,7 +217,8 @@ public class BasePayloadTest {
       BasePayload payload =
           builder.userId("user_id").context(ImmutableMap.of("foo", "bar")).build();
       Assertions.assertThat(payload.context()).containsExactly(MapEntry.entry("foo", "bar"));
-      Assertions.assertThat(payload).containsEntry(BasePayload.CONTEXT_KEY, ImmutableMap.of("foo", "bar"));
+      Assertions.assertThat(payload)
+          .containsEntry(BasePayload.CONTEXT_KEY, ImmutableMap.of("foo", "bar"));
     }
   }
 

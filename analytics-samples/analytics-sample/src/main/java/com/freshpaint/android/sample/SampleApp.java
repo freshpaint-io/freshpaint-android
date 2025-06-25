@@ -21,19 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.freshpaint.android.sample;
+package com.freshpaint.android.sample;
 
 import android.app.Application;
-import android.net.Uri;
 import android.util.Log;
-
 import io.freshpaint.android.Freshpaint;
-import io.freshpaint.android.ConnectionFactory;
-import io.freshpaint.android.ValueMap;
-
-import java.io.IOException;
-import java.net.HttpURLConnection;
-
 import io.github.inflationx.calligraphy3.CalligraphyConfig;
 import io.github.inflationx.calligraphy3.CalligraphyInterceptor;
 import io.github.inflationx.viewpump.ViewPump;
@@ -52,7 +44,6 @@ public class SampleApp extends Application {
                 new CalligraphyInterceptor(
                     new CalligraphyConfig.Builder()
                         .setDefaultFontPath("fonts/CircularStd-Book.otf")
-                        .setFontAttrId(R.attr.fontPath)
                         .build()))
             .build());
 

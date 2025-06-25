@@ -24,11 +24,9 @@
 package io.freshpaint.android;
 
 import static io.freshpaint.android.Options.ALL_INTEGRATIONS_KEY;
-import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
 
 import android.app.Activity;
 import android.os.Bundle;
-
 import io.freshpaint.android.integrations.AliasPayload;
 import io.freshpaint.android.integrations.BasePayload;
 import io.freshpaint.android.integrations.GroupPayload;
@@ -38,7 +36,6 @@ import io.freshpaint.android.integrations.ScreenPayload;
 import io.freshpaint.android.integrations.TrackPayload;
 import io.freshpaint.android.internal.Private;
 import io.freshpaint.android.internal.Utils;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -175,7 +172,7 @@ abstract class IntegrationOperation {
 
   @Private
   static void runMiddlewareChain(
-          BasePayload payload, List<Middleware> middleware, Middleware.Callback callback) {
+      BasePayload payload, List<Middleware> middleware, Middleware.Callback callback) {
     Middleware.Chain chain = new MiddlewareChainRunner(0, payload, middleware, callback);
     chain.proceed(payload);
   }

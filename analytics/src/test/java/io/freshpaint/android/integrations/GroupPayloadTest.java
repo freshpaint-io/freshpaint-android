@@ -27,7 +27,6 @@ import static junit.framework.Assert.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
-
 import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Before;
@@ -95,6 +94,7 @@ public class GroupPayloadTest {
     GroupPayload payload =
         builder.groupId("group_id").traits(ImmutableMap.of("foo", "bar")).build();
     Assertions.assertThat(payload.traits()).isEqualTo(ImmutableMap.of("foo", "bar"));
-    Assertions.assertThat(payload).containsEntry(GroupPayload.TRAITS_KEY, ImmutableMap.of("foo", "bar"));
+    Assertions.assertThat(payload)
+        .containsEntry(GroupPayload.TRAITS_KEY, ImmutableMap.of("foo", "bar"));
   }
 }

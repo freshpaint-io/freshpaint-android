@@ -29,7 +29,6 @@ import static android.content.Context.TELEPHONY_SERVICE;
 import static android.net.ConnectivityManager.TYPE_BLUETOOTH;
 import static android.net.ConnectivityManager.TYPE_MOBILE;
 import static android.net.ConnectivityManager.TYPE_WIFI;
-import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
 import static java.util.Collections.unmodifiableMap;
 
 import android.annotation.SuppressLint;
@@ -43,12 +42,10 @@ import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
-
+import io.freshpaint.android.core.BuildConfig;
 import io.freshpaint.android.integrations.Logger;
 import io.freshpaint.android.internal.Private;
 import io.freshpaint.android.internal.Utils;
-import io.freshpaint.android.core.BuildConfig;
-
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -275,7 +272,8 @@ public class AnalyticsContext extends ValueMap {
   void putNetwork(Context context) {
     Map<String, Object> network = Utils.createMap();
     if (Utils.hasPermission(context, ACCESS_NETWORK_STATE)) {
-      ConnectivityManager connectivityManager = Utils.getSystemService(context, CONNECTIVITY_SERVICE);
+      ConnectivityManager connectivityManager =
+          Utils.getSystemService(context, CONNECTIVITY_SERVICE);
       if (connectivityManager != null) {
         NetworkInfo wifiInfo = connectivityManager.getNetworkInfo(TYPE_WIFI);
         network.put(NETWORK_WIFI_KEY, wifiInfo != null && wifiInfo.isConnected());
@@ -386,7 +384,10 @@ public class AnalyticsContext extends ValueMap {
       return putValue(CAMPAIGN_TERM_KEY, term);
     }
 
-    /** @deprecated Use {@link #term()} instead. */
+    /**
+     * @deprecated Use {@link #term()} instead.
+     */
+    @Deprecated
     public String tern() {
       return term();
     }
@@ -408,8 +409,7 @@ public class AnalyticsContext extends ValueMap {
   /** Information about the device. */
   public static class Device extends ValueMap {
 
-    @Private
-    static final String DEVICE_ID_KEY = "id";
+    @Private static final String DEVICE_ID_KEY = "id";
     @Private static final String DEVICE_MANUFACTURER_KEY = "manufacturer";
     @Private static final String DEVICE_MODEL_KEY = "model";
     @Private static final String DEVICE_NAME_KEY = "name";
@@ -554,7 +554,10 @@ public class AnalyticsContext extends ValueMap {
       return getString(REFERRER_TYPE_KEY);
     }
 
-    /** @deprecated Use {@link #putUrl(String)} */
+    /**
+     * @deprecated Use {@link #putUrl(String)}
+     */
+    @Deprecated
     public Referrer putTerm(String url) {
       return putValue(REFERRER_URL_KEY, url);
     }

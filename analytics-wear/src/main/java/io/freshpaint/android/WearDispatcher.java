@@ -30,14 +30,12 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-
-import io.freshpaint.android.internal.Utils;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
-
+import io.freshpaint.android.internal.Utils;
 import java.util.Collection;
 import java.util.HashSet;
 

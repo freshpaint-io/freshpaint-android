@@ -24,7 +24,6 @@
 package io.freshpaint.android;
 
 import io.freshpaint.android.integrations.BasePayload;
-
 import java.io.IOException;
 import java.util.Map;
 

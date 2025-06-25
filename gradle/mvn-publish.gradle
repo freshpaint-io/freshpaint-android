@@ -32,12 +32,12 @@ task androidJavadocs(type: Javadoc) {
 }
 
 task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
-    classifier = 'javadoc'
+    archiveClassifier.set('javadoc')
     from androidJavadocs.destinationDir
 }
 
 task androidSourcesJar(type: Jar) {
-    classifier = 'sources'
+    archiveClassifier.set('sources')
     from android.sourceSets.main.java.source
 }
 
@@ -108,8 +108,8 @@ publishing {
             // The username and password we've fetched earlier
             if (!getUrl().toString().startsWith("file:/")) {
                 credentials {
-                    username NEXUS_USERNAME
-                    password NEXUS_PASSWORD
+                    username NEXUS_USERNAME ?: ""
+                    password NEXUS_PASSWORD ?: ""
                 }
             }
         }
@@ -117,6 +117,7 @@ publishing {
 }
 
 signing {
+    required { gradle.taskGraph.hasTask("publish") }
     sign publishing.publications
 }
 

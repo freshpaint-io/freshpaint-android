@@ -33,10 +33,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
-
 import io.freshpaint.android.integrations.TrackPayload;
 import io.freshpaint.android.internal.Utils;
-
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.Collections;
@@ -109,8 +107,7 @@ public final class TestUtils {
             .event("foo")
             .userId("userId")
             .messageId("a161304c-498c-4830-9291-fcfb8498877b")
-            .timestamp(
-                Utils.parseISO8601Date("2010-01-01T12:00:00+01:00"))
+            .timestamp(Utils.parseISO8601Date("2010-01-01T12:00:00+01:00"))
             .build();
   }
 

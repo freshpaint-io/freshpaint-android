@@ -24,9 +24,6 @@
 package io.freshpaint.android;
 
 import io.freshpaint.android.internal.Utils;
-
-import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -120,9 +117,7 @@ public class Properties extends ValueMap {
     return getString(CURRENCY_KEY);
   }
 
-  /**
-   * Set a path (usually the path of the URL) for the screen.
-   */
+  /** Set a path (usually the path of the URL) for the screen. */
   public Properties putPath(String path) {
     return putValue(PATH_KEY, path);
   }
@@ -143,9 +138,7 @@ public class Properties extends ValueMap {
     return getString(REFERRER_KEY);
   }
 
-  /**
-   * Set the title of the screen.
-   */
+  /** Set the title of the screen. */
   public Properties putTitle(String title) {
     return putValue(TITLE_KEY, title);
   }
@@ -154,9 +147,7 @@ public class Properties extends ValueMap {
     return getString(TITLE_KEY);
   }
 
-  /**
-   * Set a url for the screen.
-   */
+  /** Set a url for the screen. */
   public Properties putUrl(String url) {
     return putValue(URL_KEY, url);
   }
@@ -165,9 +156,7 @@ public class Properties extends ValueMap {
     return getString(URL_KEY);
   }
 
-  /**
-   * Set the name of the product associated with an event.
-   */
+  /** Set the name of the product associated with an event. */
   public Properties putName(String name) {
     return putValue(NAME_KEY, name);
   }
@@ -188,9 +177,7 @@ public class Properties extends ValueMap {
     return getString(CATEGORY_KEY);
   }
 
-  /**
-   * Set a sku for the product associated with an event.
-   */
+  /** Set a sku for the product associated with an event. */
   public Properties putSku(String sku) {
     return putValue(SKU_KEY, sku);
   }
@@ -199,9 +186,7 @@ public class Properties extends ValueMap {
     return getString(SKU_KEY);
   }
 
-  /**
-   * Set a price (in dollars) for the product associated with an event.
-   */
+  /** Set a price (in dollars) for the product associated with an event. */
   public Properties putPrice(double price) {
     return putValue(PRICE_KEY, price);
   }
@@ -210,9 +195,7 @@ public class Properties extends ValueMap {
     return getDouble(PRICE_KEY, 0);
   }
 
-  /**
-   * Set an ID for the product associated with an event.
-   */
+  /** Set an ID for the product associated with an event. */
   public Properties putProductId(String id) {
     return putValue(ID_KEY, id);
   }
@@ -221,9 +204,7 @@ public class Properties extends ValueMap {
     return getString(ID_KEY);
   }
 
-  /**
-   * Set the order ID associated with an event.
-   */
+  /** Set the order ID associated with an event. */
   public Properties putOrderId(String orderId) {
     return putValue(ORDER_ID_KEY, orderId);
   }
@@ -232,9 +213,7 @@ public class Properties extends ValueMap {
     return getString(ORDER_ID_KEY);
   }
 
-  /**
-   * Set the total amount (in dollars) for an order associated with an event.
-   */
+  /** Set the total amount (in dollars) for an order associated with an event. */
   public Properties putTotal(double total) {
     return putValue(TOTAL_KEY, total);
   }
@@ -259,7 +238,9 @@ public class Properties extends ValueMap {
     return putValue(SUBTOTAL_KEY, subtotal);
   }
 
-  /** @deprecated use {@link #subtotal()} */
+  /**
+   * @deprecated use {@link #subtotal()}
+   */
   @Deprecated
   public double putSubtotal() {
     return subtotal();
@@ -269,9 +250,7 @@ public class Properties extends ValueMap {
     return getDouble(SUBTOTAL_KEY, 0);
   }
 
-  /**
-   * Set the shipping amount (in dollars) for an order associated with an event.
-   */
+  /** Set the shipping amount (in dollars) for an order associated with an event. */
   public Properties putShipping(double shipping) {
     return putValue(SHIPPING_KEY, shipping);
   }
@@ -280,9 +259,7 @@ public class Properties extends ValueMap {
     return getDouble(SHIPPING_KEY, 0);
   }
 
-  /**
-   * Set the tax amount (in dollars) for an order associated with an event.
-   */
+  /** Set the tax amount (in dollars) for an order associated with an event. */
   public Properties putTax(double tax) {
     return putValue(TAX_KEY, tax);
   }
@@ -291,9 +268,7 @@ public class Properties extends ValueMap {
     return getDouble(TAX_KEY, 0);
   }
 
-  /**
-   * Set the discount amount (in dollars) for an order associated with an event.
-   */
+  /** Set the discount amount (in dollars) for an order associated with an event. */
   public Properties putDiscount(double discount) {
     return putValue(DISCOUNT_KEY, discount);
   }
@@ -302,9 +277,7 @@ public class Properties extends ValueMap {
     return getDouble(DISCOUNT_KEY, 0);
   }
 
-  /**
-   * Set a coupon name for an order associated with an event.
-   */
+  /** Set a coupon name for an order associated with an event. */
   public Properties putCoupon(String coupon) {
     return putValue(COUPON_KEY, coupon);
   }
@@ -313,9 +286,7 @@ public class Properties extends ValueMap {
     return getString(COUPON_KEY);
   }
 
-  /**
-   * Set the individual products for an order associated with an event.
-   */
+  /** Set the individual products for an order associated with an event. */
   public Properties putProducts(Product... products) {
     if (Utils.isNullOrEmpty(products)) {
       throw new IllegalArgumentException("products cannot be null or empty.");
@@ -325,7 +296,10 @@ public class Properties extends ValueMap {
     return putValue(PRODUCTS_KEY, Collections.unmodifiableList(productList));
   }
 
-  /** @deprecated Use {@link #products()} instead. */
+  /**
+   * @deprecated Use {@link #products()} instead.
+   */
+  @Deprecated
   public List<Product> products(Product... products) {
     return products();
   }
@@ -334,9 +308,7 @@ public class Properties extends ValueMap {
     return getList(PRODUCTS_KEY, Product.class);
   }
 
-  /**
-   * Set whether an order associated with an event is from a repeating customer.
-   */
+  /** Set whether an order associated with an event is from a repeating customer. */
   public Properties putRepeatCustomer(boolean repeat) {
     return putValue(REPEAT_KEY, repeat);
   }

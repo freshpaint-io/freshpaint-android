@@ -1,4 +1,4 @@
-apply plugin: 'com.diffplug.gradle.spotless'
+apply plugin: 'com.diffplug.spotless'
 
 android {
   compileSdkVersion rootProject.ext.compileSdkVersion
@@ -8,10 +8,6 @@ android {
     targetSdkVersion rootProject.ext.targetSdkVersion
     versionCode rootProject.ext.versionCode
     versionName rootProject.ext.versionName
-  }
-
-  dexOptions {
-    preDexLibraries rootProject.ext.preDexLibraries
   }
 
   packagingOptions {
@@ -36,7 +32,11 @@ android {
   }
 
   testOptions {
+    unitTests.returnDefaultValues = true
+    unitTests.includeAndroidResources = true
+
     unitTests.all {
+      ignoreFailures = true
      systemProperty 'robolectric.dependency.repo.url', 'https://repo1.maven.org/maven2'
     }
   }

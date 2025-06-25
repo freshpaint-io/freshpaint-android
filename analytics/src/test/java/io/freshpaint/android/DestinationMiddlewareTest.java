@@ -34,18 +34,15 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.Manifest;
 import androidx.annotation.NonNull;
-
+import com.google.common.util.concurrent.MoreExecutors;
 import io.freshpaint.android.integrations.BasePayload;
 import io.freshpaint.android.integrations.IdentifyPayload;
 import io.freshpaint.android.integrations.Integration;
 import io.freshpaint.android.integrations.TrackPayload;
-import com.google.common.util.concurrent.MoreExecutors;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,8 +59,7 @@ public class DestinationMiddlewareTest {
 
   Freshpaint.Builder builder;
 
-  @Mock
-  Integration<Void> integrationFoo;
+  @Mock Integration<Void> integrationFoo;
   @Mock Integration<Void> integrationBar;
 
   @Before
@@ -160,8 +156,7 @@ public class DestinationMiddlewareTest {
                     properties.putAll(payload.properties());
 
                     TrackPayload newPayload =
-                        payload
-                            .toBuilder()
+                        payload.toBuilder()
                             .properties(properties.putValue("middleware_key", "middleware_value"))
                             .build();
                     payloadRefDestMiddleware.set(newPayload);
@@ -176,7 +171,8 @@ public class DestinationMiddlewareTest {
     verify(integrationBar).track(payloadRefOriginal.get());
 
     assertThat(payloadRefDestMiddleware.get().event()).isEqualTo("foo");
-    Assertions.assertThat(payloadRefDestMiddleware.get().properties()).containsKey("middleware_key");
+    Assertions.assertThat(payloadRefDestMiddleware.get().properties())
+        .containsKey("middleware_key");
     Assertions.assertThat(payloadRefDestMiddleware.get().properties().get("middleware_key"))
         .isEqualTo("middleware_value");
     verify(integrationFoo).track(payloadRefDestMiddleware.get());

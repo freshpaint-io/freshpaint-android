@@ -35,9 +35,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import android.app.Application;
 import android.content.Context;
 import android.content.res.Resources;
-
 import io.freshpaint.android.core.BuildConfig;
-
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
@@ -104,7 +102,9 @@ public class AnalyticsBuilderTest {
               throw new AssertionError("should not be invoked");
             }
           };
-      new Freshpaint.Builder(context, "foo").useSourceMiddleware(middleware).useSourceMiddleware(middleware);
+      new Freshpaint.Builder(context, "foo")
+          .useSourceMiddleware(middleware)
+          .useSourceMiddleware(middleware);
       fail("Registering middleware twice throw exception.");
     } catch (IllegalStateException expected) {
       assertThat(expected).hasMessage("Source Middleware is already registered.");
@@ -292,7 +292,8 @@ public class AnalyticsBuilderTest {
     Resources resources = mock(Resources.class);
     when(context.getResources()).thenReturn(resources);
 
-    when(resources.getIdentifier(eq(Freshpaint.WRITE_KEY_RESOURCE_IDENTIFIER), eq("string"), eq("string")))
+    when(resources.getIdentifier(
+            eq(Freshpaint.WRITE_KEY_RESOURCE_IDENTIFIER), eq("string"), eq("string")))
         .thenReturn(1);
     //noinspection ResourceType
     when(resources.getString(1)).thenReturn(writeKey);

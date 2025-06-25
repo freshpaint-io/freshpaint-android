@@ -24,7 +24,6 @@
 package io.freshpaint.android.integrations;
 
 import android.util.Log;
-
 import io.freshpaint.android.Freshpaint;
 
 /** An abstraction for logging messages. */

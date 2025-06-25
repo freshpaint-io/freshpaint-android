@@ -21,12 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.freshpaint.android.sample;
+package com.freshpaint.android.sample;
 
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
-
 import io.freshpaint.android.WearAnalytics;
 import io.freshpaint.android.sample.R;
 
