@@ -41,12 +41,9 @@ public class MainActivity extends Activity {
 
     View view = findViewById(R.id.logo);
     view.setOnClickListener(
-        new View.OnClickListener() {
-          @Override
-          public void onClick(View view) {
-            view.animate().rotationBy(360);
-            WearAnalytics.with(MainActivity.this).track("Clicked Logo", null);
-          }
+        view1 -> {
+          view1.animate().rotationBy(360);
+          WearAnalytics.with(MainActivity.this).track("Clicked Logo", null);
         });
   }
 }

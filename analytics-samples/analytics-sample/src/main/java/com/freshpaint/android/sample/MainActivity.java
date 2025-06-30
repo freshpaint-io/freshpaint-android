@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
 
   /** Returns true if the string is null, or empty (when trimmed). */
   public static boolean isNullOrEmpty(String text) {
-    return TextUtils.isEmpty(text) || text.trim().length() == 0;
+    return TextUtils.isEmpty(text) || text.trim().isEmpty();
   }
 
   @Override

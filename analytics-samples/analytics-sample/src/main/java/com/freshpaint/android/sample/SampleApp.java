@@ -64,12 +64,6 @@ public class SampleApp extends Application {
     // If you need to know when integrations have been initialized, use the onIntegrationReady
     // listener.
     freshpaint.onIntegrationReady(
-        "Freshpaint",
-        new Freshpaint.Callback() {
-          @Override
-          public void onReady(Object instance) {
-            Log.d("Freshpaint Sample", "Freshpaint integration ready.");
-          }
-        });
+        "Freshpaint", instance -> Log.d("Freshpaint Sample", "Freshpaint integration ready."));
   }
 }
