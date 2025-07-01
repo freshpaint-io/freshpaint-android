@@ -26,10 +26,10 @@ package io.freshpaint.android.test;
 import static io.freshpaint.android.Utils.createContext;
 import static io.freshpaint.android.Utils.createTraits;
 
-import io.freshpaint.android.integrations.GroupPayload;
 import io.freshpaint.android.AnalyticsContext;
 import io.freshpaint.android.Options;
 import io.freshpaint.android.Traits;
+import io.freshpaint.android.integrations.GroupPayload;
 
 @Deprecated
 public class GroupPayloadBuilder {

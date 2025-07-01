@@ -26,9 +26,7 @@ package io.freshpaint.android;
 import static java.util.Collections.unmodifiableMap;
 
 import android.content.Context;
-
 import io.freshpaint.android.internal.Private;
-
 import java.util.Map;
 
 class ProjectSettings extends ValueMap {

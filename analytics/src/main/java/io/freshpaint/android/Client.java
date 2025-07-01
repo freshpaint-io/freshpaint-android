@@ -23,13 +23,8 @@
  */
 package io.freshpaint.android;
 
-import static io.freshpaint.android.internal.Utils.readFully;
-import static java.net.HttpURLConnection.HTTP_OK;
-
 import android.text.TextUtils;
-
 import io.freshpaint.android.internal.Utils;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,8 +32,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.util.zip.GZIPOutputStream;
 
-/** HTTP client which can upload payloads and fetch project settings from the Freshpaint public
- * API.
+/**
+ * HTTP client which can upload payloads and fetch project settings from the Freshpaint public API.
  */
 class Client {
 

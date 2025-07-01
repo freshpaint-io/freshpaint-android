@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 version = VERSION_NAME
 group = GROUP
 
 def isReleaseBuild() {
-  return VERSION_NAME.contains("SNAPSHOT") == false
+  return !VERSION_NAME.contains("SNAPSHOT")
 }
 
 def getReleaseRepositoryUrl() {
   return hasProperty('RELEASE_REPOSITORY_URL') ? RELEASE_REPOSITORY_URL
-          : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+          : "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
 }
 
 def getSnapshotRepositoryUrl() {
   return hasProperty('SNAPSHOT_REPOSITORY_URL') ? SNAPSHOT_REPOSITORY_URL
-          : "https://oss.sonatype.org/content/repositories/snapshots/"
+          : "https://s01.oss.sonatype.org/content/repositories/snapshots/"
 }
 
 def getRepositoryUsername() {
@@ -43,181 +43,167 @@ def getRepositoryPassword() {
 }
 
 afterEvaluate { project ->
-  uploadArchives {
-    repositories {
-      mavenDeployer {
-        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-        pom.groupId = GROUP
-        pom.artifactId = POM_ARTIFACT_ID
-        pom.version = VERSION_NAME
-
-        repository(url: getReleaseRepositoryUrl()) {
-          authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
-        }
-        snapshotRepository(url: getSnapshotRepositoryUrl()) {
-          authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
-        }
-
-        pom.project {
-          name POM_NAME
-          packaging POM_PACKAGING
-          description POM_DESCRIPTION
-          url POM_URL
-
-          scm {
-            url POM_SCM_URL
-            connection POM_SCM_CONNECTION
-            developerConnection POM_SCM_DEV_CONNECTION
-          }
-
-          licenses {
-            license {
-              name POM_LICENCE_NAME
-              url POM_LICENCE_URL
-              distribution POM_LICENCE_DIST
-            }
-          }
-
-          developers {
-            developer {
-              id POM_DEVELOPER_ID
-              name POM_DEVELOPER_NAME
-            }
-          }
-        }
-      }
-    }
-  }
-
-  signing {
-    required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
-    sign configurations.archives
-  }
 
   if (project.getPlugins().hasPlugin('com.android.application') ||
           project.getPlugins().hasPlugin('com.android.library')) {
-    task install(type: Upload, dependsOn: assemble) {
-      repositories.mavenInstaller {
-        configuration = configurations.archives
-
-        pom.groupId = GROUP
-        pom.artifactId = POM_ARTIFACT_ID
-        pom.version = VERSION_NAME
-
-        pom.project {
-          name POM_NAME
-          packaging POM_PACKAGING
-          description POM_DESCRIPTION
-          url POM_URL
-
-          scm {
-            url POM_SCM_URL
-            connection POM_SCM_CONNECTION
-            developerConnection POM_SCM_DEV_CONNECTION
-          }
-
-          licenses {
-            license {
-              name POM_LICENCE_NAME
-              url POM_LICENCE_URL
-              distribution POM_LICENCE_DIST
-            }
-          }
-
-          developers {
-            developer {
-              id POM_DEVELOPER_ID
-              name POM_DEVELOPER_NAME
-            }
-          }
-        }
-      }
-    }
 
     task androidJavadocs(type: Javadoc) {
       source = android.sourceSets.main.java.source
       classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+
+      // Add library variant classpath for newer AGP compatibility
+      try {
+        classpath += project.android.libraryVariants.toList().first().javaCompileProvider.get().classpath
+      } catch (Exception e) {
+        // Fallback for older AGP versions or different configurations
+        try {
+          classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
+        } catch (Exception fallbackException) {
+          logger.warn("Could not add library variant classpath: ${fallbackException.message}")
+        }
+      }
     }
 
     task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
-      classifier = 'javadoc'
+      archiveClassifier.set('javadoc')  // Updated from classifier
       from androidJavadocs.destinationDir
     }
 
     task androidSourcesJar(type: Jar) {
-      classifier = 'sources'
+      archiveClassifier.set('sources')  // Updated from classifier
       from android.sourceSets.main.java.source
     }
-  } else {
-    install {
-      repositories.mavenInstaller {
-        pom.groupId = GROUP
-        pom.artifactId = POM_ARTIFACT_ID
-        pom.version = VERSION_NAME
 
-        pom.project {
-          name POM_NAME
-          packaging POM_PACKAGING
-          description POM_DESCRIPTION
-          url POM_URL
+  } else {
+    task sourcesJar(type: Jar, dependsOn: classes) {
+      archiveClassifier.set('sources')  // Updated from classifier
+      from sourceSets.main.allSource
+    }
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+      archiveClassifier.set('javadoc')  // Updated from classifier
+      from javadoc.destinationDir
+    }
+  }
+
+  // Configure publishing - replaces uploadArchives
+  publishing {
+    publications {
+      maven(MavenPublication) {
+        groupId = GROUP
+        artifactId = POM_ARTIFACT_ID
+        version = VERSION_NAME
+
+        if (project.getPlugins().hasPlugin('com.android.application') ||
+                project.getPlugins().hasPlugin('com.android.library')) {
+          // Android library publishing
+          artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
+          artifact androidSourcesJar
+          artifact androidJavadocsJar
+        } else {
+          // Java library publishing
+          from components.java
+          artifact sourcesJar
+          artifact javadocJar
+        }
+
+        pom {
+          name = POM_NAME
+          packaging = POM_PACKAGING
+          description = POM_DESCRIPTION
+          url = POM_URL
 
           scm {
-            url POM_SCM_URL
-            connection POM_SCM_CONNECTION
-            developerConnection POM_SCM_DEV_CONNECTION
+            url = POM_SCM_URL
+            connection = POM_SCM_CONNECTION
+            developerConnection = POM_SCM_DEV_CONNECTION
           }
 
           licenses {
             license {
-              name POM_LICENCE_NAME
-              url POM_LICENCE_URL
-              distribution POM_LICENCE_DIST
+              name = POM_LICENCE_NAME
+              url = POM_LICENCE_URL
+              distribution = POM_LICENCE_DIST
             }
           }
 
           developers {
             developer {
-              id POM_DEVELOPER_ID
-              name POM_DEVELOPER_NAME
+              id = POM_DEVELOPER_ID
+              name = POM_DEVELOPER_NAME
             }
+          }
+
+          // Add dependencies to POM (replaces automatic dependency resolution)
+          withXml {
+            def dependenciesNode = asNode().appendNode('dependencies')
+
+            def addDependencies = { configurationName ->
+              project.configurations.findByName(configurationName)?.allDependencies?.each { dep ->
+                if (dep.group != null && dep.name != null && dep.version != null && dep.name != 'unspecified') {
+                  def dependencyNode = dependenciesNode.appendNode('dependency')
+                  dependencyNode.appendNode('groupId', dep.group)
+                  dependencyNode.appendNode('artifactId', dep.name)
+                  dependencyNode.appendNode('version', dep.version)
+
+                  // Set scope based on configuration
+                  if (configurationName == 'implementation' || configurationName == 'runtime') {
+                    dependencyNode.appendNode('scope', 'runtime')
+                  } else if (configurationName == 'api' || configurationName == 'compile') {
+                    dependencyNode.appendNode('scope', 'compile')
+                  }
+                }
+              }
+            }
+
+            // Add different types of dependencies
+            addDependencies('api')
+            addDependencies('implementation')
+            addDependencies('compile') // Legacy support
+            addDependencies('runtime') // Legacy support
           }
         }
       }
     }
 
-    task sourcesJar(type: Jar, dependsOn:classes) {
-      classifier = 'sources'
-      from sourceSets.main.allSource
-    }
+    repositories {
+      maven {
+        name = "sonatype"
+        url = isReleaseBuild() ? getReleaseRepositoryUrl() : getSnapshotRepositoryUrl()
 
-    task javadocJar(type: Jar, dependsOn:javadoc) {
-      classifier = 'javadoc'
-      from javadoc.destinationDir
-    }
-  }
-
-  if (JavaVersion.current().isJava8Compatible()) {
-    allprojects {
-      tasks.withType(Javadoc) {
-        options.addStringOption('Xdoclint:none', '-quiet')
+        credentials {
+          username = getRepositoryUsername()
+          password = getRepositoryPassword()
+        }
       }
     }
   }
 
-  artifacts {
-    if (project.getPlugins().hasPlugin('com.android.application') ||
-            project.getPlugins().hasPlugin('com.android.library')) {
-      archives androidSourcesJar
-      archives androidJavadocsJar
-    } else {
-      archives sourcesJar
-      archives javadocJar
+  // Configure signing - updated for maven-publish
+  signing {
+    required { isReleaseBuild() && gradle.taskGraph.hasTask("publish") }
+    sign publishing.publications.maven
+  }
+
+  // Legacy compatibility tasks to maintain same interface
+  task uploadArchives(dependsOn: 'publish') {
+    doLast {
+      logger.lifecycle("✅ Published ${project.name} ${VERSION_NAME} to ${isReleaseBuild() ? 'release' : 'snapshot'} repository")
+    }
+  }
+
+  task install(dependsOn: 'publishToMavenLocal') {
+    doLast {
+      logger.lifecycle("✅ Installed ${project.name} ${VERSION_NAME} to local Maven repository")
     }
   }
 }
 
-// Ref: https://github.com/chrisbanes/gradle-mvn-push/issues/39#issue-42709896
-afterEvaluate {
-  androidJavadocs.classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
+// Enhanced Javadoc configuration for Java 8+ compatibility
+if (JavaVersion.current().isJava8Compatible()) {
+  allprojects {
+    tasks.withType(Javadoc).configureEach {
+      options.addStringOption('Xdoclint:none', '-quiet')
+    }
+  }
 }

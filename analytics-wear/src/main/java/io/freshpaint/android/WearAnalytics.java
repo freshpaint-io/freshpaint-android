@@ -23,17 +23,14 @@
  */
 package io.freshpaint.android;
 
-import static io.freshpaint.android.internal.Utils.isNullOrEmpty;
-
 import android.content.Context;
-
 import io.freshpaint.android.integrations.BasePayload;
 import io.freshpaint.android.internal.Utils;
 
 /**
- * The counterpart to {@link Freshpaint} for Android Wear. This class will
- * simply forward all events to the host. The host app must register {@link
- * PhoneAnalyticsListenerService} (or a subclass) to be able to receive the events.
+ * The counterpart to {@link Freshpaint} for Android Wear. This class will simply forward all events
+ * to the host. The host app must register {@link PhoneAnalyticsListenerService} (or a subclass) to
+ * be able to receive the events.
  *
  * <p>This class can only send track or screen events. You should `identify`, `group` or `alias`
  * users through your host app (that runs on an Android phone).

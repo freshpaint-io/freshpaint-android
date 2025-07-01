@@ -21,12 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.freshpaint.android.sample;
+package com.freshpaint.android.sample;
 
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
-
 import io.freshpaint.android.WearAnalytics;
 import io.freshpaint.android.sample.R;
 
@@ -42,12 +41,9 @@ public class MainActivity extends Activity {
 
     View view = findViewById(R.id.logo);
     view.setOnClickListener(
-        new View.OnClickListener() {
-          @Override
-          public void onClick(View view) {
-            view.animate().rotationBy(360);
-            WearAnalytics.with(MainActivity.this).track("Clicked Logo", null);
-          }
+        view1 -> {
+          view1.animate().rotationBy(360);
+          WearAnalytics.with(MainActivity.this).track("Clicked Logo", null);
         });
   }
 }

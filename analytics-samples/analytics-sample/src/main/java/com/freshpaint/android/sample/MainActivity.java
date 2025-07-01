@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.freshpaint.android.sample;
+package com.freshpaint.android.sample;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
@@ -34,22 +34,16 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
-import io.freshpaint.android.sample.R;
 import io.freshpaint.android.Freshpaint;
-
+import io.freshpaint.android.sample.R;
 import io.github.inflationx.viewpump.ViewPumpContextWrapper;
 
 public class MainActivity extends Activity {
-  @BindView(R.id.user_id)
-  EditText userId;
+  private EditText userId;
 
   /** Returns true if the string is null, or empty (when trimmed). */
   public static boolean isNullOrEmpty(String text) {
-    return TextUtils.isEmpty(text) || text.trim().length() == 0;
+    return TextUtils.isEmpty(text) || text.trim().isEmpty();
   }
 
   @Override
@@ -57,21 +51,26 @@ public class MainActivity extends Activity {
     super.onCreate(savedInstanceState);
 
     setContentView(R.layout.activity_main);
-    ButterKnife.bind(this);
+
+    // Initialize views
+    userId = findViewById(R.id.user_id);
+
+    // Set up click listeners with lambdas
+    findViewById(R.id.action_track_a).setOnClickListener(v -> onButtonAClicked());
+    findViewById(R.id.action_track_b).setOnClickListener(v -> onButtonBClicked());
+    findViewById(R.id.action_identify).setOnClickListener(v -> onIdentifyButtonClicked());
+    findViewById(R.id.action_flush).setOnClickListener(v -> onFlushButtonClicked());
   }
 
-  @OnClick(R.id.action_track_a)
-  void onButtonAClicked() {
+  private void onButtonAClicked() {
     Freshpaint.with(this).track("This is an Android Event");
   }
 
-  @OnClick(R.id.action_track_b)
-  void onButtonBClicked() {
+  private void onButtonBClicked() {
     Freshpaint.with(this).track("Button B Clicked");
   }
 
-  @OnClick(R.id.action_identify)
-  void onIdentifyButtonClicked() {
+  private void onIdentifyButtonClicked() {
     String id = userId.getText().toString();
     if (isNullOrEmpty(id)) {
       Toast.makeText(this, R.string.id_required, Toast.LENGTH_LONG).show();
@@ -80,8 +79,7 @@ public class MainActivity extends Activity {
     }
   }
 
-  @OnClick(R.id.action_flush)
-  void onFlushButtonClicked() {
+  private void onFlushButtonClicked() {
     Freshpaint.with(this).flush();
   }
 

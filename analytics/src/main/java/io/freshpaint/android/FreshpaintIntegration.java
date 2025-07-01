@@ -24,15 +24,15 @@
 package io.freshpaint.android;
 
 import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
-import static io.freshpaint.android.internal.Utils.toISO8601Date;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.util.JsonWriter;
-
+import android.util.Log;
 import io.freshpaint.android.integrations.AliasPayload;
 import io.freshpaint.android.integrations.BasePayload;
 import io.freshpaint.android.integrations.GroupPayload;
@@ -43,7 +43,6 @@ import io.freshpaint.android.integrations.ScreenPayload;
 import io.freshpaint.android.integrations.TrackPayload;
 import io.freshpaint.android.internal.Private;
 import io.freshpaint.android.internal.Utils;
-
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -57,13 +56,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.UUID;
-import android.util.Log;        
-import android.content.SharedPreferences;
 
 /** Entity that queues payloads on disks and uploads them periodically. */
 class FreshpaintIntegration extends Integration<Void> {
@@ -99,15 +96,16 @@ class FreshpaintIntegration extends Integration<Void> {
    * 2GB limit.
    */
   static final int MAX_QUEUE_SIZE = 1000;
+
   /** Our servers only accept payloads < 32KB. */
   static final int MAX_PAYLOAD_SIZE = 32000; // 32KB.
+
   /**
    * Our servers only accept batches < 500KB. This limit is 475KB to account for extra data that is
    * not present in payloads themselves, but is added later, such as {@code sentAt}, {@code
    * integrations} and other json tokens.
    */
-  @Private
-  static final int MAX_BATCH_SIZE = 475000; // 475KB.
+  @Private static final int MAX_BATCH_SIZE = 475000; // 475KB.
 
   @Private static final Charset UTF_8 = Charset.forName("UTF-8");
   private static final String FRESHPAINT_THREAD_NAME = Utils.THREAD_PREFIX + "FreshpaintDispatcher";
@@ -124,6 +122,7 @@ class FreshpaintIntegration extends Integration<Void> {
   private final Cartographer cartographer;
   private final ExecutorService networkExecutor;
   private final ScheduledExecutorService flushScheduler;
+
   /**
    * We don't want to stop adding payloads to our disk queue when we're uploading payloads. So we
    * upload payloads on a network executor instead.
@@ -156,8 +155,9 @@ class FreshpaintIntegration extends Integration<Void> {
   private boolean isFirstEventInSession;
 
   private static final String PREFS_KEY = "freshpaint_prefs";
-  private static final String PREFS_KEY_CURRENT_SESSION_ID   = "freshpaint_current_session_id";
-  private static final String PREFS_KEY_SESSION_STARTED_SECONDS = "freshpaint_session_started_seconds";
+  private static final String PREFS_KEY_CURRENT_SESSION_ID = "freshpaint_current_session_id";
+  private static final String PREFS_KEY_SESSION_STARTED_SECONDS =
+      "freshpaint_session_started_seconds";
 
   /**
    * Create a {@link QueueFile} in the given folder with the given name. If the underlying file is
@@ -260,39 +260,39 @@ class FreshpaintIntegration extends Integration<Void> {
   }
 
   private void validateOrRenewSessionWithTimeout() {
-    SharedPreferences prefs = 
-        context.getSharedPreferences(PREFS_KEY, Context.MODE_PRIVATE);
+    SharedPreferences prefs = context.getSharedPreferences(PREFS_KEY, Context.MODE_PRIVATE);
 
     isFirstEventInSession = false;
-    currentSessionId   = prefs.getString(PREFS_KEY_CURRENT_SESSION_ID, null);
+    currentSessionId = prefs.getString(PREFS_KEY_CURRENT_SESSION_ID, null);
     sessionStartedSeconds = prefs.getLong(PREFS_KEY_SESSION_STARTED_SECONDS, 0);
-    long   nowSeconds = System.currentTimeMillis() / 1_000L;
+    long nowSeconds = System.currentTimeMillis() / 1_000L;
 
-    long currentSessionDuration  = nowSeconds - sessionStartedSeconds;
+    long currentSessionDuration = nowSeconds - sessionStartedSeconds;
 
-    Log.d("Session", String.format(
-        "now=%d, started=%d, current=%d s, timeout=%d s",
-        nowSeconds,
-        sessionStartedSeconds,
-        currentSessionDuration,
-        sessionTimeoutSeconds
-    ));
+    Log.d(
+        "Session",
+        String.format(
+            "now=%d, started=%d, current=%d s, timeout=%d s",
+            nowSeconds, sessionStartedSeconds, currentSessionDuration, sessionTimeoutSeconds));
 
-    if (currentSessionId == null || sessionStartedSeconds == 0 || currentSessionDuration >= sessionTimeoutSeconds) {
+    if (currentSessionId == null
+        || sessionStartedSeconds == 0
+        || currentSessionDuration >= sessionTimeoutSeconds) {
       resetSession();
     }
   }
 
   private void resetSession() {
-    currentSessionId   = UUID.randomUUID().toString();
+    currentSessionId = UUID.randomUUID().toString();
     sessionStartedSeconds = System.currentTimeMillis() / 1_000L;
     isFirstEventInSession = true;
 
     SharedPreferences prefs = context.getSharedPreferences(PREFS_KEY, Context.MODE_PRIVATE);
-    prefs.edit()
-      .putString(PREFS_KEY_CURRENT_SESSION_ID, currentSessionId)
-      .putLong(PREFS_KEY_SESSION_STARTED_SECONDS, sessionStartedSeconds)
-      .apply();
+    prefs
+        .edit()
+        .putString(PREFS_KEY_CURRENT_SESSION_ID, currentSessionId)
+        .putLong(PREFS_KEY_SESSION_STARTED_SECONDS, sessionStartedSeconds)
+        .apply();
   }
 
   @Override
@@ -341,10 +341,10 @@ class FreshpaintIntegration extends Integration<Void> {
     payload.put("integrations", combinedIntegrations);
 
     ValueMap originalProps = payload.getValueMap("properties");
-    ValueMap eventProps    = new ValueMap();
+    ValueMap eventProps = new ValueMap();
 
-    if (originalProps != null)  eventProps.putAll(originalProps);
-    
+    if (originalProps != null) eventProps.putAll(originalProps);
+
     eventProps.put(KEY_SESSION_ID, currentSessionId);
     eventProps.put(KEY_IS_FIRST_EVENT_IN_SESSION, isFirstEventInSession);
     payload.put("properties", eventProps);
@@ -524,6 +524,7 @@ class FreshpaintIntegration extends Integration<Void> {
   static class BatchPayloadWriter implements Closeable {
 
     private final JsonWriter jsonWriter;
+
     /** Keep around for writing payloads as Strings. */
     private final BufferedWriter bufferedWriter;
 

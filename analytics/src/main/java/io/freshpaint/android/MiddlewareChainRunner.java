@@ -24,16 +24,13 @@
 package io.freshpaint.android;
 
 import androidx.annotation.NonNull;
-
 import io.freshpaint.android.integrations.BasePayload;
-
 import java.util.List;
 
 class MiddlewareChainRunner implements Middleware.Chain {
 
   private int index;
-  private final @NonNull
-  BasePayload payload;
+  private final @NonNull BasePayload payload;
   private final @NonNull List<Middleware> middleware;
   private final @NonNull Middleware.Callback callback;
 

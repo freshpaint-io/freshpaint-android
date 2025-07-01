@@ -24,7 +24,6 @@
 package io.freshpaint.android;
 
 import android.annotation.SuppressLint;
-
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
 import java.io.IOException;

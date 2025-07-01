@@ -220,7 +220,7 @@ class AnalyticsActivityLifecycleCallbacks
 
     public AnalyticsActivityLifecycleCallbacks build() {
       return new AnalyticsActivityLifecycleCallbacks(
-              freshpaint,
+          freshpaint,
           analyticsExecutor,
           shouldTrackApplicationLifecycleEvents,
           trackAttributionInformation,

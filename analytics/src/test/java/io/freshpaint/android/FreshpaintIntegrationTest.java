@@ -47,11 +47,9 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-
 import io.freshpaint.android.integrations.Logger;
 import io.freshpaint.android.integrations.TrackPayload;
 import io.freshpaint.android.internal.Utils;
-
 import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
@@ -107,7 +105,8 @@ public class FreshpaintIntegrationTest {
   @Test
   public void enqueueAddsToQueueFile() throws IOException {
     PayloadQueue payloadQueue = new PayloadQueue.PersistentQueue(queueFile);
-    FreshpaintIntegration freshpaintIntegration = new SegmentBuilder().payloadQueue(payloadQueue).build();
+    FreshpaintIntegration freshpaintIntegration =
+        new SegmentBuilder().payloadQueue(payloadQueue).build();
     freshpaintIntegration.performEnqueue(TRACK_PAYLOAD);
     assertThat(payloadQueue.size()).isEqualTo(1);
   }
@@ -158,8 +157,11 @@ public class FreshpaintIntegrationTest {
   public void enqueueLimitsQueueSize() throws IOException {
     PayloadQueue payloadQueue = mock(PayloadQueue.class);
     // We want to trigger a remove, but not a flush.
-    when(payloadQueue.size()).thenReturn(0, FreshpaintIntegration.MAX_QUEUE_SIZE, FreshpaintIntegration.MAX_QUEUE_SIZE, 0);
-    FreshpaintIntegration freshpaintIntegration = new SegmentBuilder().payloadQueue(payloadQueue).build();
+    when(payloadQueue.size())
+        .thenReturn(
+            0, FreshpaintIntegration.MAX_QUEUE_SIZE, FreshpaintIntegration.MAX_QUEUE_SIZE, 0);
+    FreshpaintIntegration freshpaintIntegration =
+        new SegmentBuilder().payloadQueue(payloadQueue).build();
 
     freshpaintIntegration.performEnqueue(TRACK_PAYLOAD);
 
@@ -172,7 +174,8 @@ public class FreshpaintIntegrationTest {
     PayloadQueue payloadQueue = mock(PayloadQueue.class);
     doThrow(new IOException("no remove for you.")).when(payloadQueue).remove(1);
     when(payloadQueue.size()).thenReturn(FreshpaintIntegration.MAX_QUEUE_SIZE); // trigger a remove
-    FreshpaintIntegration freshpaintIntegration = new SegmentBuilder().payloadQueue(payloadQueue).build();
+    FreshpaintIntegration freshpaintIntegration =
+        new SegmentBuilder().payloadQueue(payloadQueue).build();
 
     try {
       freshpaintIntegration.performEnqueue(TRACK_PAYLOAD);
@@ -438,7 +441,8 @@ public class FreshpaintIntegrationTest {
   @Test
   public void shutdown() throws IOException {
     PayloadQueue payloadQueue = mock(PayloadQueue.class);
-    FreshpaintIntegration freshpaintIntegration = new SegmentBuilder().payloadQueue(payloadQueue).build();
+    FreshpaintIntegration freshpaintIntegration =
+        new SegmentBuilder().payloadQueue(payloadQueue).build();
 
     freshpaintIntegration.shutdown();
 
@@ -624,7 +628,8 @@ public class FreshpaintIntegrationTest {
           flushInterval,
           flushSize,
           logger,
-          Crypto.none());
+          Crypto.none(),
+          0);
     }
   }
 }
