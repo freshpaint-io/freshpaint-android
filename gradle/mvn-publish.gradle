@@ -15,7 +15,7 @@ def getSnapshotRepositoryUrl() {
 if (!hasProperty("signing.keyId")) {
     ext["signing.keyId"] = System.getenv('SIGNING_KEY_ID')
     ext["signing.password"] = System.getenv('SIGNING_KEY_PASSWORD')
-    ext["signing.secretKeyRingFile"] = System.getenv('SIGNING_SECRET_KEY_RING_FILE')
+    ext["signing.secretKey"] = System.getenv('SIGNING_SECRET_KEY')
     ext["NEXUS_USERNAME"] = System.getenv('NEXUS_USERNAME')
     ext["NEXUS_PASSWORD"] = System.getenv('NEXUS_PASSWORD')
 }
@@ -28,6 +28,7 @@ task androidJavadocs(type: Javadoc) {
             owner.classpath += variant.javaCompileProvider.get().classpath
         }
     }
+    exclude '**/BuildConfig.java'
     exclude '**/R.html', '**/R.*.html', '**/index.html'
 }
 
@@ -53,7 +54,6 @@ publishing {
             // Two artifacts, the `aar` and the sources
             artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
             artifact androidSourcesJar
-            artifact androidJavadocsJar
 
             // Self-explanatory metadata for the most part
             pom {
@@ -108,8 +108,8 @@ publishing {
             // The username and password we've fetched earlier
             if (!getUrl().toString().startsWith("file:/")) {
                 credentials {
-                    username NEXUS_USERNAME ?: ""
-                    password NEXUS_PASSWORD ?: ""
+                    username findProperty("NEXUS_USERNAME")
+                    password findProperty("NEXUS_PASSWORD")
                 }
             }
         }
@@ -117,8 +117,12 @@ publishing {
 }
 
 signing {
-    required { gradle.taskGraph.hasTask("publish") }
-    sign publishing.publications
+    useInMemoryPgpKeys(
+        findProperty("signing.keyId"),
+        findProperty("signing.secretKey"),
+        findProperty("signing.password")
+    )
+    sign publishing.publications.release
 }
 
 afterEvaluate {
