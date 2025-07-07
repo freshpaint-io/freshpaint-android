@@ -21,18 +21,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.freshpaint.android;
+package com.freshpaint.android;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 import androidx.test.rule.ActivityTestRule;
 import androidx.test.runner.AndroidJUnit4;
-
-import io.freshpaint.android.sample.MainActivity;
-import io.freshpaint.android.sample.BuildConfig;
-import io.freshpaint.android.webhook.WebhookService;
+import com.freshpaint.android.sample.MainActivity;
+import com.freshpaint.android.webhook.WebhookService;
 import com.segment.backo.Backo;
+import io.freshpaint.android.Freshpaint;
+import io.freshpaint.android.Properties;
+import io.freshpaint.android.Traits;
+import io.freshpaint.android.sample.BuildConfig;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -75,8 +77,10 @@ public class E2ETest {
    * https://app.segment.com/segment-libraries/sources/analytics_android_e2e_test/overview
    */
   private static final String SEGMENT_WRITE_KEY = "OAtgAHjkAD5MP31srDe9wiBjpvcXC8De";
+
   /** Webhook bucket that is connected to the Segment project. */
   private static final String WEBHOOK_BUCKET = "android";
+
   /** Credentials to retrieve data from the webhook. */
   private static final String WEBHOOK_AUTH_USERNAME = BuildConfig.WEBHOOK_AUTH_USERNAME;
 

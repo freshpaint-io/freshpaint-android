@@ -156,8 +156,7 @@ public class DestinationMiddlewareTest {
                     properties.putAll(payload.properties());
 
                     TrackPayload newPayload =
-                        payload
-                            .toBuilder()
+                        payload.toBuilder()
                             .properties(properties.putValue("middleware_key", "middleware_value"))
                             .build();
                     payloadRefDestMiddleware.set(newPayload);

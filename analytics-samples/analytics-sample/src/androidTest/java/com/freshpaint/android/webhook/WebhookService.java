@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.freshpaint.android.webhook;
+package com.freshpaint.android.webhook;
 
 import java.util.List;
 import retrofit2.Call;

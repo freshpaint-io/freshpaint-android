@@ -84,6 +84,7 @@ public class Freshpaint {
   @Private static final String OPT_OUT_PREFERENCE_KEY = "opt-out";
   static final String WRITE_KEY_RESOURCE_IDENTIFIER = "analytics_write_key";
   static final List<String> INSTANCES = new ArrayList<>(1);
+
   /* This is intentional since we're only using the application context. */
   @SuppressLint("StaticFieldLeak")
   static volatile Freshpaint singleton = null;
@@ -373,12 +374,16 @@ public class Freshpaint {
 
   // Analytics API
 
-  /** @see #identify(String, Traits, Options) */
+  /**
+   * @see #identify(String, Traits, Options)
+   */
   public void identify(@NonNull String userId) {
     identify(userId, null, null);
   }
 
-  /** @see #identify(String, Traits, Options) */
+  /**
+   * @see #identify(String, Traits, Options)
+   */
   public void identify(@NonNull Traits traits) {
     identify(null, traits, null);
   }
@@ -432,12 +437,16 @@ public class Freshpaint {
         });
   }
 
-  /** @see #group(String, Traits, Options) */
+  /**
+   * @see #group(String, Traits, Options)
+   */
   public void group(@NonNull String groupId) {
     group(groupId, null, null);
   }
 
-  /** @see #group(String, Traits, Options) */
+  /**
+   * @see #group(String, Traits, Options)
+   */
   public void group(@NonNull String groupId, @Nullable Traits traits) {
     group(groupId, traits, null);
   }
@@ -484,12 +493,16 @@ public class Freshpaint {
         });
   }
 
-  /** @see #track(String, Properties, Options) */
+  /**
+   * @see #track(String, Properties, Options)
+   */
   public void track(@NonNull String event) {
     track(event, null, null);
   }
 
-  /** @see #track(String, Properties, Options) */
+  /**
+   * @see #track(String, Properties, Options)
+   */
   public void track(@NonNull String event, @Nullable Properties properties) {
     track(event, properties, null);
   }
@@ -538,6 +551,7 @@ public class Freshpaint {
    * @see #screen(String, String, Properties, Options)
    * @deprecated Use {@link #screen(String)} instead.
    */
+  @Deprecated
   public void screen(@Nullable String category, @Nullable String name) {
     screen(category, name, null, null);
   }
@@ -546,17 +560,22 @@ public class Freshpaint {
    * @see #screen(String, String, Properties, Options)
    * @deprecated Use {@link #screen(String, Properties)} instead.
    */
+  @Deprecated
   public void screen(
       @Nullable String category, @Nullable String name, @Nullable Properties properties) {
     screen(category, name, properties, null);
   }
 
-  /** @see #screen(String, String, Properties, Options) */
+  /**
+   * @see #screen(String, String, Properties, Options)
+   */
   public void screen(@Nullable String name) {
     screen(null, name, null, null);
   }
 
-  /** @see #screen(String, String, Properties, Options) */
+  /**
+   * @see #screen(String, String, Properties, Options)
+   */
   public void screen(@Nullable String name, @Nullable Properties properties) {
     screen(null, name, properties, null);
   }
@@ -603,7 +622,9 @@ public class Freshpaint {
         });
   }
 
-  /** @see #alias(String, Options) */
+  /**
+   * @see #alias(String, Options)
+   */
   public void alias(@NonNull String newId) {
     alias(newId, null);
   }
@@ -772,6 +793,7 @@ public class Freshpaint {
    *
    * @deprecated This will be removed in a future release.
    */
+  @Deprecated
   public Logger getLogger() {
     return logger;
   }
@@ -864,7 +886,10 @@ public class Freshpaint {
         });
   }
 
-  /** @deprecated Use {@link #onIntegrationReady(String, Callback)} instead. */
+  /**
+   * @deprecated Use {@link #onIntegrationReady(String, Callback)} instead.
+   */
+  @Deprecated
   public void onIntegrationReady(
       @SuppressWarnings("deprecation") BundledIntegration integration, Callback callback) {
     if (integration == null) {
@@ -873,7 +898,10 @@ public class Freshpaint {
     onIntegrationReady(integration.key, callback);
   }
 
-  /** @deprecated */
+  /**
+   * @deprecated
+   */
+  @Deprecated
   public enum BundledIntegration {
     AMPLITUDE("Amplitude"),
     APPS_FLYER("AppsFlyer"),
@@ -1120,7 +1148,9 @@ public class Freshpaint {
       return this;
     }
 
-    /** @deprecated As of {@code 3.0.1}, this method does nothing. */
+    /**
+     * @deprecated As of {@code 3.0.1}, this method does nothing.
+     */
     @Deprecated
     public Builder disableBundledIntegrations() {
       return this;
@@ -1204,6 +1234,7 @@ public class Freshpaint {
      * @see #useSourceMiddleware(Middleware)
      * @deprecated Use {@link #useSourceMiddleware(Middleware)} instead.
      */
+    @Deprecated
     public Builder middleware(Middleware middleware) {
       return useSourceMiddleware(middleware);
     }

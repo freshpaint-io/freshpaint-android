@@ -30,14 +30,12 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-
-import io.freshpaint.android.internal.Utils;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
-
+import io.freshpaint.android.internal.Utils;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -101,19 +99,14 @@ class WearDispatcher {
 
     @Override
     public void handleMessage(final Message msg) {
-      switch (msg.what) {
-        case REQUEST_DISPATCH:
-          WearPayload payload = (WearPayload) msg.obj;
-          wearDispatcher.performDispatch(payload);
-          break;
-        default:
-          Freshpaint.HANDLER.post(
-              new Runnable() {
-                @Override
-                public void run() {
-                  throw new AssertionError("Unhandled dispatcher message." + msg.what);
-                }
-              });
+      if (msg.what == REQUEST_DISPATCH) {
+        WearPayload payload = (WearPayload) msg.obj;
+        wearDispatcher.performDispatch(payload);
+      } else {
+        Freshpaint.HANDLER.post(
+            () -> {
+              throw new AssertionError("Unhandled dispatcher message." + msg.what);
+            });
       }
     }
   }

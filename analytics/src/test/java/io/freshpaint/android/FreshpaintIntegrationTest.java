@@ -628,7 +628,8 @@ public class FreshpaintIntegrationTest {
           flushInterval,
           flushSize,
           logger,
-          Crypto.none());
+          Crypto.none(),
+          0);
     }
   }
 }

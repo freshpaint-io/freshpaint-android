@@ -384,7 +384,10 @@ public class AnalyticsContext extends ValueMap {
       return putValue(CAMPAIGN_TERM_KEY, term);
     }
 
-    /** @deprecated Use {@link #term()} instead. */
+    /**
+     * @deprecated Use {@link #term()} instead.
+     */
+    @Deprecated
     public String tern() {
       return term();
     }
@@ -551,7 +554,10 @@ public class AnalyticsContext extends ValueMap {
       return getString(REFERRER_TYPE_KEY);
     }
 
-    /** @deprecated Use {@link #putUrl(String)} */
+    /**
+     * @deprecated Use {@link #putUrl(String)}
+     */
+    @Deprecated
     public Referrer putTerm(String url) {
       return putValue(REFERRER_URL_KEY, url);
     }

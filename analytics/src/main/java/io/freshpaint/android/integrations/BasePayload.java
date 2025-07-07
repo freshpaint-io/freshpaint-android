@@ -157,7 +157,9 @@ public abstract class BasePayload extends ValueMap {
   @NonNull
   public abstract Builder toBuilder();
 
-  /** @see #TYPE_KEY */
+  /**
+   * @see #TYPE_KEY
+   */
   public enum Type {
     alias,
     group,

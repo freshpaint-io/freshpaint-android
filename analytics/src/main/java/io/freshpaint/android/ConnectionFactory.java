@@ -43,6 +43,7 @@ public class ConnectionFactory {
   private String authorizationHeader(String writeKey) {
     return "Basic " + Base64.encodeToString((writeKey + ":").getBytes(), Base64.NO_WRAP);
   }
+
   /** Return a {@link HttpURLConnection} that writes batched payloads to Freshpaint. */
   public HttpURLConnection upload(String writeKey) throws IOException {
     HttpURLConnection connection = openConnection("https://api.perfalytics.com/android");

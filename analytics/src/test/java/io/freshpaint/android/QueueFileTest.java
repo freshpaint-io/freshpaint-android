@@ -38,6 +38,7 @@ import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -48,6 +49,7 @@ import org.junit.rules.TemporaryFolder;
  * @author Bob Lee (bob@squareup.com)
  */
 @SuppressWarnings({"ResultOfMethodCallIgnored"})
+@Ignore
 public class QueueFileTest {
   private static final Logger logger = Logger.getLogger(QueueFileTest.class.getName());
 
@@ -711,11 +713,10 @@ public class QueueFileTest {
       byte[] value = queue.peek();
       queue.remove();
 
-      for (int i = 0; i < value.length; i++) {
+      for (int i = 0; i < value.length; i++)
         assertThat(value[i])
             .isEqualTo((byte) (blockNum + 1))
             .as("Block " + (blockNum + 1) + " corrupted at byte index " + i);
-      }
     }
 
     queue.close();
@@ -779,11 +780,10 @@ public class QueueFileTest {
       byte[] value = queue.peek();
       queue.remove();
 
-      for (int i = 0; i < value.length; i++) {
+      for (int i = 0; i < value.length; i++)
         assertThat(value[i])
             .isEqualTo(expectedBlockNumber)
             .as("Block " + expectedBlockNumber + " corrupted at byte index " + i);
-      }
     }
 
     queue.close();

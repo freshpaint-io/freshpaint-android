@@ -2,6 +2,15 @@ apply plugin: 'com.android.library'
 
 apply from: rootProject.file('gradle/android.gradle')
 
+android {
+  namespace "io.freshpaint.android.core.tests"
+
+  compileOptions {
+    sourceCompatibility rootProject.ext.sourceCompatibilityVersion
+    targetCompatibility rootProject.ext.targetCompatibilityVersion
+  }
+}
+
 dependencies {
   api project(':analytics')
 }

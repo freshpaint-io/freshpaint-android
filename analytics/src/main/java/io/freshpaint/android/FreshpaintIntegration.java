@@ -96,8 +96,10 @@ class FreshpaintIntegration extends Integration<Void> {
    * 2GB limit.
    */
   static final int MAX_QUEUE_SIZE = 1000;
+
   /** Our servers only accept payloads < 32KB. */
   static final int MAX_PAYLOAD_SIZE = 32000; // 32KB.
+
   /**
    * Our servers only accept batches < 500KB. This limit is 475KB to account for extra data that is
    * not present in payloads themselves, but is added later, such as {@code sentAt}, {@code
@@ -120,6 +122,7 @@ class FreshpaintIntegration extends Integration<Void> {
   private final Cartographer cartographer;
   private final ExecutorService networkExecutor;
   private final ScheduledExecutorService flushScheduler;
+
   /**
    * We don't want to stop adding payloads to our disk queue when we're uploading payloads. So we
    * upload payloads on a network executor instead.
@@ -521,6 +524,7 @@ class FreshpaintIntegration extends Integration<Void> {
   static class BatchPayloadWriter implements Closeable {
 
     private final JsonWriter jsonWriter;
+
     /** Keep around for writing payloads as Strings. */
     private final BufferedWriter bufferedWriter;
 

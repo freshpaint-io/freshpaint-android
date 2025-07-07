@@ -238,7 +238,9 @@ public class Properties extends ValueMap {
     return putValue(SUBTOTAL_KEY, subtotal);
   }
 
-  /** @deprecated use {@link #subtotal()} */
+  /**
+   * @deprecated use {@link #subtotal()}
+   */
   @Deprecated
   public double putSubtotal() {
     return subtotal();
@@ -294,7 +296,10 @@ public class Properties extends ValueMap {
     return putValue(PRODUCTS_KEY, Collections.unmodifiableList(productList));
   }
 
-  /** @deprecated Use {@link #products()} instead. */
+  /**
+   * @deprecated Use {@link #products()} instead.
+   */
+  @Deprecated
   public List<Product> products(Product... products) {
     return products();
   }

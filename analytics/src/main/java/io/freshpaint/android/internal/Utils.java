@@ -90,7 +90,10 @@ public final class Utils {
     return set;
   }
 
-  /** @deprecated Use {@link #toISO8601String(Date)}. */
+  /**
+   * @deprecated Use {@link #toISO8601String(Date)}.
+   */
+  @Deprecated
   public static String toISO8601Date(Date date) {
     return toISO8601String(date);
   }
@@ -116,7 +119,10 @@ public final class Utils {
     return Iso8601Utils.parse(date);
   }
 
-  /** @deprecated Use {@link #parseISO8601Date(String)}. */
+  /**
+   * @deprecated Use {@link #parseISO8601Date(String)}.
+   */
+  @Deprecated
   public static Date toISO8601Date(String date) throws ParseException {
     return parseISO8601Date(date);
   }
