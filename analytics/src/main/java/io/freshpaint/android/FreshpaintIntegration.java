@@ -158,7 +158,8 @@ class FreshpaintIntegration extends Integration<Void> {
   private static final String PREFS_KEY_CURRENT_SESSION_ID = "freshpaint_current_session_id";
   private static final String PREFS_KEY_SESSION_STARTED_SECONDS =
       "freshpaint_session_started_seconds";
-
+  private static final String KEY_FIREBASE_SCREEN = "firebase_screen";
+  private static final String KEY_FIREBASE_SCREEN_CLASS = "firebase_screen_class";
   /**
    * Create a {@link QueueFile} in the given folder with the given name. If the underlying file is
    * somehow corrupted, we'll delete it, and try to recreate the file. This method will throw an
@@ -347,6 +348,9 @@ class FreshpaintIntegration extends Integration<Void> {
 
     eventProps.put(KEY_SESSION_ID, currentSessionId);
     eventProps.put(KEY_IS_FIRST_EVENT_IN_SESSION, isFirstEventInSession);
+    
+    addScreenPropertiesIfAvailable(payload, eventProps);
+
     payload.put("properties", eventProps);
 
     Log.d("Session", payload.toString());
@@ -609,5 +613,43 @@ class FreshpaintIntegration extends Integration<Void> {
           throw new AssertionError("Unknown dispatcher message: " + msg.what);
       }
     }
+  }
+
+  /**
+   * Adds Firebase screen properties to the event properties if a screen name is available.
+   * Extracts screen name from payload (name or category) and generates a corresponding screen class.
+   * 
+   * @param payload The original payload containing potential screen information
+   * @param eventProps The event properties map to which screen properties will be added
+   */
+  private void addScreenPropertiesIfAvailable(ValueMap payload, ValueMap eventProps) {
+    String screenName = getScreenNameFromPayload(payload);
+    if (screenName != null) {
+      String screenClass = generateScreenClassName(screenName);
+      eventProps.put(KEY_FIREBASE_SCREEN, screenName);
+      eventProps.put(KEY_FIREBASE_SCREEN_CLASS, screenClass);
+    }
+  }
+
+  /**
+   * Extracts screen name from payload, trying 'name' first, then 'category'.
+   * 
+   * @param payload The payload to extract screen name from
+   * @return The screen name if found, null otherwise
+   */
+  private String getScreenNameFromPayload(ValueMap payload) {
+    String screenName = payload.getString("name");
+    return screenName != null ? screenName : payload.getString("category");
+  }
+
+  /**
+   * Generates a Firebase-compatible screen class name by removing special characters
+   * and appending "Screen" suffix.
+   * 
+   * @param screenName The original screen name
+   * @return A sanitized screen class name
+   */
+  private String generateScreenClassName(String screenName) {
+    return screenName.replaceAll("[^a-zA-Z0-9]", "") + "Screen";
   }
 }

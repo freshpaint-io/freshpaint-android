@@ -1,6 +1,24 @@
 Changelog
 =========
 
+Version 2.0.0 - (10 Jul, 2025)
+
+### Added
+- The SDK now automatically adds Firebase-compatible screen properties to track screen views:
+  - `event`: `screen_view`
+  - `firebase_screen`: The original screen name (from `name` or `category` field)
+  - `firebase_screen_class`: A sanitized class name (alphanumeric + "Screen" suffix)
+
+### Changed
+- Updated Gradle wrapper to 8.10.2
+- Updated Gradle properties to include modern Android settings
+- Updated dependencies to latest versions
+- Spotless lint format execution applied across codebase
+
+### Removed
+- Removed unnecessary .project and .classpath files
+
+  
 Version 1.2.3 (23 May, 2025)
 * [New] SDK now persists `session_id` across launches and renews it automatically after `sessionTimeout` (default 30 min, configurable).
 * [New] Added `$first_event_in_session` flag to every event’s `properties` to indicate the first event in each session.

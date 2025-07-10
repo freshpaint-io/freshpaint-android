@@ -39,6 +39,8 @@ public class ScreenPayload extends BasePayload {
 
   static final String CATEGORY_KEY = "category";
   static final String NAME_KEY = "name";
+  static final String EVENT_KEY = "event";
+  static final String EVENT_VALUE = "screen_view";
   static final String PROPERTIES_KEY = "properties";
 
   @Private
@@ -68,6 +70,9 @@ public class ScreenPayload extends BasePayload {
     if (!isNullOrEmpty(category)) {
       put(CATEGORY_KEY, category);
     }
+
+    put(EVENT_KEY, EVENT_VALUE);
+
     put(PROPERTIES_KEY, properties);
   }
 
