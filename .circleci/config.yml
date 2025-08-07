@@ -65,7 +65,11 @@ jobs:
       - android/restore-gradle-cache
       - run:
           name: Publish Release to Sonatype Central
-          command: echo "Replace me with an actual publish!"
+          command: |
+            # If we use ASCII armored in memory keys, need to update this to use ORG_GRADLE_PROJECT_signingKey as an environment var
+            # See this link https://docs.gradle.org/current/userguide/signing_plugin.html#sec:in-memory-keys
+            # Then we'll also need to update `gradle-mvn-push.gradle` to use the in-memory PGP keys
+            ./gradlew -Prelease publishRelease -Psigning.keyID=$SIGNING_KEY_ID -Psigning.password=$SIGNING_KEY_PASSWORD -Psigning.=$SIGNING_KEY -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD
       - android/save-gradle-cache
 
 workflows:
