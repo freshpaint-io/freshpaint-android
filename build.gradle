@@ -3,6 +3,7 @@ apply from: rootProject.file('gradle/versioning.gradle')
 buildscript {
   ext.kotlin_version = '2.0.21'
   repositories {
+    gradlePluginPortal()
     google()
     mavenCentral()
     maven {
@@ -11,6 +12,7 @@ buildscript {
   }
 
   dependencies {
+    classpath 'tech.medivh.plugin.publisher:tech.medivh.plugin.publisher.gradle.plugin:1.2.5'
     classpath 'com.android.tools.build:gradle:8.8.2'
     classpath 'com.diffplug.spotless:spotless-plugin-gradle:7.0.4'
     classpath 'com.getkeepsafe.dexcount:dexcount-gradle-plugin:4.0.0'
@@ -30,6 +32,7 @@ allprojects {
   apply plugin: 'idea'
 
   repositories {
+    gradlePluginPortal()
     google()
     mavenCentral()
   }

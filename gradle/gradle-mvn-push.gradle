@@ -182,6 +182,8 @@ afterEvaluate { project ->
   // Configure signing - updated for maven-publish
   signing {
     required { isReleaseBuild() && gradle.taskGraph.hasTask("publish") }
+
+    // TODO: Maybe update this so that it uses in-memory ASCII-armored keys?
     sign publishing.publications.maven
   }
 
