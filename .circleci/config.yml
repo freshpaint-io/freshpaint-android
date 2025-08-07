@@ -15,8 +15,8 @@ jobs:
       - run:
           name: Run Tests
           command: |
-          export JAVA_OPTS="--add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED" 
-          ./gradlew test
+            export JAVA_OPTS="--add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED" 
+            ./gradlew test
       - android/save-gradle-cache
       - android/save-build-cache
       - store_test_results:
@@ -35,8 +35,8 @@ jobs:
       - run:
           name: Build Release AAR
           command: |
-          export JAVA_OPTS="--add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED" 
-          ./gradlew assembleRelease
+            export JAVA_OPTS="--add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED" 
+            ./gradlew assembleRelease
       - run:
           name: Build Javadocs
           command: JAVA_OPTS="--add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED" ./gradlew androidJavadocs
