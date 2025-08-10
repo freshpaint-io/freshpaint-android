@@ -37,3 +37,27 @@ medivhPublisher {
         }
     }
 }
+
+// Signing expects a base 64 encoded version of an ascii armored PGP key
+// gpg --armor --export-secret-keys LAST-8-CHARS-OF-KEY-ID > privkey.sec.asc
+// cat privkey.sec.asc | base64
+signing {
+    def signingKeyB64 = System.getenv("SIGNING_KEY_B64")
+    def signingPassword = System.getenv("SIGNING_PASSWORD")
+    def signingKey = signingKeyB64 ? new String(Base64.decoder.decode(signingKeyB64)) : null
+
+    if (signingKey) {
+        logger.info('Signing key supplied! Using in memory PgpKeys')
+        // Only for debugging!!
+//        logger.info('**********************************')
+//        logger.lifecycle("SigningKeyB64 ${signingKeyB64.take(20)}")
+//        logger.lifecycle("SigningKey ${signingKey.take(50)}")
+//        logger.lifecycle("SigningPassword ${signingPassword}")
+//        logger.info('**********************************')
+
+        useInMemoryPgpKeys(signingKey, signingPassword)
+    } else {
+        logger.warn('Signing disabled: no SIGNING_KEY_B64 provided.')
+    }
+}
+
