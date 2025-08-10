@@ -57,7 +57,10 @@ signing {
 
         useInMemoryPgpKeys(signingKey, signingPassword)
     } else {
-        logger.warn('Signing disabled: no SIGNING_KEY_B64 provided.')
+        logger.warn('**********************************')
+        logger.warn('Signing failed: no SIGNING_KEY_B64 provided')
+        logger.warn('Please provide SIGNING_KEY_B64 and SIGNING_PASSWORD as environment variables')
+        logger.warn('**********************************')
     }
 }
 
