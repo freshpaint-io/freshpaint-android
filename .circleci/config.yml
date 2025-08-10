@@ -85,10 +85,10 @@ workflows:
       - publish-release:
           requires:
             - build
-#          filters:
-#            branches:
-#              only: master
-#            tags:
-#              only: /^v.*/
+          filters:
+            branches:
+              only: master
+            tags:
+              only: /^v.*/
           context:
             - sonatype-central
