@@ -3,7 +3,7 @@ def isReleaseBuild() {
 }
 
 def getVersionName() { // If not release build add SNAPSHOT suffix
-    return isReleaseBuild() ? VERSION_NAME : VERSION_NAME+"-SNAPSHOT"
+    return VERSION_NAME
 }
 
 ext {

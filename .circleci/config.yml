@@ -1,0 +1,96 @@
+version: 2.1
+
+orbs:
+  android: circleci/android@2.3.0
+
+jobs:
+  test:
+    machine:
+      image: android:2024.11.1
+    resource_class: large
+    steps:
+      - checkout
+      - android/restore-gradle-cache
+      - android/restore-build-cache
+      - run:
+          name: Run Tests
+          environment:
+            JAVA_OPTS: --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+          command: ./gradlew test
+      - android/save-gradle-cache
+      - android/save-build-cache
+      - store_test_results:
+          path: analytics/build/test-results
+      - store_artifacts:
+          path: analytics/build/reports/tests
+
+  build:
+    machine:
+      image: android:2024.11.1
+    resource_class: large
+    steps:
+      - checkout
+      - android/restore-gradle-cache
+      - android/restore-build-cache
+      - run:
+          name: Build Release AAR
+          environment:
+            JAVA_OPTS: --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+          command: ./gradlew assembleRelease
+      - run:
+          name: Build Javadocs
+          environment:
+            JAVA_OPTS: --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+          command: ./gradlew androidJavadocs
+      - android/save-gradle-cache
+      - android/save-build-cache
+      - store_artifacts:
+          path: analytics/build/outputs/aar
+          destination: aar-files
+      - store_artifacts:
+          path: analytics/build/docs
+          destination: javadocs
+      - persist_to_workspace:
+          root: .
+          paths:
+            - analytics/build/outputs/aar/*
+            - analytics/build/docs/*
+
+  publish-release:
+    machine:
+      image: android:2024.11.1
+    resource_class: large
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - android/restore-gradle-cache
+      - run:
+          name: Publish Release to Sonatype Central
+          command: |
+            # If we use ASCII armored in memory keys, need to update this to use ORG_GRADLE_PROJECT_signingKey as an environment var
+            # See this link https://docs.gradle.org/current/userguide/signing_plugin.html#sec:in-memory-keys
+            # Then we'll also need to update `gradle-mvn-push.gradle` to use the in-memory PGP keys
+            ./gradlew :analytics:uploadToSonatype -PsonatypeUsername=$SONATYPE_USERNAME -PsonatypePassword=$SONATYPE_PASSWORD
+      - android/save-gradle-cache
+
+workflows:
+  version: 2
+  build-and-publish:
+    jobs:
+      - test
+      - build:
+          requires:
+            - test
+
+      # Publish releases on master branch and tags
+      - publish-release:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
+            tags:
+              only: /^v.*/
+          context:
+            - sonatype-central

@@ -20,28 +20,6 @@ apply plugin: 'signing'
 version = VERSION_NAME
 group = GROUP
 
-def isReleaseBuild() {
-  return !VERSION_NAME.contains("SNAPSHOT")
-}
-
-def getReleaseRepositoryUrl() {
-  return hasProperty('RELEASE_REPOSITORY_URL') ? RELEASE_REPOSITORY_URL
-          : "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-}
-
-def getSnapshotRepositoryUrl() {
-  return hasProperty('SNAPSHOT_REPOSITORY_URL') ? SNAPSHOT_REPOSITORY_URL
-          : "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-}
-
-def getRepositoryUsername() {
-  return hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : ""
-}
-
-def getRepositoryPassword() {
-  return hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
-}
-
 afterEvaluate { project ->
 
   if (project.getPlugins().hasPlugin('com.android.application') ||
@@ -86,112 +64,7 @@ afterEvaluate { project ->
     }
   }
 
-  // Configure publishing - replaces uploadArchives
-  publishing {
-    publications {
-      maven(MavenPublication) {
-        groupId = GROUP
-        artifactId = POM_ARTIFACT_ID
-        version = VERSION_NAME
-
-        if (project.getPlugins().hasPlugin('com.android.application') ||
-                project.getPlugins().hasPlugin('com.android.library')) {
-          // Android library publishing
-          artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
-          artifact androidSourcesJar
-          artifact androidJavadocsJar
-        } else {
-          // Java library publishing
-          from components.java
-          artifact sourcesJar
-          artifact javadocJar
-        }
-
-        pom {
-          name = POM_NAME
-          packaging = POM_PACKAGING
-          description = POM_DESCRIPTION
-          url = POM_URL
-
-          scm {
-            url = POM_SCM_URL
-            connection = POM_SCM_CONNECTION
-            developerConnection = POM_SCM_DEV_CONNECTION
-          }
-
-          licenses {
-            license {
-              name = POM_LICENCE_NAME
-              url = POM_LICENCE_URL
-              distribution = POM_LICENCE_DIST
-            }
-          }
-
-          developers {
-            developer {
-              id = POM_DEVELOPER_ID
-              name = POM_DEVELOPER_NAME
-            }
-          }
-
-          // Add dependencies to POM (replaces automatic dependency resolution)
-          withXml {
-            def dependenciesNode = asNode().appendNode('dependencies')
-
-            def addDependencies = { configurationName ->
-              project.configurations.findByName(configurationName)?.allDependencies?.each { dep ->
-                if (dep.group != null && dep.name != null && dep.version != null && dep.name != 'unspecified') {
-                  def dependencyNode = dependenciesNode.appendNode('dependency')
-                  dependencyNode.appendNode('groupId', dep.group)
-                  dependencyNode.appendNode('artifactId', dep.name)
-                  dependencyNode.appendNode('version', dep.version)
-
-                  // Set scope based on configuration
-                  if (configurationName == 'implementation' || configurationName == 'runtime') {
-                    dependencyNode.appendNode('scope', 'runtime')
-                  } else if (configurationName == 'api' || configurationName == 'compile') {
-                    dependencyNode.appendNode('scope', 'compile')
-                  }
-                }
-              }
-            }
-
-            // Add different types of dependencies
-            addDependencies('api')
-            addDependencies('implementation')
-            addDependencies('compile') // Legacy support
-            addDependencies('runtime') // Legacy support
-          }
-        }
-      }
-    }
-
-    repositories {
-      maven {
-        name = "sonatype"
-        url = isReleaseBuild() ? getReleaseRepositoryUrl() : getSnapshotRepositoryUrl()
-
-        credentials {
-          username = getRepositoryUsername()
-          password = getRepositoryPassword()
-        }
-      }
-    }
-  }
-
   // Configure signing - updated for maven-publish
-  signing {
-    required { isReleaseBuild() && gradle.taskGraph.hasTask("publish") }
-    sign publishing.publications.maven
-  }
-
-  // Legacy compatibility tasks to maintain same interface
-  task uploadArchives(dependsOn: 'publish') {
-    doLast {
-      logger.lifecycle("✅ Published ${project.name} ${VERSION_NAME} to ${isReleaseBuild() ? 'release' : 'snapshot'} repository")
-    }
-  }
-
   task install(dependsOn: 'publishToMavenLocal') {
     doLast {
       logger.lifecycle("✅ Installed ${project.name} ${VERSION_NAME} to local Maven repository")
