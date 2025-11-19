@@ -1,11 +1,59 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# Dependabot configuration for automated dependency updates
+
+# Documentation: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  # Keep Gradle dependencies up to date
+  - package-ecosystem: "gradle"
+    directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    # Group related updates to reduce PRs
+    groups:
+      # Group all minor and patch updates
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    # Limit the number of open pull requests
+    open-pull-requests-limit: 5
+    # Configure labels for PRs
+    labels:
+      - "dependencies"
+      - "gradle"
+      - "android"
+      - "automated"
+    # Allow version updates
+    versioning-strategy: auto
+    # Prefix for commit messages
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    # Enable automatic rebase
+    rebase-strategy: "auto"
+
+  # Keep GitHub Actions up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    # Configure labels for PRs
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"
+    # Limit the number of open pull requests
+    open-pull-requests-limit: 3
+    # Prefix for commit messages
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    # Enable automatic rebase
+    rebase-strategy: "auto"
