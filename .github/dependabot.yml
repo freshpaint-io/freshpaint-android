@@ -35,25 +35,3 @@ updates:
       include: "scope"
     # Enable automatic rebase
     rebase-strategy: "auto"
-
-  # Keep GitHub Actions up to date
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "America/New_York"
-    # Configure labels for PRs
-    labels:
-      - "dependencies"
-      - "github-actions"
-      - "automated"
-    # Limit the number of open pull requests
-    open-pull-requests-limit: 3
-    # Prefix for commit messages
-    commit-message:
-      prefix: "ci"
-      include: "scope"
-    # Enable automatic rebase
-    rebase-strategy: "auto"
