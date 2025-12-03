@@ -27,11 +27,7 @@ updates:
       - "gradle"
       - "android"
       - "automated"
-    # Allow version updates
-    versioning-strategy: auto
     # Prefix for commit messages
     commit-message:
       prefix: "chore"
       include: "scope"
-    # Enable automatic rebase
-    rebase-strategy: "auto"
