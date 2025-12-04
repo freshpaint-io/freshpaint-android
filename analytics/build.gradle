@@ -42,7 +42,7 @@ dependencies {
   implementation 'androidx.lifecycle:lifecycle-common-java8:2.9.1'
 
   testImplementation 'junit:junit:4.13.2'
-  testImplementation('org.robolectric:robolectric:3.5') {
+  testImplementation('org.robolectric:robolectric:4.16') {
     exclude group: 'commons-logging', module: 'commons-logging'
     exclude group: 'org.apache.httpcomponents', module: 'httpclient'
   }
