@@ -44,7 +44,7 @@ dependencies {
   annotationProcessor 'com.jakewharton:butterknife-compiler:10.2.1'
 
   androidTestImplementation 'com.squareup.retrofit2:retrofit:2.9.0'
-  androidTestImplementation 'com.squareup.retrofit2:converter-moshi:2.8.1'
+  androidTestImplementation 'com.squareup.retrofit2:converter-moshi:3.0.0'
 
   androidTestImplementation rootProject.ext.deps.supportAnnotations
   androidTestImplementation 'androidx.test:runner:1.6.2'
