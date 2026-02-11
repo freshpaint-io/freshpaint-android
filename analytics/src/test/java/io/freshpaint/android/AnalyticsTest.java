@@ -26,7 +26,7 @@ package io.freshpaint.android;
 import static android.content.Context.MODE_PRIVATE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -70,6 +70,7 @@ import org.assertj.core.api.Assertions;
 import org.assertj.core.data.MapEntry;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
+import org.mockito.ArgumentMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -215,7 +216,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<IdentifyPayload>() {
                   @Override
-                  protected boolean matchesSafely(IdentifyPayload item) {
+                  public boolean matches(IdentifyPayload item) {
                     return item.userId().equals("prateek")
                         && item.traits().username().equals("f2prateek");
                   }
@@ -238,7 +239,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<IdentifyPayload>() {
                   @Override
-                  protected boolean matchesSafely(IdentifyPayload item) {
+                  public boolean matches(IdentifyPayload item) {
                     // Exercises a bug where payloads didn't pick up userId in identify correctly.
                     // https://github.com/segmentio/analytics-android/issues/169
                     return item.userId().equals("foo");
@@ -272,7 +273,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<GroupPayload>() {
                   @Override
-                  protected boolean matchesSafely(GroupPayload item) {
+                  public boolean matches(GroupPayload item) {
                     return item.groupId().equals("segment") && item.traits().employees() == 42;
                   }
                 }));
@@ -300,7 +301,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("wrote tests")
                         && //
                         payload.properties().url().equals("github.com");
@@ -333,7 +334,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<ScreenPayload>() {
                   @Override
-                  protected boolean matchesSafely(ScreenPayload payload) {
+                  public boolean matches(ScreenPayload payload) {
                     return payload.name().equals("saw tests")
                         && //
                         payload.category().equals("android")
@@ -373,7 +374,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.context().get("from_tests") == Boolean.TRUE;
                   }
                 }));
@@ -407,7 +408,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("foo");
                   }
                 }));
@@ -437,7 +438,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("foo");
                   }
                 }));
@@ -548,7 +549,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("foo");
                   }
                 }));
@@ -621,14 +622,11 @@ public class AnalyticsTest {
     verify(traitsCache)
         .set(
             argThat(
-                new TypeSafeMatcher<Traits>() {
+                new ArgumentMatcher<Traits>() {
                   @Override
-                  protected boolean matchesSafely(Traits traits) {
+                  public boolean matches(Traits traits) {
                     return !Utils.isNullOrEmpty(traits.anonymousId());
                   }
-
-                  @Override
-                  public void describeTo(Description description) {}
                 }));
     assertThat(analyticsContext.traits()).hasSize(1).containsKey("anonymousId");
   }
@@ -782,7 +780,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<LifecycleObserver>() {
                   @Override
-                  protected boolean matchesSafely(LifecycleObserver item) {
+                  public boolean matches(LifecycleObserver item) {
                     callback.set((DefaultLifecycleObserver) item);
                     return true;
                   }
@@ -828,7 +826,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Application Installed")
                         && //
                         payload.properties().getString("version").equals("1.0.0")
@@ -870,7 +868,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<LifecycleObserver>() {
                   @Override
-                  protected boolean matchesSafely(LifecycleObserver item) {
+                  public boolean matches(LifecycleObserver item) {
                     callback.set((DefaultLifecycleObserver) item);
                     return true;
                   }
@@ -916,7 +914,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Application Updated")
                         && //
                         payload.properties().getString("previous_version").equals("1.0.0")
@@ -942,7 +940,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<Application.ActivityLifecycleCallbacks>() {
                   @Override
-                  protected boolean matchesSafely(Application.ActivityLifecycleCallbacks item) {
+                  public boolean matches(Application.ActivityLifecycleCallbacks item) {
                     callback.set(item);
                     return true;
                   }
@@ -997,7 +995,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<ScreenPayload>() {
                   @Override
-                  protected boolean matchesSafely(ScreenPayload payload) {
+                  public boolean matches(ScreenPayload payload) {
                     return payload.name().equals("Foo");
                   }
                 }));
@@ -1015,7 +1013,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<Application.ActivityLifecycleCallbacks>() {
                   @Override
-                  protected boolean matchesSafely(Application.ActivityLifecycleCallbacks item) {
+                  public boolean matches(Application.ActivityLifecycleCallbacks item) {
                     callback.set(item);
                     return true;
                   }
@@ -1069,7 +1067,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Deep Link Opened")
                         && payload.properties().getString("url").equals(expectedUrl)
                         && payload.properties().getString("gclid").equals("abcd")
@@ -1090,7 +1088,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<Application.ActivityLifecycleCallbacks>() {
                   @Override
-                  protected boolean matchesSafely(Application.ActivityLifecycleCallbacks item) {
+                  public boolean matches(Application.ActivityLifecycleCallbacks item) {
                     callback.set(item);
                     return true;
                   }
@@ -1144,7 +1142,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Deep Link Opened")
                         && payload.properties().getString("url").equals(expectedUrl)
                         && payload.properties().getString("gclid").equals("abcd")
@@ -1165,7 +1163,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<Application.ActivityLifecycleCallbacks>() {
                   @Override
-                  protected boolean matchesSafely(Application.ActivityLifecycleCallbacks item) {
+                  public boolean matches(Application.ActivityLifecycleCallbacks item) {
                     callback.set(item);
                     return true;
                   }
@@ -1214,7 +1212,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Deep Link Opened");
                   }
                 }));
@@ -1232,7 +1230,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<Application.ActivityLifecycleCallbacks>() {
                   @Override
-                  protected boolean matchesSafely(Application.ActivityLifecycleCallbacks item) {
+                  public boolean matches(Application.ActivityLifecycleCallbacks item) {
                     callback.set(item);
                     return true;
                   }
@@ -1284,7 +1282,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Deep Link Opened");
                   }
                 }));
@@ -1302,7 +1300,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<Application.ActivityLifecycleCallbacks>() {
                   @Override
-                  protected boolean matchesSafely(Application.ActivityLifecycleCallbacks item) {
+                  public boolean matches(Application.ActivityLifecycleCallbacks item) {
                     callback.set(item);
                     return true;
                   }
@@ -1378,7 +1376,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<LifecycleObserver>() {
                   @Override
-                  protected boolean matchesSafely(LifecycleObserver item) {
+                  public boolean matches(LifecycleObserver item) {
                     callback.set((DefaultLifecycleObserver) item);
                     return true;
                   }
@@ -1425,7 +1423,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Application Opened")
                         && payload.properties().getString("version").equals("1.0.0")
                         && payload.properties().getString("build").equals(String.valueOf(100))
@@ -1446,7 +1444,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<LifecycleObserver>() {
                   @Override
-                  protected boolean matchesSafely(LifecycleObserver item) {
+                  public boolean matches(LifecycleObserver item) {
                     callback.set((DefaultLifecycleObserver) item);
                     return true;
                   }
@@ -1498,7 +1496,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Application Backgrounded");
                   }
                 }));
@@ -1516,7 +1514,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<LifecycleObserver>() {
                   @Override
-                  protected boolean matchesSafely(LifecycleObserver item) {
+                  public boolean matches(LifecycleObserver item) {
                     callback.set((DefaultLifecycleObserver) item);
                     return true;
                   }
@@ -1565,7 +1563,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Application Backgrounded");
                   }
                 }));
@@ -1575,7 +1573,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
-                  protected boolean matchesSafely(TrackPayload payload) {
+                  public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Application Opened")
                         && payload.properties().getBoolean("from_background", false);
                   }
@@ -1596,7 +1594,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<Application.ActivityLifecycleCallbacks>() {
                   @Override
-                  protected boolean matchesSafely(Application.ActivityLifecycleCallbacks item) {
+                  public boolean matches(Application.ActivityLifecycleCallbacks item) {
                     registeredCallback.set(item);
                     return true;
                   }
@@ -1607,7 +1605,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<Application.ActivityLifecycleCallbacks>() {
                   @Override
-                  protected boolean matchesSafely(Application.ActivityLifecycleCallbacks item) {
+                  public boolean matches(Application.ActivityLifecycleCallbacks item) {
                     unregisteredCallback.set(item);
                     return true;
                   }
@@ -1692,7 +1690,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<LifecycleObserver>() {
                   @Override
-                  protected boolean matchesSafely(LifecycleObserver item) {
+                  public boolean matches(LifecycleObserver item) {
                     registeredCallback.set((DefaultLifecycleObserver) item);
                     return true;
                   }
@@ -1703,7 +1701,7 @@ public class AnalyticsTest {
             argThat(
                 new TestUtils.NoDescriptionMatcher<LifecycleObserver>() {
                   @Override
-                  protected boolean matchesSafely(LifecycleObserver item) {
+                  public boolean matches(LifecycleObserver item) {
                     unregisteredCallback.set((DefaultLifecycleObserver) item);
                     return true;
                   }

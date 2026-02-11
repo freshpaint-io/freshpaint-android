@@ -32,15 +32,15 @@ import static io.freshpaint.android.TestUtils.TRACK_PAYLOAD_JSON;
 import static io.freshpaint.android.TestUtils.mockApplication;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMap;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -202,7 +202,7 @@ public class FreshpaintIntegrationTest {
     for (int i = 0; i < 4; i++) {
       freshpaintIntegration.performEnqueue(TRACK_PAYLOAD);
     }
-    verifyZeroInteractions(client);
+    verifyNoInteractions(client);
     // Only the last enqueue should trigger an upload.
     freshpaintIntegration.performEnqueue(TRACK_PAYLOAD);
 
@@ -295,7 +295,7 @@ public class FreshpaintIntegrationTest {
 
     freshpaintIntegration.submitFlush();
 
-    verifyZeroInteractions(context);
+    verifyNoInteractions(context);
     verify(client, never()).upload();
   }
 
