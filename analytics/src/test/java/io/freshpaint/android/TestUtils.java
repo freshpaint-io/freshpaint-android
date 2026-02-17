@@ -25,9 +25,9 @@ package io.freshpaint.android;
 
 import static android.Manifest.permission.INTERNET;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.argThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
+import org.mockito.ArgumentMatcher;
 import org.json.JSONObject;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -156,32 +157,6 @@ public final class TestUtils {
     throw new AssertionError("no instances");
   }
 
-  public static <K, V> Map<K, V> mapEq(Map<K, V> expected) {
-    return argThat(new MapMatcher<>(expected));
-  }
-
-  private static class MapMatcher<K, V> extends TypeSafeMatcher<Map<K, V>> {
-
-    private final Map<K, V> expected;
-
-    MapMatcher(Map<K, V> expected) {
-      this.expected = expected;
-    }
-
-    @Override
-    public boolean matchesSafely(Map<K, V> map) {
-      return expected.equals(map);
-    }
-
-    @Override
-    public void describeTo(Description description) {
-      description.appendText(expected.toString());
-    }
-  }
-
-  public static JSONObject jsonEq(JSONObject expected) {
-    return argThat(new JSONObjectMatcher(expected));
-  }
 
   private static class JSONObjectMatcher extends TypeSafeMatcher<JSONObject> {
 
@@ -243,9 +218,9 @@ public final class TestUtils {
     shadowApp.grantPermissions(permission);
   }
 
-  public abstract static class NoDescriptionMatcher<T> extends TypeSafeMatcher<T> {
+  public abstract static class NoDescriptionMatcher<T> implements ArgumentMatcher<T> {
 
     @Override
-    public void describeTo(Description description) {}
+    public abstract boolean matches(T argument);
   }
 }

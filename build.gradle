@@ -14,6 +14,7 @@ buildscript {
   dependencies {
     classpath 'tech.medivh.plugin.publisher:tech.medivh.plugin.publisher.gradle.plugin:1.2.5'
     classpath 'com.android.tools.build:gradle:8.8.2'
+    // Cannot bump: Breaks functionality.
     classpath 'com.diffplug.spotless:spotless-plugin-gradle:7.0.4'
     classpath 'com.getkeepsafe.dexcount:dexcount-gradle-plugin:4.0.0'
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
@@ -59,7 +60,7 @@ ext {
   versionCode = Integer.parseInt(VERSION_CODE)
   versionName = getVersionName()
 
-  minSdkVersion = 21
+  minSdkVersion = 23
   minSdkVersionWear = 25
   targetSdkVersion = 35
   compileSdkVersion = 35
