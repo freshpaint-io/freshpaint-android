@@ -48,9 +48,9 @@ dependencies {
   }
   testImplementation 'com.squareup.assertj:assertj-android:1.2.0'
   // Not bumping to 5.21.0 because mockito requires bitebuddy and Java 24, which breaks the app.
-  testImplementation 'org.mockito:mockito-core:5.1.0'
+  testImplementation 'org.mockito:mockito-core:5.22.0'
   // Pinned to 3.9.1 for Kotlin 2.0.21 compatibility (3.16.4 requires Kotlin 2.2.0)
-  testImplementation 'com.squareup.okio:okio:3.9.1'
+  testImplementation 'com.squareup.okio:okio:3.16.4'
   testImplementation 'com.squareup.okhttp:mockwebserver:2.7.5'
   testImplementation 'com.squareup.burst:burst-junit4:1.2.0'
 
@@ -63,7 +63,7 @@ dependencies {
   testImplementation 'org.assertj:assertj-core:3.26.3'
 
   // Conservative core dependencies
-  implementation "androidx.core:core-ktx:1.16.0"
+  implementation "androidx.core:core-ktx:1.17.0"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
 
