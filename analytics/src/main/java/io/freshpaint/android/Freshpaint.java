@@ -130,6 +130,9 @@ public class Freshpaint {
 
   @Private final boolean nanosecondTimestamps;
 
+  // Whether to fire the app_install (first-open) event on first launch. Set by Builder.
+  @Private final boolean trackFirstOpen;
+
   /**
    * Return a reference to the global default {@link Freshpaint} instance.
    *
@@ -213,7 +216,8 @@ public class Freshpaint {
       @NonNull Map<String, List<Middleware>> destinationMiddleware,
       @NonNull final ValueMap defaultProjectSettings,
       @NonNull Lifecycle lifecycle,
-      boolean nanosecondTimestamps) {
+      boolean nanosecondTimestamps,
+      boolean trackFirstOpen) {
     this.application = application;
     this.networkExecutor = networkExecutor;
     this.stats = stats;
@@ -238,6 +242,7 @@ public class Freshpaint {
     this.destinationMiddleware = destinationMiddleware;
     this.lifecycle = lifecycle;
     this.nanosecondTimestamps = nanosecondTimestamps;
+    this.trackFirstOpen = trackFirstOpen;
 
     namespaceSharedPreferences();
 
@@ -1020,6 +1025,7 @@ public class Freshpaint {
     private boolean recordScreenViews = false;
     private boolean trackAttributionInformation = false;
     private boolean trackDeepLinks = false;
+    private boolean trackFirstOpen = true;
     private boolean nanosecondTimestamps = false;
     private Crypto crypto;
     private ValueMap defaultProjectSettings = new ValueMap();
@@ -1231,6 +1237,15 @@ public class Freshpaint {
     }
 
     /**
+     * Enable or disable firing the first-open install event ({@code app_install}) on the initial
+     * launch. Enabled by default.
+     */
+    public Builder trackFirstOpen(boolean trackFirstOpen) {
+      this.trackFirstOpen = trackFirstOpen;
+      return this;
+    }
+
+    /**
      * @see #useSourceMiddleware(Middleware)
      * @deprecated Use {@link #useSourceMiddleware(Middleware)} instead.
      */
@@ -1375,36 +1390,39 @@ public class Freshpaint {
         executor = Executors.newSingleThreadExecutor();
       }
       Lifecycle lifecycle = ProcessLifecycleOwner.get().getLifecycle();
-      return new Freshpaint(
-          application,
-          networkExecutor,
-          stats,
-          traitsCache,
-          analyticsContext,
-          defaultOptions,
-          logger,
-          tag,
-          Collections.unmodifiableList(factories),
-          client,
-          cartographer,
-          projectSettingsCache,
-          writeKey,
-          flushQueueSize,
-          flushIntervalInMillis,
-          sessionTimeoutSeconds,
-          executor,
-          trackApplicationLifecycleEvents,
-          advertisingIdLatch,
-          recordScreenViews,
-          trackAttributionInformation,
-          trackDeepLinks,
-          optOut,
-          crypto,
-          srcMiddleware,
-          destMiddleware,
-          defaultProjectSettings,
-          lifecycle,
-          nanosecondTimestamps);
+      Freshpaint freshpaint =
+          new Freshpaint(
+              application,
+              networkExecutor,
+              stats,
+              traitsCache,
+              analyticsContext,
+              defaultOptions,
+              logger,
+              tag,
+              Collections.unmodifiableList(factories),
+              client,
+              cartographer,
+              projectSettingsCache,
+              writeKey,
+              flushQueueSize,
+              flushIntervalInMillis,
+              sessionTimeoutSeconds,
+              executor,
+              trackApplicationLifecycleEvents,
+              advertisingIdLatch,
+              recordScreenViews,
+              trackAttributionInformation,
+              trackDeepLinks,
+              optOut,
+              crypto,
+              srcMiddleware,
+              destMiddleware,
+              defaultProjectSettings,
+              lifecycle,
+              nanosecondTimestamps,
+              trackFirstOpen);
+      return freshpaint;
     }
   }
 

@@ -183,7 +183,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     // Used by singleton tests.
     TestUtils.grantPermission(RuntimeEnvironment.application, Manifest.permission.INTERNET);
@@ -817,7 +818,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     callback.get().onCreate(mockLifecycleOwner);
 
@@ -905,7 +907,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     callback.get().onCreate(mockLifecycleOwner);
 
@@ -976,7 +979,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     Activity activity = mock(Activity.class);
     PackageManager packageManager = mock(PackageManager.class);
@@ -1049,7 +1053,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     final String expectedUrl = "app://track.com/open?utm_id=12345&gclid=abcd&nope=";
 
@@ -1124,7 +1129,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     final String expectedUrl = "app://track.com/open?utm_id=12345&gclid=abcd&nope=";
 
@@ -1199,7 +1205,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     Activity activity = mock(Activity.class);
 
@@ -1266,7 +1273,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     Activity activity = mock(Activity.class);
 
@@ -1336,7 +1344,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     Activity activity = mock(Activity.class);
     Bundle bundle = new Bundle();
@@ -1413,7 +1422,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     callback.get().onCreate(mockLifecycleOwner);
     callback.get().onStart(mockLifecycleOwner);
@@ -1482,7 +1492,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     Activity backgroundedActivity = mock(Activity.class);
     when(backgroundedActivity.isChangingConfigurations()).thenReturn(false);
@@ -1551,7 +1562,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     callback.get().onCreate(mockLifecycleOwner);
     callback.get().onStart(mockLifecycleOwner);
@@ -1641,7 +1653,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     assertThat(freshpaint.shutdown).isFalse();
     freshpaint.shutdown();
@@ -1738,7 +1751,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     assertThat(freshpaint.shutdown).isFalse();
     freshpaint.shutdown();
@@ -1815,6 +1829,7 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
+            true,
             true);
 
     freshpaint.track("event");
@@ -1857,7 +1872,8 @@ public class AnalyticsTest {
             Collections.<String, List<Middleware>>emptyMap(),
             new ValueMap(),
             lifecycle,
-            false);
+            false,
+            true);
 
     freshpaint.track("event");
     ArgumentCaptor<TrackPayload> payload = ArgumentCaptor.forClass(TrackPayload.class);

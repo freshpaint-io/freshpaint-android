@@ -151,4 +151,8 @@ build/
 # Ignore Gradle GUI config
 gradle-app.setting
 
+<<<<<<< feature/frp-41-android-pr-1-configuration-ad_id-permission-and-keystore
 .ai-dev/
+=======
+.ai-dev/
+>>>>>>> feature/frp-53-android-mmp-integration
