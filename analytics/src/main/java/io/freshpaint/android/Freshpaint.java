@@ -130,6 +130,9 @@ public class Freshpaint {
 
   @Private final boolean nanosecondTimestamps;
 
+  // Whether to fire the app_install (first-open) event on first launch. Set by Builder.
+  boolean trackFirstOpen = true;
+
   /**
    * Return a reference to the global default {@link Freshpaint} instance.
    *
@@ -1020,6 +1023,7 @@ public class Freshpaint {
     private boolean recordScreenViews = false;
     private boolean trackAttributionInformation = false;
     private boolean trackDeepLinks = false;
+    private boolean trackFirstOpen = true;
     private boolean nanosecondTimestamps = false;
     private Crypto crypto;
     private ValueMap defaultProjectSettings = new ValueMap();
@@ -1231,6 +1235,15 @@ public class Freshpaint {
     }
 
     /**
+     * Enable or disable firing the first-open install event ({@code app_install}) on the initial
+     * launch. Enabled by default.
+     */
+    public Builder trackFirstOpen(boolean trackFirstOpen) {
+      this.trackFirstOpen = trackFirstOpen;
+      return this;
+    }
+
+    /**
      * @see #useSourceMiddleware(Middleware)
      * @deprecated Use {@link #useSourceMiddleware(Middleware)} instead.
      */
@@ -1375,36 +1388,39 @@ public class Freshpaint {
         executor = Executors.newSingleThreadExecutor();
       }
       Lifecycle lifecycle = ProcessLifecycleOwner.get().getLifecycle();
-      return new Freshpaint(
-          application,
-          networkExecutor,
-          stats,
-          traitsCache,
-          analyticsContext,
-          defaultOptions,
-          logger,
-          tag,
-          Collections.unmodifiableList(factories),
-          client,
-          cartographer,
-          projectSettingsCache,
-          writeKey,
-          flushQueueSize,
-          flushIntervalInMillis,
-          sessionTimeoutSeconds,
-          executor,
-          trackApplicationLifecycleEvents,
-          advertisingIdLatch,
-          recordScreenViews,
-          trackAttributionInformation,
-          trackDeepLinks,
-          optOut,
-          crypto,
-          srcMiddleware,
-          destMiddleware,
-          defaultProjectSettings,
-          lifecycle,
-          nanosecondTimestamps);
+      Freshpaint freshpaint =
+          new Freshpaint(
+              application,
+              networkExecutor,
+              stats,
+              traitsCache,
+              analyticsContext,
+              defaultOptions,
+              logger,
+              tag,
+              Collections.unmodifiableList(factories),
+              client,
+              cartographer,
+              projectSettingsCache,
+              writeKey,
+              flushQueueSize,
+              flushIntervalInMillis,
+              sessionTimeoutSeconds,
+              executor,
+              trackApplicationLifecycleEvents,
+              advertisingIdLatch,
+              recordScreenViews,
+              trackAttributionInformation,
+              trackDeepLinks,
+              optOut,
+              crypto,
+              srcMiddleware,
+              destMiddleware,
+              defaultProjectSettings,
+              lifecycle,
+              nanosecondTimestamps);
+      freshpaint.trackFirstOpen = trackFirstOpen;
+      return freshpaint;
     }
   }
 

@@ -62,6 +62,9 @@ dependencies {
   // Conservative assertj version compatible with Kotlin 2.0.21
   testImplementation 'org.assertj:assertj-core:3.26.3'
 
+  // Keystore-backed EncryptedSharedPreferences for stable device ID
+  implementation 'androidx.security:security-crypto:1.0.0'
+
   // Conservative core dependencies
   implementation "androidx.core:core-ktx:1.16.0"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
