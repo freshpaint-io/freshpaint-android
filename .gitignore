@@ -151,8 +151,4 @@ build/
 # Ignore Gradle GUI config
 gradle-app.setting
 
-<<<<<<< HEAD
-### AI Dev ###
-=======
->>>>>>> 419b38b (gitignore)
 .ai-dev/
