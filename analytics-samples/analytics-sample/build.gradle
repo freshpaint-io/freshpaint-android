@@ -26,6 +26,12 @@ android {
     disable 'IconMissingDensityFolder', 'GoogleAppIndexingWarning', 'AllowBackup'
   }
 
+  packagingOptions {
+    // play-services-basement:10.2.6 and tink-android:1.5.0 (via security-crypto) both
+    // include this file. Exclude to resolve the duplicate resource merge conflict.
+    exclude 'build-data.properties'
+  }
+
   defaultConfig {
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
