@@ -248,7 +248,7 @@ public class StableDeviceIdTest {
   }
 
   @Test
-  public void freshpaintInstanceFieldDefaultIsTrue() throws Exception {
+  public void freshpaintInstanceFieldExists() throws Exception {
     // Freshpaint instances constructed directly (as in existing tests) default to true
     Field field = Freshpaint.class.getDeclaredField("trackFirstOpen");
     field.setAccessible(true);

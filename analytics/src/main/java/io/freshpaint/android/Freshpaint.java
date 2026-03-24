@@ -131,7 +131,7 @@ public class Freshpaint {
   @Private final boolean nanosecondTimestamps;
 
   // Whether to fire the app_install (first-open) event on first launch. Set by Builder.
-  boolean trackFirstOpen = true;
+  @Private final boolean trackFirstOpen;
 
   /**
    * Return a reference to the global default {@link Freshpaint} instance.
@@ -216,7 +216,8 @@ public class Freshpaint {
       @NonNull Map<String, List<Middleware>> destinationMiddleware,
       @NonNull final ValueMap defaultProjectSettings,
       @NonNull Lifecycle lifecycle,
-      boolean nanosecondTimestamps) {
+      boolean nanosecondTimestamps,
+      boolean trackFirstOpen) {
     this.application = application;
     this.networkExecutor = networkExecutor;
     this.stats = stats;
@@ -241,6 +242,7 @@ public class Freshpaint {
     this.destinationMiddleware = destinationMiddleware;
     this.lifecycle = lifecycle;
     this.nanosecondTimestamps = nanosecondTimestamps;
+    this.trackFirstOpen = trackFirstOpen;
 
     namespaceSharedPreferences();
 
@@ -1418,8 +1420,8 @@ public class Freshpaint {
               destMiddleware,
               defaultProjectSettings,
               lifecycle,
-              nanosecondTimestamps);
-      freshpaint.trackFirstOpen = trackFirstOpen;
+              nanosecondTimestamps,
+              trackFirstOpen);
       return freshpaint;
     }
   }

@@ -26,6 +26,7 @@ package io.freshpaint.android;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.security.crypto.EncryptedSharedPreferences;
 import androidx.security.crypto.MasterKeys;
 import java.util.UUID;
@@ -37,9 +38,10 @@ import java.util.UUID;
  */
 class StableDeviceId {
 
-  static final String KEY_SDK_INSTALLATION_ID = "freshpaint.sdk_installation_id";
+  @VisibleForTesting static final String KEY_SDK_INSTALLATION_ID = "freshpaint.sdk_installation_id";
   private static final String ENCRYPTED_PREFS_FILE = "freshpaint_device_id";
   private static final String PLAIN_PREFS_FILE = "freshpaint_device_id_plain";
+  private static final Object LOCK = new Object();
 
   private StableDeviceId() {}
 
@@ -60,7 +62,7 @@ class StableDeviceId {
               EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
               EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM);
       return getOrCreate(prefs);
-    } catch (Throwable ignored) {
+    } catch (Exception | LinkageError ignored) {
       // Keystore unavailable, locked, or class failed to initialize — fall through
     }
 
@@ -69,7 +71,7 @@ class StableDeviceId {
       SharedPreferences prefs =
           context.getSharedPreferences(PLAIN_PREFS_FILE, Context.MODE_PRIVATE);
       return getOrCreate(prefs);
-    } catch (Throwable ignored) {
+    } catch (Exception ignored) {
       // Storage completely unavailable — return ephemeral UUID
     }
 
@@ -78,11 +80,13 @@ class StableDeviceId {
 
   @NonNull
   private static String getOrCreate(@NonNull SharedPreferences prefs) {
-    String id = prefs.getString(KEY_SDK_INSTALLATION_ID, null);
-    if (id == null) {
-      id = UUID.randomUUID().toString();
-      prefs.edit().putString(KEY_SDK_INSTALLATION_ID, id).apply();
+    synchronized (LOCK) {
+      String id = prefs.getString(KEY_SDK_INSTALLATION_ID, null);
+      if (id == null) {
+        id = UUID.randomUUID().toString();
+        prefs.edit().putString(KEY_SDK_INSTALLATION_ID, id).commit();
+      }
+      return id;
     }
-    return id;
   }
 }
