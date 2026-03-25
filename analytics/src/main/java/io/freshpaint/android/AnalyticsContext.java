@@ -51,6 +51,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Context is a dictionary of free-form information about the state of the device. Context is
@@ -150,12 +151,13 @@ public class AnalyticsContext extends ValueMap {
     super(delegate);
   }
 
-  void attachAdvertisingId(Context context, CountDownLatch latch, Logger logger) {
+  void attachAdvertisingId(
+      Context context, CountDownLatch latch, Logger logger, ExecutorService executor) {
     // This is done as an extra step so we don't run into errors like this for testing
     // http://pastebin.com/gyWJKWiu.
     if (Utils.isOnClassPath("com.google.android.gms.ads.identifier.AdvertisingIdClient")) {
       // This needs to be done each time since the settings may have been updated.
-      new GetAdvertisingIdTask(this, latch, logger).execute(context);
+      executor.submit(new GetAdvertisingIdWorker(this, latch, logger, context));
     } else {
       logger.debug(
           "Not collecting advertising ID because "
@@ -417,6 +419,7 @@ public class AnalyticsContext extends ValueMap {
     @Private static final String DEVICE_TOKEN_KEY = "token";
     @Private static final String DEVICE_ADVERTISING_ID_KEY = "advertisingId";
     @Private static final String DEVICE_AD_TRACKING_ENABLED_KEY = "adTrackingEnabled";
+    @Private static final String DEVICE_LIMIT_AD_TRACKING_KEY = "limit_ad_tracking";
 
     @Private
     Device() {}
@@ -438,6 +441,7 @@ public class AnalyticsContext extends ValueMap {
         put(DEVICE_ADVERTISING_ID_KEY, advertisingId);
       }
       put(DEVICE_AD_TRACKING_ENABLED_KEY, adTrackingEnabled);
+      put(DEVICE_LIMIT_AD_TRACKING_KEY, !adTrackingEnabled);
     }
 
     /** Set a device token. */

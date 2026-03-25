@@ -176,6 +176,17 @@ public class AnalyticsContextTest {
     device.putAdvertisingInfo("adId", true);
     assertThat(device).containsEntry("advertisingId", "adId");
     assertThat(device).containsEntry("adTrackingEnabled", true);
+    assertThat(device).containsEntry("limit_ad_tracking", false);
+  }
+
+  @Test
+  public void deviceLimitAdTrackingEnabled() {
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+
+    device.putAdvertisingInfo(null, false);
+    assertThat(device).doesNotContainKey("advertisingId");
+    assertThat(device).containsEntry("adTrackingEnabled", false);
+    assertThat(device).containsEntry("limit_ad_tracking", true);
   }
 
   @Test

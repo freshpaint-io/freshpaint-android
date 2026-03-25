@@ -28,9 +28,7 @@ import static org.robolectric.annotation.Config.NONE;
 
 import android.content.ContentResolver;
 import android.content.Context;
-import android.os.AsyncTask;
 import android.provider.Settings.Secure;
-import android.util.Pair;
 import io.freshpaint.android.integrations.Logger;
 import java.util.concurrent.CountDownLatch;
 import org.junit.Test;
@@ -41,39 +39,7 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = NONE)
-public class GetAdvertisingIdTaskTest {
-  @Test
-  public void getAdvertisingId() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
-    Traits traits = Traits.create();
-    AnalyticsContext context =
-        AnalyticsContext.create(RuntimeEnvironment.application, traits, true);
-    AsyncTask<Context, Void, Pair<String, Boolean>> task =
-        new GetAdvertisingIdTask(context, latch, Logger.with(Freshpaint.LogLevel.VERBOSE));
-    task.execute(RuntimeEnvironment.application);
-    latch.await();
-    assertThat(context.device()).doesNotContainKey("advertisingId");
-  }
-
-  @Test
-  public void getAdvertisingIdAmazonFireOSLimitAdTracking1() throws Exception {
-    Context context = RuntimeEnvironment.application;
-    ContentResolver contentResolver = context.getContentResolver();
-    Secure.putInt(contentResolver, "limit_ad_tracking", 1);
-    CountDownLatch latch = new CountDownLatch(1);
-
-    Traits traits = Traits.create();
-    AnalyticsContext analyticsContext =
-        AnalyticsContext.create(RuntimeEnvironment.application, traits, true);
-
-    AsyncTask<Context, Void, Pair<String, Boolean>> task =
-        new GetAdvertisingIdTask(analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE));
-    task.execute(context);
-    latch.await();
-
-    assertThat(analyticsContext.device()).doesNotContainKey("advertisingId");
-    assertThat(analyticsContext.device()).containsEntry("adTrackingEnabled", false);
-  }
+public class GetAdvertisingIdWorkerTest {
 
   @Test
   public void getAdvertisingIdAmazonFireOSLimitAdTracking0() throws Exception {
@@ -83,18 +49,57 @@ public class GetAdvertisingIdTaskTest {
     Secure.putString(contentResolver, "advertising_id", "df07c7dc-cea7-4a89-b328-810ff5acb15d");
 
     CountDownLatch latch = new CountDownLatch(1);
-
     Traits traits = Traits.create();
-    AnalyticsContext analyticsContext =
-        AnalyticsContext.create(RuntimeEnvironment.application, traits, true);
+    AnalyticsContext analyticsContext = AnalyticsContext.create(context, traits, true);
 
-    AsyncTask<Context, Void, Pair<String, Boolean>> task =
-        new GetAdvertisingIdTask(analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE));
-    task.execute(context);
+    GetAdvertisingIdWorker worker =
+        new GetAdvertisingIdWorker(
+            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context);
+    worker.run();
     latch.await();
 
     assertThat(analyticsContext.device())
         .containsEntry("advertisingId", "df07c7dc-cea7-4a89-b328-810ff5acb15d");
     assertThat(analyticsContext.device()).containsEntry("adTrackingEnabled", true);
+    assertThat(analyticsContext.device()).containsEntry("limit_ad_tracking", false);
+  }
+
+  @Test
+  public void getAdvertisingIdAmazonFireOSLimitAdTracking1() throws Exception {
+    Context context = RuntimeEnvironment.application;
+    ContentResolver contentResolver = context.getContentResolver();
+    Secure.putInt(contentResolver, "limit_ad_tracking", 1);
+
+    CountDownLatch latch = new CountDownLatch(1);
+    Traits traits = Traits.create();
+    AnalyticsContext analyticsContext = AnalyticsContext.create(context, traits, true);
+
+    GetAdvertisingIdWorker worker =
+        new GetAdvertisingIdWorker(
+            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context);
+    worker.run();
+    latch.await();
+
+    assertThat(analyticsContext.device()).doesNotContainKey("advertisingId");
+    assertThat(analyticsContext.device()).containsEntry("adTrackingEnabled", false);
+    assertThat(analyticsContext.device()).containsEntry("limit_ad_tracking", true);
+  }
+
+  @Test
+  public void bothPathsFailLatchStillCountedDown() throws Exception {
+    // GPS not available (no GMS), Amazon Fire also fails because limit_ad_tracking setting is not
+    // set — latch is still counted down without hanging.
+    Context context = RuntimeEnvironment.application;
+    // Don't set limit_ad_tracking → Settings.Secure.getInt throws exception
+    CountDownLatch latch = new CountDownLatch(1);
+    Traits traits = Traits.create();
+    AnalyticsContext analyticsContext = AnalyticsContext.create(context, traits, true);
+
+    GetAdvertisingIdWorker worker =
+        new GetAdvertisingIdWorker(
+            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context);
+    worker.run();
+
+    assertThat(latch.getCount()).isEqualTo(0);
   }
 }

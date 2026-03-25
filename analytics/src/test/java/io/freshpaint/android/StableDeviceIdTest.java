@@ -24,11 +24,9 @@
 package io.freshpaint.android;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -89,28 +87,73 @@ public class StableDeviceIdTest {
 
         // Unused editor methods
         @Override
-        public SharedPreferences.Editor putStringSet(String k, java.util.Set<String> v) { return this; }
+        public SharedPreferences.Editor putStringSet(String k, java.util.Set<String> v) {
+          return this;
+        }
+
         @Override
-        public SharedPreferences.Editor putInt(String k, int v) { return this; }
+        public SharedPreferences.Editor putInt(String k, int v) {
+          return this;
+        }
+
         @Override
-        public SharedPreferences.Editor putLong(String k, long v) { return this; }
+        public SharedPreferences.Editor putLong(String k, long v) {
+          return this;
+        }
+
         @Override
-        public SharedPreferences.Editor putFloat(String k, float v) { return this; }
+        public SharedPreferences.Editor putFloat(String k, float v) {
+          return this;
+        }
+
         @Override
-        public SharedPreferences.Editor putBoolean(String k, boolean v) { return this; }
+        public SharedPreferences.Editor putBoolean(String k, boolean v) {
+          return this;
+        }
       };
     }
 
     // Unused SharedPreferences methods
-    @Override public java.util.Map<String, ?> getAll() { return store; }
-    @Override public java.util.Set<String> getStringSet(String k, java.util.Set<String> d) { return d; }
-    @Override public int getInt(String k, int d) { return d; }
-    @Override public long getLong(String k, long d) { return d; }
-    @Override public float getFloat(String k, float d) { return d; }
-    @Override public boolean getBoolean(String k, boolean d) { return d; }
-    @Override public boolean contains(String k) { return store.containsKey(k); }
-    @Override public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener l) {}
-    @Override public void unregisterOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener l) {}
+    @Override
+    public java.util.Map<String, ?> getAll() {
+      return store;
+    }
+
+    @Override
+    public java.util.Set<String> getStringSet(String k, java.util.Set<String> d) {
+      return d;
+    }
+
+    @Override
+    public int getInt(String k, int d) {
+      return d;
+    }
+
+    @Override
+    public long getLong(String k, long d) {
+      return d;
+    }
+
+    @Override
+    public float getFloat(String k, float d) {
+      return d;
+    }
+
+    @Override
+    public boolean getBoolean(String k, boolean d) {
+      return d;
+    }
+
+    @Override
+    public boolean contains(String k) {
+      return store.containsKey(k);
+    }
+
+    @Override
+    public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener l) {}
+
+    @Override
+    public void unregisterOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener l) {}
   }
 
   private FakeSharedPreferences fakePrefs;
