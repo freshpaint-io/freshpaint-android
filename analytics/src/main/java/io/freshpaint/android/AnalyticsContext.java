@@ -157,7 +157,12 @@ public class AnalyticsContext extends ValueMap {
     // http://pastebin.com/gyWJKWiu.
     if (Utils.isOnClassPath("com.google.android.gms.ads.identifier.AdvertisingIdClient")) {
       // This needs to be done each time since the settings may have been updated.
-      executor.submit(new GetAdvertisingIdWorker(this, latch, logger, context));
+      try {
+        executor.submit(new GetAdvertisingIdWorker(this, latch, logger, context));
+      } catch (java.util.concurrent.RejectedExecutionException e) {
+        logger.debug("networkExecutor is shut down; skipping GAID fetch.");
+        latch.countDown();
+      }
     } else {
       logger.debug(
           "Not collecting advertising ID because "
@@ -239,6 +244,14 @@ public class AnalyticsContext extends ValueMap {
     put(DEVICE_KEY, device);
   }
 
+  /**
+   * Returns the {@link Device} attached to this context. The returned instance is always the same
+   * object (memoized): {@link #putDevice} stores a {@code Device} instance at {@link #DEVICE_KEY},
+   * and {@code ValueMap.coerceToValueMap} returns it via the identity branch when the stored value
+   * already implements the target class. This invariant is relied upon by {@link
+   * AttributionMiddleware} to ensure that {@code synchronized(sourceDevice)} and {@code
+   * synchronized putAdvertisingInfo()} share the same monitor.
+   */
   public Device device() {
     return getValueMap(DEVICE_KEY, Device.class);
   }

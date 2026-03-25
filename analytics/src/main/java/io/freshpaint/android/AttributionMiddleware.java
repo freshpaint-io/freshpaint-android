@@ -52,6 +52,10 @@ class AttributionMiddleware implements Middleware {
       AnalyticsContext.Device payloadDevice = payloadContext.device();
       if (payloadDevice == null) return;
 
+      // analyticsContext.device() always returns the same Device instance (memoized via
+      // ValueMap.coerceToValueMap identity branch). synchronized(sourceDevice) therefore
+      // shares the same monitor as synchronized putAdvertisingInfo(), eliminating the race
+      // between GetAdvertisingIdWorker writes and middleware reads.
       synchronized (sourceDevice) {
         String gaid = sourceDevice.getString(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY);
         boolean limitAdTracking =
