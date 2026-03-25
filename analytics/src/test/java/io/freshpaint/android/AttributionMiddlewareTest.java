@@ -53,18 +53,16 @@ public class AttributionMiddlewareTest {
   private AnalyticsContext buildSourceContext(
       String deviceId, String gaid, boolean adTrackingEnabled) {
     LinkedHashMap<String, Object> deviceMap = new LinkedHashMap<>();
-    if (deviceId != null) {
-      deviceMap.put("id", deviceId);
-    }
-    if (gaid != null) {
-      deviceMap.put("advertisingId", gaid);
-      deviceMap.put("adTrackingEnabled", adTrackingEnabled);
-    }
-    deviceMap.put("limit_ad_tracking", !adTrackingEnabled);
-
     LinkedHashMap<String, Object> contextMap = new LinkedHashMap<>();
     contextMap.put("device", deviceMap);
-    return new AnalyticsContext(contextMap);
+    AnalyticsContext sourceContext = new AnalyticsContext(contextMap);
+
+    AnalyticsContext.Device device = sourceContext.device();
+    if (deviceId != null) {
+      device.put(AnalyticsContext.Device.DEVICE_ID_KEY, deviceId);
+    }
+    device.putAdvertisingInfo(gaid, adTrackingEnabled);
+    return sourceContext;
   }
 
   /**

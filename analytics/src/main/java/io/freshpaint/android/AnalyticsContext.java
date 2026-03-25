@@ -436,7 +436,7 @@ public class AnalyticsContext extends ValueMap {
     }
 
     /** Set the advertising information for this device. */
-    void putAdvertisingInfo(String advertisingId, boolean adTrackingEnabled) {
+    synchronized void putAdvertisingInfo(String advertisingId, boolean adTrackingEnabled) {
       if (adTrackingEnabled && !Utils.isNullOrEmpty(advertisingId)) {
         put(DEVICE_ADVERTISING_ID_KEY, advertisingId);
       }

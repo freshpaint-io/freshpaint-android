@@ -44,22 +44,25 @@ class AttributionMiddleware implements Middleware {
     BasePayload payload = chain.payload();
     try {
       AnalyticsContext.Device sourceDevice = analyticsContext.device();
-      if (sourceDevice != null) {
-        AnalyticsContext payloadContext = payload.context();
-        if (payloadContext != null) {
-          AnalyticsContext.Device payloadDevice = payloadContext.device();
-          if (payloadDevice != null) {
-            String gaid = sourceDevice.getString("advertisingId");
-            boolean limitAdTracking = sourceDevice.getBoolean("limit_ad_tracking", false);
-            String deviceId = sourceDevice.getString("id");
-            if (gaid != null) {
-              payloadDevice.put("advertisingId", gaid);
-            }
-            payloadDevice.put("limit_ad_tracking", limitAdTracking);
-            if (deviceId != null) {
-              payloadDevice.put("id", deviceId);
-            }
-          }
+      if (sourceDevice == null) return;
+
+      AnalyticsContext payloadContext = payload.context();
+      if (payloadContext == null) return;
+
+      AnalyticsContext.Device payloadDevice = payloadContext.device();
+      if (payloadDevice == null) return;
+
+      synchronized (sourceDevice) {
+        String gaid = sourceDevice.getString(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY);
+        boolean limitAdTracking =
+            sourceDevice.getBoolean(AnalyticsContext.Device.DEVICE_LIMIT_AD_TRACKING_KEY, false);
+        String deviceId = sourceDevice.getString(AnalyticsContext.Device.DEVICE_ID_KEY);
+        if (gaid != null) {
+          payloadDevice.put(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY, gaid);
+        }
+        payloadDevice.put(AnalyticsContext.Device.DEVICE_LIMIT_AD_TRACKING_KEY, limitAdTracking);
+        if (deviceId != null) {
+          payloadDevice.put(AnalyticsContext.Device.DEVICE_ID_KEY, deviceId);
         }
       }
     } finally {
