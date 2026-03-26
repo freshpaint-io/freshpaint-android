@@ -43,6 +43,7 @@ class AttributionMiddleware implements Middleware {
   public void intercept(Chain chain) {
     BasePayload payload = chain.payload();
     try {
+      // Note: all early returns below still reach chain.proceed() via the finally block.
       AnalyticsContext.Device sourceDevice = analyticsContext.device();
       if (sourceDevice == null) return;
 
@@ -58,8 +59,10 @@ class AttributionMiddleware implements Middleware {
       // between GetAdvertisingIdWorker writes and middleware reads.
       synchronized (sourceDevice) {
         String gaid = sourceDevice.getString(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY);
+        // Default true: if the GAID worker has not run yet, conservatively treat ad tracking as
+        // limited rather than sending limit_ad_tracking=false to MMP backends prematurely.
         boolean limitAdTracking =
-            sourceDevice.getBoolean(AnalyticsContext.Device.DEVICE_LIMIT_AD_TRACKING_KEY, false);
+            sourceDevice.getBoolean(AnalyticsContext.Device.DEVICE_LIMIT_AD_TRACKING_KEY, true);
         String deviceId = sourceDevice.getString(AnalyticsContext.Device.DEVICE_ID_KEY);
         if (gaid != null) {
           payloadDevice.put(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY, gaid);

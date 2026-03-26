@@ -115,7 +115,8 @@ class GetAdvertisingIdWorker implements Runnable {
         logger.debug(
             "Unable to collect advertising ID from Amazon Fire OS and Google Play Services.");
         // Conservatively mark limit_ad_tracking=true when GAID status cannot be determined.
-        device.putAdvertisingInfo(null, false);
+        // adTrackingEnabled=false → putAdvertisingInfo sets limit_ad_tracking = !false = true.
+        device.putAdvertisingInfo(null, /* adTrackingEnabled= */ false);
         return;
       }
       device.putAdvertisingInfo(info.first, info.second);

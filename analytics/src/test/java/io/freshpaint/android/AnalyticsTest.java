@@ -827,16 +827,22 @@ public class AnalyticsTest {
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
                   public boolean matches(TrackPayload payload) {
-                    return payload.event().equals("Application Installed")
+                    return payload.event().equals("app_install")
                         && //
-                        payload.properties().getString("version").equals("1.0.0")
+                        payload.properties().containsKey("install_timestamp")
                         && //
-                        payload.properties().getString("build").equals(String.valueOf(100));
+                        payload.properties().containsKey("device_id")
+                        && //
+                        payload.properties().containsKey("limit_ad_tracking")
+                        && //
+                        payload.properties().containsKey("os_version")
+                        && //
+                        payload.properties().containsKey("app_version");
                   }
                 }));
 
     callback.get().onCreate(mockLifecycleOwner);
-    verifyNoMoreInteractions(integration); // Application Installed is not duplicated
+    verifyNoMoreInteractions(integration); // app_install is not fired twice
   }
 
   @Test

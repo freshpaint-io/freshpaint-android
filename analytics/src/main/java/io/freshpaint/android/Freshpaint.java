@@ -33,6 +33,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -52,6 +53,7 @@ import io.freshpaint.android.internal.Private;
 import io.freshpaint.android.internal.Utils;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -92,6 +94,7 @@ public class Freshpaint {
   @Private static final Properties EMPTY_PROPERTIES = new Properties();
   private static final String VERSION_KEY = "version";
   private static final String BUILD_KEY = "build";
+  private static final String FIRST_OPEN_TRACKED_KEY = "first_open_tracked";
   private static final String TRACKED_ATTRIBUTION_KEY = "tracked_attribution";
   private static final String TRAITS_KEY = "traits";
 
@@ -293,8 +296,7 @@ public class Freshpaint {
 
   @Private
   void trackAttributionInformation() {
-    // Freshpaint doesn't support tracking attirbution information.
-    return;
+    // Hook for FRP-44: Install Referrer data will be merged here.
   }
 
   @Private
@@ -304,18 +306,39 @@ public class Freshpaint {
     String currentVersion = packageInfo.versionName;
     int currentBuild = packageInfo.versionCode;
 
-    // Get the previous recorded version.
+    // Get the previous recorded version and first-open flag.
     SharedPreferences sharedPreferences = Utils.getFreshpaintSharedPreferences(application, tag);
     String previousVersion = sharedPreferences.getString(VERSION_KEY, null);
     int previousBuild = sharedPreferences.getInt(BUILD_KEY, -1);
+    boolean firstOpenTracked = sharedPreferences.getBoolean(FIRST_OPEN_TRACKED_KEY, false);
 
-    // Check and track Application Installed or Application Updated.
+    // Check and track app_install (first install) or Application Updated.
     if (previousBuild == -1) {
-      track(
-          "Application Installed",
-          new Properties() //
-              .putValue(VERSION_KEY, currentVersion)
-              .putValue(BUILD_KEY, String.valueOf(currentBuild)));
+      if (trackFirstOpen && !firstOpenTracked) {
+        AnalyticsContext.Device device = analyticsContext.device();
+        // gaid is snapshotted here, before track() submits to analyticsExecutor and before
+        // waitForAdvertisingId() runs. This means properties.gaid will be null on first launch
+        // if the GAID worker hasn't completed yet. This is intentional:
+        // context.device.advertisingId
+        // (attached to all payloads by AttributionMiddleware after the latch) will carry the
+        // resolved value. Do not add a latch wait here — it would deadlock the calling thread.
+        String gaid =
+            device != null
+                ? device.getString(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY)
+                : null;
+        boolean limitAdTracking =
+            device == null
+                || device.getBoolean(AnalyticsContext.Device.DEVICE_LIMIT_AD_TRACKING_KEY, true);
+        track(
+            "app_install",
+            new Properties()
+                .putValue("install_timestamp", Utils.toISO8601String(new Date()))
+                .putValue("device_id", StableDeviceId.get(application))
+                .putValue("gaid", gaid)
+                .putValue("limit_ad_tracking", limitAdTracking)
+                .putValue("os_version", Build.VERSION.RELEASE)
+                .putValue("app_version", currentVersion));
+      }
     } else if (currentBuild != previousBuild) {
       track(
           "Application Updated",
@@ -326,10 +349,11 @@ public class Freshpaint {
               .putValue("previous_" + BUILD_KEY, String.valueOf(previousBuild)));
     }
 
-    // Update the recorded version.
+    // Update the recorded version and first-open flag atomically.
     SharedPreferences.Editor editor = sharedPreferences.edit();
     editor.putString(VERSION_KEY, currentVersion);
     editor.putInt(BUILD_KEY, currentBuild);
+    editor.putBoolean(FIRST_OPEN_TRACKED_KEY, true);
     editor.apply();
   }
 
@@ -824,8 +848,10 @@ public class Freshpaint {
    */
   public void reset() {
     SharedPreferences sharedPreferences = Utils.getFreshpaintSharedPreferences(application, tag);
-    // LIB-1578: only remove traits, preserve BUILD and VERSION keys in order to to fix over-sending
-    // of 'Application Installed' events and under-sending of 'Application Updated' events
+    // LIB-1578: only remove traits, preserve BUILD, VERSION, and FIRST_OPEN_TRACKED keys in order
+    // to fix over-sending of 'app_install' events and under-sending of 'Application Updated'
+    // events. FIRST_OPEN_TRACKED_KEY is intentionally preserved so that app_install is not
+    // re-fired after a user reset (matching the original Application Installed behavior).
     SharedPreferences.Editor editor = sharedPreferences.edit();
     editor.remove(TRAITS_KEY + "-" + tag);
     editor.apply();
@@ -1210,7 +1236,7 @@ public class Freshpaint {
     }
 
     /**
-     * Automatically track application lifecycle events, including "Application Installed",
+     * Automatically track application lifecycle events, including "app_install" (first-open),
      * "Application Updated" and "Application Opened".
      */
     public Builder trackApplicationLifecycleEvents() {
@@ -1394,39 +1420,37 @@ public class Freshpaint {
         executor = Executors.newSingleThreadExecutor();
       }
       Lifecycle lifecycle = ProcessLifecycleOwner.get().getLifecycle();
-      Freshpaint freshpaint =
-          new Freshpaint(
-              application,
-              networkExecutor,
-              stats,
-              traitsCache,
-              analyticsContext,
-              defaultOptions,
-              logger,
-              tag,
-              Collections.unmodifiableList(factories),
-              client,
-              cartographer,
-              projectSettingsCache,
-              writeKey,
-              flushQueueSize,
-              flushIntervalInMillis,
-              sessionTimeoutSeconds,
-              executor,
-              trackApplicationLifecycleEvents,
-              advertisingIdLatch,
-              recordScreenViews,
-              trackAttributionInformation,
-              trackDeepLinks,
-              optOut,
-              crypto,
-              srcMiddleware,
-              destMiddleware,
-              defaultProjectSettings,
-              lifecycle,
-              nanosecondTimestamps,
-              trackFirstOpen);
-      return freshpaint;
+      return new Freshpaint(
+          application,
+          networkExecutor,
+          stats,
+          traitsCache,
+          analyticsContext,
+          defaultOptions,
+          logger,
+          tag,
+          Collections.unmodifiableList(factories),
+          client,
+          cartographer,
+          projectSettingsCache,
+          writeKey,
+          flushQueueSize,
+          flushIntervalInMillis,
+          sessionTimeoutSeconds,
+          executor,
+          trackApplicationLifecycleEvents,
+          advertisingIdLatch,
+          recordScreenViews,
+          trackAttributionInformation,
+          trackDeepLinks,
+          optOut,
+          crypto,
+          srcMiddleware,
+          destMiddleware,
+          defaultProjectSettings,
+          lifecycle,
+          nanosecondTimestamps,
+          trackFirstOpen);
     }
   }
 

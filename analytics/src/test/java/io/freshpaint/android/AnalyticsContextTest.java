@@ -179,6 +179,18 @@ public class AnalyticsContextTest {
     assertThat(device).containsEntry("limit_ad_tracking", false);
   }
 
+  /**
+   * Pins the memoization invariant relied upon by AttributionMiddleware for correct
+   * synchronization: analyticsContext.device() must return the same object instance on every call
+   * so that synchronized(sourceDevice) in the middleware and synchronized putAdvertisingInfo() in
+   * GetAdvertisingIdWorker share the same monitor.
+   */
+  @Test
+  public void deviceReturnsSameInstance() {
+    AnalyticsContext ctx = AnalyticsContext.create(RuntimeEnvironment.application, traits, true);
+    assertThat(ctx.device()).isSameAs(ctx.device());
+  }
+
   @Test
   public void deviceLimitAdTrackingEnabled() {
     AnalyticsContext.Device device = new AnalyticsContext.Device();
