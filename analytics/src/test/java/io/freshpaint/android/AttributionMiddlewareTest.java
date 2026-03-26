@@ -164,4 +164,49 @@ public class AttributionMiddlewareTest {
 
     verify(chain).proceed(payload);
   }
+
+  /**
+   * When payload.context() returns null, chain.proceed() must still be called exactly once. Covers
+   * the second early-exit guard in intercept().
+   */
+  @Test
+  public void chainProceedCalledExactlyOnceWhenPayloadContextIsNull() {
+    AnalyticsContext sourceContext =
+        buildSourceContext("device-id", "gaid-1234", /* adTrackingEnabled= */ true);
+
+    BasePayload payload = mock(BasePayload.class);
+    when(payload.context()).thenReturn(null);
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(payload);
+
+    AttributionMiddleware middleware = new AttributionMiddleware(sourceContext);
+    middleware.intercept(chain);
+
+    verify(chain).proceed(payload);
+  }
+
+  /**
+   * When the payload context has no device section (device() returns null), chain.proceed() must
+   * still be called exactly once. Covers the third early-exit guard in intercept().
+   */
+  @Test
+  public void chainProceedCalledExactlyOnceWhenPayloadDeviceIsNull() {
+    AnalyticsContext sourceContext =
+        buildSourceContext("device-id", "gaid-1234", /* adTrackingEnabled= */ true);
+
+    // Payload context with no "device" key → payloadContext.device() returns null
+    AnalyticsContext payloadContext = new AnalyticsContext(new LinkedHashMap<String, Object>());
+
+    BasePayload payload = mock(BasePayload.class);
+    when(payload.context()).thenReturn(payloadContext);
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(payload);
+
+    AttributionMiddleware middleware = new AttributionMiddleware(sourceContext);
+    middleware.intercept(chain);
+
+    verify(chain).proceed(payload);
+  }
 }
