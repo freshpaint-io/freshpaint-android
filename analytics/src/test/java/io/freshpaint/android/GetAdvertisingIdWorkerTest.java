@@ -101,5 +101,10 @@ public class GetAdvertisingIdWorkerTest {
     worker.run();
 
     assertThat(latch.getCount()).isEqualTo(0);
+    // When both GAID sources fail, the conservative privacy-safe default must be explicitly
+    // written.
+    assertThat(analyticsContext.device()).doesNotContainKey("advertisingId");
+    assertThat(analyticsContext.device()).containsEntry("adTrackingEnabled", false);
+    assertThat(analyticsContext.device()).containsEntry("limit_ad_tracking", true);
   }
 }

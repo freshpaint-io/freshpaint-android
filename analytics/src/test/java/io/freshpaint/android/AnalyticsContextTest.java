@@ -190,6 +190,21 @@ public class AnalyticsContextTest {
   }
 
   @Test
+  public void devicePutAdvertisingInfoClearsPreviousGaid() {
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+
+    // First call sets a valid GAID
+    device.putAdvertisingInfo("some-gaid", true);
+    assertThat(device).containsEntry("advertisingId", "some-gaid");
+
+    // Second call with tracking disabled must remove the previously set GAID
+    device.putAdvertisingInfo(null, false);
+    assertThat(device).doesNotContainKey("advertisingId");
+    assertThat(device).containsEntry("adTrackingEnabled", false);
+    assertThat(device).containsEntry("limit_ad_tracking", true);
+  }
+
+  @Test
   public void location() {
     AnalyticsContext.Location location = new AnalyticsContext.Location();
 

@@ -452,6 +452,8 @@ public class AnalyticsContext extends ValueMap {
     synchronized void putAdvertisingInfo(String advertisingId, boolean adTrackingEnabled) {
       if (adTrackingEnabled && !Utils.isNullOrEmpty(advertisingId)) {
         put(DEVICE_ADVERTISING_ID_KEY, advertisingId);
+      } else {
+        remove(DEVICE_ADVERTISING_ID_KEY);
       }
       put(DEVICE_AD_TRACKING_ENABLED_KEY, adTrackingEnabled);
       put(DEVICE_LIMIT_AD_TRACKING_KEY, !adTrackingEnabled);

@@ -106,14 +106,16 @@ class GetAdvertisingIdWorker implements Runnable {
           logger.error(e, "Unable to collect advertising ID from Amazon Fire OS.");
         }
       }
-      if (info == null) {
-        logger.debug(
-            "Unable to collect advertising ID from Amazon Fire OS and Google Play Services.");
-        return;
-      }
       AnalyticsContext.Device device = analyticsContext.device();
       if (device == null) {
         logger.debug("Not collecting advertising ID because context.device is null.");
+        return;
+      }
+      if (info == null) {
+        logger.debug(
+            "Unable to collect advertising ID from Amazon Fire OS and Google Play Services.");
+        // Conservatively mark limit_ad_tracking=true when GAID status cannot be determined.
+        device.putAdvertisingInfo(null, false);
         return;
       }
       device.putAdvertisingInfo(info.first, info.second);
