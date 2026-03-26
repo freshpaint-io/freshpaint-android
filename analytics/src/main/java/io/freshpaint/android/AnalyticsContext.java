@@ -51,6 +51,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Context is a dictionary of free-form information about the state of the device. Context is
@@ -150,12 +151,18 @@ public class AnalyticsContext extends ValueMap {
     super(delegate);
   }
 
-  void attachAdvertisingId(Context context, CountDownLatch latch, Logger logger) {
+  void attachAdvertisingId(
+      Context context, CountDownLatch latch, Logger logger, ExecutorService executor) {
     // This is done as an extra step so we don't run into errors like this for testing
     // http://pastebin.com/gyWJKWiu.
     if (Utils.isOnClassPath("com.google.android.gms.ads.identifier.AdvertisingIdClient")) {
       // This needs to be done each time since the settings may have been updated.
-      new GetAdvertisingIdTask(this, latch, logger).execute(context);
+      try {
+        executor.submit(new GetAdvertisingIdWorker(this, latch, logger, context));
+      } catch (java.util.concurrent.RejectedExecutionException e) {
+        logger.debug("networkExecutor is shut down; skipping GAID fetch.");
+        latch.countDown();
+      }
     } else {
       logger.debug(
           "Not collecting advertising ID because "
@@ -237,6 +244,14 @@ public class AnalyticsContext extends ValueMap {
     put(DEVICE_KEY, device);
   }
 
+  /**
+   * Returns the {@link Device} attached to this context. The returned instance is always the same
+   * object (memoized): {@link #putDevice} stores a {@code Device} instance at {@link #DEVICE_KEY},
+   * and {@code ValueMap.coerceToValueMap} returns it via the identity branch when the stored value
+   * already implements the target class. This invariant is relied upon by {@link
+   * AttributionMiddleware} to ensure that {@code synchronized(sourceDevice)} and {@code
+   * synchronized putAdvertisingInfo()} share the same monitor.
+   */
   public Device device() {
     return getValueMap(DEVICE_KEY, Device.class);
   }
@@ -417,6 +432,7 @@ public class AnalyticsContext extends ValueMap {
     @Private static final String DEVICE_TOKEN_KEY = "token";
     @Private static final String DEVICE_ADVERTISING_ID_KEY = "advertisingId";
     @Private static final String DEVICE_AD_TRACKING_ENABLED_KEY = "adTrackingEnabled";
+    @Private static final String DEVICE_LIMIT_AD_TRACKING_KEY = "limit_ad_tracking";
 
     @Private
     Device() {}
@@ -433,11 +449,14 @@ public class AnalyticsContext extends ValueMap {
     }
 
     /** Set the advertising information for this device. */
-    void putAdvertisingInfo(String advertisingId, boolean adTrackingEnabled) {
+    synchronized void putAdvertisingInfo(String advertisingId, boolean adTrackingEnabled) {
       if (adTrackingEnabled && !Utils.isNullOrEmpty(advertisingId)) {
         put(DEVICE_ADVERTISING_ID_KEY, advertisingId);
+      } else {
+        remove(DEVICE_ADVERTISING_ID_KEY);
       }
       put(DEVICE_AD_TRACKING_ENABLED_KEY, adTrackingEnabled);
+      put(DEVICE_LIMIT_AD_TRACKING_KEY, !adTrackingEnabled);
     }
 
     /** Set a device token. */

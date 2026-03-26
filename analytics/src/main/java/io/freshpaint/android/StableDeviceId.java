@@ -32,9 +32,9 @@ import androidx.security.crypto.MasterKeys;
 import java.util.UUID;
 
 /**
- * Generates and persists a stable SDK installation ID backed by EncryptedSharedPreferences
- * (Android Keystore). Falls back to plain SharedPreferences if the Keystore is unavailable or
- * locked. Never throws.
+ * Generates and persists a stable SDK installation ID backed by EncryptedSharedPreferences (Android
+ * Keystore). Falls back to plain SharedPreferences if the Keystore is unavailable or locked. Never
+ * throws.
  */
 class StableDeviceId {
 

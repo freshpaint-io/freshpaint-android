@@ -1373,13 +1373,17 @@ public class Freshpaint {
       AnalyticsContext analyticsContext =
           AnalyticsContext.create(application, traitsCache.get(), collectDeviceID);
       CountDownLatch advertisingIdLatch = new CountDownLatch(1);
-      analyticsContext.attachAdvertisingId(application, advertisingIdLatch, logger);
+      analyticsContext.attachAdvertisingId(
+          application, advertisingIdLatch, logger, networkExecutor);
 
       List<Integration.Factory> factories = new ArrayList<>(1 + this.factories.size());
       factories.add(FreshpaintIntegration.FACTORY);
       factories.addAll(this.factories);
 
-      List<Middleware> srcMiddleware = Utils.immutableCopyOf(this.sourceMiddleware);
+      List<Middleware> srcMiddlewareList = new ArrayList<>();
+      srcMiddlewareList.add(new AttributionMiddleware(analyticsContext));
+      srcMiddlewareList.addAll(this.sourceMiddleware);
+      List<Middleware> srcMiddleware = Utils.immutableCopyOf(srcMiddlewareList);
       Map<String, List<Middleware>> destMiddleware =
           Utils.isNullOrEmpty(this.destinationMiddleware)
               ? Collections.<String, List<Middleware>>emptyMap()

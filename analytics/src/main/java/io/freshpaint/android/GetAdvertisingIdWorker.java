@@ -25,30 +25,32 @@ package io.freshpaint.android;
 
 import android.content.ContentResolver;
 import android.content.Context;
-import android.os.AsyncTask;
 import android.provider.Settings.Secure;
 import android.util.Pair;
 import io.freshpaint.android.integrations.Logger;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * An {@link AsyncTask} that fetches the advertising info and attaches it to the given {@link
- * AnalyticsContext} instance.
+ * A {@link Runnable} that fetches the advertising info and attaches it to the given {@link
+ * AnalyticsContext} instance. Submitted to an {@link java.util.concurrent.ExecutorService} instead
+ * of using the deprecated {@link android.os.AsyncTask}.
  */
-class GetAdvertisingIdTask extends AsyncTask<Context, Void, Pair<String, Boolean>> {
+class GetAdvertisingIdWorker implements Runnable {
 
   private final AnalyticsContext analyticsContext;
   private final CountDownLatch latch;
   private final Logger logger;
+  private final Context context;
 
-  GetAdvertisingIdTask(AnalyticsContext analyticsContext, CountDownLatch latch, Logger logger) {
+  GetAdvertisingIdWorker(
+      AnalyticsContext analyticsContext, CountDownLatch latch, Logger logger, Context context) {
     this.analyticsContext = analyticsContext;
     this.latch = latch;
     this.logger = logger;
+    this.context = context;
   }
 
-  private Pair<String, Boolean> getGooglePlayServicesAdvertisingID(Context context)
-      throws Exception {
+  private Pair<String, Boolean> getGooglePlayServicesAdvertisingID() throws Exception {
     Object advertisingInfo =
         Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient")
             .getMethod("getAdvertisingIdInfo", Context.class)
@@ -71,7 +73,7 @@ class GetAdvertisingIdTask extends AsyncTask<Context, Void, Pair<String, Boolean
     return Pair.create(advertisingId, true);
   }
 
-  private Pair<String, Boolean> getAmazonFireAdvertisingID(Context context) throws Exception {
+  private Pair<String, Boolean> getAmazonFireAdvertisingID() throws Exception {
     ContentResolver contentResolver = context.getContentResolver();
 
     // Ref: http://prateeks.link/2uGs6bf
@@ -89,33 +91,31 @@ class GetAdvertisingIdTask extends AsyncTask<Context, Void, Pair<String, Boolean
   }
 
   @Override
-  protected Pair<String, Boolean> doInBackground(Context... contexts) {
-    final Context context = contexts[0];
+  public void run() {
+    Pair<String, Boolean> info = null;
     try {
-      return getGooglePlayServicesAdvertisingID(context);
-    } catch (Exception e) {
-      logger.error(e, "Unable to collect advertising ID from Google Play Services.");
-    }
-    try {
-      return getAmazonFireAdvertisingID(context);
-    } catch (Exception e) {
-      logger.error(e, "Unable to collect advertising ID from Amazon Fire OS.");
-    }
-    logger.debug("Unable to collect advertising ID from Amazon Fire OS and Google Play Services.");
-    return null;
-  }
-
-  @Override
-  protected void onPostExecute(Pair<String, Boolean> info) {
-    super.onPostExecute(info);
-
-    try {
+      try {
+        info = getGooglePlayServicesAdvertisingID();
+      } catch (Exception e) {
+        logger.error(e, "Unable to collect advertising ID from Google Play Services.");
+      }
       if (info == null) {
-        return;
+        try {
+          info = getAmazonFireAdvertisingID();
+        } catch (Exception e) {
+          logger.error(e, "Unable to collect advertising ID from Amazon Fire OS.");
+        }
       }
       AnalyticsContext.Device device = analyticsContext.device();
       if (device == null) {
         logger.debug("Not collecting advertising ID because context.device is null.");
+        return;
+      }
+      if (info == null) {
+        logger.debug(
+            "Unable to collect advertising ID from Amazon Fire OS and Google Play Services.");
+        // Conservatively mark limit_ad_tracking=true when GAID status cannot be determined.
+        device.putAdvertisingInfo(null, false);
         return;
       }
       device.putAdvertisingInfo(info.first, info.second);

@@ -176,6 +176,32 @@ public class AnalyticsContextTest {
     device.putAdvertisingInfo("adId", true);
     assertThat(device).containsEntry("advertisingId", "adId");
     assertThat(device).containsEntry("adTrackingEnabled", true);
+    assertThat(device).containsEntry("limit_ad_tracking", false);
+  }
+
+  @Test
+  public void deviceLimitAdTrackingEnabled() {
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+
+    device.putAdvertisingInfo(null, false);
+    assertThat(device).doesNotContainKey("advertisingId");
+    assertThat(device).containsEntry("adTrackingEnabled", false);
+    assertThat(device).containsEntry("limit_ad_tracking", true);
+  }
+
+  @Test
+  public void devicePutAdvertisingInfoClearsPreviousGaid() {
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+
+    // First call sets a valid GAID
+    device.putAdvertisingInfo("some-gaid", true);
+    assertThat(device).containsEntry("advertisingId", "some-gaid");
+
+    // Second call with tracking disabled must remove the previously set GAID
+    device.putAdvertisingInfo(null, false);
+    assertThat(device).doesNotContainKey("advertisingId");
+    assertThat(device).containsEntry("adTrackingEnabled", false);
+    assertThat(device).containsEntry("limit_ad_tracking", true);
   }
 
   @Test
