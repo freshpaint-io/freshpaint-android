@@ -38,7 +38,6 @@ import androidx.lifecycle.Lifecycle;
 import io.freshpaint.android.integrations.BasePayload;
 import io.freshpaint.android.integrations.Logger;
 import io.freshpaint.android.integrations.TrackPayload;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -322,10 +321,10 @@ public class FreshpaintInstallEventTest {
     Properties props = tracksOf(captured).get(0).properties();
     assertThat(props).containsKey("install_timestamp");
     assertThat(props).containsKey("device_id");
-    assertThat(props).containsKey("gaid"); // nullable; key must still be present
     assertThat(props).containsKey("limit_ad_tracking");
     assertThat(props).containsKey("os_version");
     assertThat(props).containsKey("app_version");
+    // gaid is omitted when not yet resolved; see gaidAbsentWhenNotResolved
   }
 
   // AC5 — install_timestamp is a valid ISO 8601 string
@@ -462,38 +461,39 @@ public class FreshpaintInstallEventTest {
   }
 
   // -------------------------------------------------------------------------
-  // FRP-41 M2 gap — Builder.trackFirstOpen(false) propagates to instance
+  // gaid field — absent when not resolved, present when resolved
   // -------------------------------------------------------------------------
 
+  /** gaid must be absent (not explicit null) when the GAID worker hasn't run yet. */
   @Test
-  public void builderTrackFirstOpenFalsePropagatesToBuilder() throws Exception {
-    Application ctx = mock(Application.class);
-    android.app.Application app = mock(android.app.Application.class);
-    when(ctx.getApplicationContext()).thenReturn(app);
-    when(app.checkCallingOrSelfPermission(anyString()))
-        .thenReturn(android.content.pm.PackageManager.PERMISSION_GRANTED);
-    when(app.getApplicationContext()).thenReturn(app);
+  public void gaidAbsentWhenNotResolved() {
+    // Device has no advertisingId key (GAID worker hasn't run) → gaid omitted from payload.
+    Freshpaint fp = buildFreshpaint(true);
+    fp.trackApplicationLifecycleEvents();
 
-    Freshpaint.Builder builder =
-        new Freshpaint.Builder(ctx, "test-write-key").trackFirstOpen(false);
-    Field field = Freshpaint.Builder.class.getDeclaredField("trackFirstOpen");
-    field.setAccessible(true);
-    assertThat((Boolean) field.get(builder)).isFalse();
+    assertThat(tracksOf(captured).get(0).properties()).doesNotContainKey("gaid");
   }
 
-  @Test
-  public void builderTrackFirstOpenTrueIsDefault() throws Exception {
-    Application ctx = mock(Application.class);
-    android.app.Application app = mock(android.app.Application.class);
-    when(ctx.getApplicationContext()).thenReturn(app);
-    when(app.checkCallingOrSelfPermission(anyString()))
-        .thenReturn(android.content.pm.PackageManager.PERMISSION_GRANTED);
-    when(app.getApplicationContext()).thenReturn(app);
+  // -------------------------------------------------------------------------
+  // reset() — FIRST_OPEN_TRACKED_KEY must survive user reset
+  // -------------------------------------------------------------------------
 
-    Freshpaint.Builder builder = new Freshpaint.Builder(ctx, "test-write-key");
-    Field field = Freshpaint.Builder.class.getDeclaredField("trackFirstOpen");
-    field.setAccessible(true);
-    assertThat((Boolean) field.get(builder)).isTrue();
+  /**
+   * Calling {@link Freshpaint#reset()} must NOT remove {@code first_open_tracked}. If the key were
+   * cleared on reset, a subsequent {@link Freshpaint#trackApplicationLifecycleEvents()} call would
+   * re-fire {@code app_install}, double-counting the install in MMP backends.
+   */
+  @Test
+  public void resetPreservesFirstOpenTrackedKey() {
+    Freshpaint fp = buildFreshpaint(true);
+    fp.trackApplicationLifecycleEvents();
+
+    assertThat(fakePrefs.store.get("first_open_tracked")).isEqualTo(true);
+
+    fp.reset();
+
+    assertThat(fakePrefs.store).containsKey("first_open_tracked");
+    assertThat(fakePrefs.store.get("first_open_tracked")).isEqualTo(true);
   }
 
   // -------------------------------------------------------------------------

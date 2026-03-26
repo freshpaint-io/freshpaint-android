@@ -166,8 +166,8 @@ public class AttributionMiddlewareTest {
   }
 
   /**
-   * When payload.context() returns null, chain.proceed() must still be called exactly once.
-   * Covers the second early-exit guard in intercept().
+   * When payload.context() returns null, chain.proceed() must still be called exactly once. Covers
+   * the second early-exit guard in intercept().
    */
   @Test
   public void chainProceedCalledExactlyOnceWhenPayloadContextIsNull() {

@@ -329,15 +329,20 @@ public class Freshpaint {
         boolean limitAdTracking =
             device == null
                 || device.getBoolean(AnalyticsContext.Device.DEVICE_LIMIT_AD_TRACKING_KEY, true);
-        track(
-            "app_install",
+        Properties installProps =
             new Properties()
                 .putValue("install_timestamp", Utils.toISO8601String(new Date()))
                 .putValue("device_id", StableDeviceId.get(application))
-                .putValue("gaid", gaid)
                 .putValue("limit_ad_tracking", limitAdTracking)
                 .putValue("os_version", Build.VERSION.RELEASE)
-                .putValue("app_version", currentVersion));
+                .putValue("app_version", currentVersion);
+        // Omit gaid when not yet resolved: explicit null vs. absent key are handled differently
+        // by some MMP backends. AttributionMiddleware will populate context.device.advertisingId
+        // with the resolved value once the GAID worker completes.
+        if (gaid != null) {
+          installProps.putValue("gaid", gaid);
+        }
+        track("app_install", installProps);
       }
     } else if (currentBuild != previousBuild) {
       track(
@@ -353,6 +358,9 @@ public class Freshpaint {
     SharedPreferences.Editor editor = sharedPreferences.edit();
     editor.putString(VERSION_KEY, currentVersion);
     editor.putInt(BUILD_KEY, currentBuild);
+    // Written on every path (fresh install, upgrade, subsequent launch) so that upgrade-path
+    // users who skip previousBuild==-1 are also guarded against future re-fires. This key means
+    // "app_install will not fire again", not "app_install was fired on this device".
     editor.putBoolean(FIRST_OPEN_TRACKED_KEY, true);
     editor.apply();
   }
