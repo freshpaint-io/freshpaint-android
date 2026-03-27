@@ -296,7 +296,14 @@ public class Freshpaint {
 
   @Private
   void trackAttributionInformation() {
-    // Hook for FRP-44: Install Referrer data will be merged here.
+    SharedPreferences prefs = Utils.getFreshpaintSharedPreferences(application, tag);
+    if (prefs.getBoolean(TRACKED_ATTRIBUTION_KEY, false)) {
+      return;
+    }
+    // Blocks the calling thread up to 5 seconds waiting for the Play Store service.
+    // Must only be called from a background thread (analyticsExecutor).
+    InstallReferrerManager.collectAndStore(application, prefs, 5_000L);
+    prefs.edit().putBoolean(TRACKED_ATTRIBUTION_KEY, true).apply();
   }
 
   @Private
@@ -341,6 +348,15 @@ public class Freshpaint {
         // with the resolved value once the GAID worker completes.
         if (gaid != null) {
           installProps.putValue("gaid", gaid);
+        }
+        // Merge Install Referrer data collected by trackAttributionInformation(). On first
+        // launch when trackAttributionInformation == true, this data is available because the
+        // combined executor task runs trackAttributionInformation() before
+        // trackApplicationLifecycleEvents(). When trackAttributionInformation == false, the
+        // map is empty and no fields are added.
+        Map<String, Object> irData = InstallReferrerManager.getStoredProperties(sharedPreferences);
+        for (Map.Entry<String, Object> entry : irData.entrySet()) {
+          installProps.putValue(entry.getKey(), entry.getValue());
         }
         track("app_install", installProps);
       }

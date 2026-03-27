@@ -97,16 +97,25 @@ class AnalyticsActivityLifecycleCallbacks
         && shouldTrackApplicationLifecycleEvents) {
       numberOfActivities.set(0);
       firstLaunch.set(true);
-      freshpaint.trackApplicationLifecycleEvents();
 
       if (trackAttributionInformation) {
+        // When attribution tracking is enabled, collect Install Referrer data first (blocks up
+        // to 5 s on a background thread), then fire trackApplicationLifecycleEvents() so that
+        // the app_install payload includes the referrer fields.
+        //
+        // Accepted tradeoff: Application Updated also fires on the executor thread and may be
+        // delayed up to 5 s when an upgrade coincides with attribution tracking being enabled.
+        // This delay is acceptable for the attribution use case.
         analyticsExecutor.submit(
             new Runnable() {
               @Override
               public void run() {
                 freshpaint.trackAttributionInformation();
+                freshpaint.trackApplicationLifecycleEvents();
               }
             });
+      } else {
+        freshpaint.trackApplicationLifecycleEvents();
       }
     }
   }

@@ -92,8 +92,9 @@ public class FreshpaintInstallEventTest {
     }
 
     @Override
-    public long getLong(String k, long d) {
-      return d;
+    public long getLong(String key, long def) {
+      Object val = store.get(key);
+      return val instanceof Long ? (Long) val : def;
     }
 
     @Override
@@ -139,7 +140,8 @@ public class FreshpaintInstallEventTest {
         }
 
         @Override
-        public Editor putLong(String k, long v) {
+        public Editor putLong(String key, long value) {
+          store.put(key, value);
           return this;
         }
 
@@ -563,6 +565,38 @@ public class FreshpaintInstallEventTest {
     assertThat(tracksOf(captured)).hasSize(1);
     Object limitAdTracking = tracksOf(captured).get(0).properties().get("limit_ad_tracking");
     assertThat(limitAdTracking).isEqualTo(true);
+  }
+
+  // -------------------------------------------------------------------------
+  // AC13 — Install Referrer data merged into app_install payload (FRP-44)
+  // -------------------------------------------------------------------------
+
+  /**
+   * When Install Referrer data is pre-populated in SharedPreferences (as
+   * trackAttributionInformation does before trackApplicationLifecycleEvents runs), app_install must
+   * include those fields.
+   */
+  @Test
+  public void irDataMergedIntoAppInstallPayload() {
+    // Simulate InstallReferrerManager.collectAndStore() having already run on the executor.
+    fakePrefs.store.put(InstallReferrerManager.KEY_IR_COLLECTED, true);
+    fakePrefs.store.put("ir.install_referrer", "utm_source=google&utm_campaign=winter_sale");
+    fakePrefs.store.put("ir.utm_source", "google");
+    fakePrefs.store.put("ir.utm_campaign", "winter_sale");
+    fakePrefs.store.put("ir.$gclid", "test-gclid-value");
+    fakePrefs.store.put("ir.$gclid_creation_time", 1710000000000L);
+
+    Freshpaint fp = buildFreshpaint(true);
+    fp.trackApplicationLifecycleEvents();
+
+    assertThat(tracksOf(captured)).hasSize(1);
+    Properties props = tracksOf(captured).get(0).properties();
+    assertThat(props.get("install_referrer"))
+        .isEqualTo("utm_source=google&utm_campaign=winter_sale");
+    assertThat(props.get("utm_source")).isEqualTo("google");
+    assertThat(props.get("utm_campaign")).isEqualTo("winter_sale");
+    assertThat(props.get("$gclid")).isEqualTo("test-gclid-value");
+    assertThat(props.get("$gclid_creation_time")).isEqualTo(1710000000000L);
   }
 
   // -------------------------------------------------------------------------
