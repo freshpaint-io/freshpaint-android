@@ -25,10 +25,12 @@ package io.freshpaint.android;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.android.installreferrer.api.InstallReferrerClient;
 import com.android.installreferrer.api.InstallReferrerStateListener;
 import com.android.installreferrer.api.ReferrerDetails;
+import io.freshpaint.android.integrations.Logger;
 import java.net.URLDecoder;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -85,6 +87,15 @@ class InstallReferrerManager {
    * <p>Idempotent: a second call is a no-op if {@link #KEY_IR_COLLECTED} is already {@code true}.
    */
   static void collectAndStore(Context context, SharedPreferences prefs, long timeoutMs) {
+    collectAndStore(context, prefs, timeoutMs, null);
+  }
+
+  /**
+   * Same as {@link #collectAndStore(Context, SharedPreferences, long)} but logs failures at {@link
+   * Logger.Level#DEBUG} level when {@code logger} is non-null.
+   */
+  static void collectAndStore(
+      Context context, SharedPreferences prefs, long timeoutMs, @Nullable Logger logger) {
     if (prefs.getBoolean(KEY_IR_COLLECTED, false)) {
       return;
     }
@@ -95,12 +106,15 @@ class InstallReferrerManager {
       // InstallReferrerManager itself loads cleanly because class resolution is lazy: the
       // InstallReferrerClient reference in the constant pool is only resolved when this line
       // executes, at which point the catch block is active.
-      doCollect(InstallReferrerClient.newBuilder(context).build(), prefs, timeoutMs);
+      doCollect(InstallReferrerClient.newBuilder(context).build(), prefs, timeoutMs, logger);
     } catch (InterruptedException e) {
       // Restore interrupt status so the calling executor thread can honour shutdown signals.
       Thread.currentThread().interrupt();
-    } catch (Exception | NoClassDefFoundError ignored) {
+    } catch (Exception | NoClassDefFoundError e) {
       // Optional dependency absent, service error, or unexpected failure — skip silently.
+      if (logger != null) {
+        logger.debug("Install Referrer collection failed: %s", e.toString());
+      }
     } finally {
       prefs.edit().putBoolean(KEY_IR_COLLECTED, true).apply();
     }
@@ -123,13 +137,14 @@ class InstallReferrerManager {
       result.put("install_referrer", rawReferrer);
     }
 
-    // Timestamps (omit if zero — organic installs have no click timestamp)
+    // Timestamps (omit if zero or negative — organic installs have no click timestamp;
+    // negative values are error sentinels from the API and should not be stored)
     long referrerClickTs = prefs.getLong(KEY_REFERRER_CLICK_TIMESTAMP, 0L);
-    if (referrerClickTs != 0L) {
+    if (referrerClickTs > 0L) {
       result.put("referrer_click_timestamp", referrerClickTs);
     }
     long installBeginTs = prefs.getLong(KEY_INSTALL_BEGIN_TIMESTAMP, 0L);
-    if (installBeginTs != 0L) {
+    if (installBeginTs > 0L) {
       result.put("install_begin_timestamp", installBeginTs);
     }
 
@@ -198,6 +213,16 @@ class InstallReferrerManager {
   static void doCollect(
       final InstallReferrerClient client, final SharedPreferences prefs, long timeoutMs)
       throws InterruptedException {
+    doCollect(client, prefs, timeoutMs, null);
+  }
+
+  @VisibleForTesting
+  static void doCollect(
+      final InstallReferrerClient client,
+      final SharedPreferences prefs,
+      long timeoutMs,
+      @Nullable final Logger logger)
+      throws InterruptedException {
     final CountDownLatch latch = new CountDownLatch(1);
 
     client.startConnection(
@@ -209,8 +234,11 @@ class InstallReferrerManager {
                 try {
                   ReferrerDetails details = client.getInstallReferrer();
                   parseAndStore(details, prefs);
-                } catch (Exception ignored) {
+                } catch (Exception e) {
                   // Parse or query failure — skip, leave prefs empty for this run
+                  if (logger != null) {
+                    logger.debug("Install Referrer parse failed: %s", e.toString());
+                  }
                 }
               }
               // Non-OK response codes (FEATURE_NOT_SUPPORTED, SERVICE_UNAVAILABLE,
@@ -257,10 +285,10 @@ class InstallReferrerManager {
     if (rawReferrer != null && !rawReferrer.isEmpty()) {
       editor.putString(KEY_INSTALL_REFERRER, rawReferrer);
     }
-    if (referrerClickTs != 0L) {
+    if (referrerClickTs > 0L) {
       editor.putLong(KEY_REFERRER_CLICK_TIMESTAMP, referrerClickTs);
     }
-    if (installBeginTs != 0L) {
+    if (installBeginTs > 0L) {
       editor.putLong(KEY_INSTALL_BEGIN_TIMESTAMP, installBeginTs);
     }
 
@@ -324,11 +352,12 @@ class InstallReferrerManager {
    * key-value map. Uses pure-Java {@link URLDecoder} — no Android dependencies — so it is
    * exercisable in unit tests without Robolectric.
    *
-   * <p>Note: {@link URLDecoder#decode} converts {@code +} to a space. The Google Play Install
-   * Referrer API encodes spaces as {@code %20}, so {@code +} in a referrer string is treated as a
-   * literal {@code +} in practice. Third-party redirect chains that use form-style encoding ({@code
-   * +} for space) would produce incorrect values; this is not a known issue for supported ad
-   * platforms.
+   * <p>Note: {@link URLDecoder#decode} follows the {@code application/x-www-form-urlencoded}
+   * convention and converts {@code +} to a space. The Google Play Install Referrer API uses {@code
+   * %20} to encode spaces and does not emit literal {@code +} characters, so this has no effect on
+   * values returned by the Play Store. Ad platforms that include literal {@code +} characters in
+   * parameter values (not as a space encoding) would have them decoded as spaces; this is not a
+   * known issue for the supported ad platforms.
    */
   @VisibleForTesting
   static Map<String, String> parseQueryParams(String referrer) {

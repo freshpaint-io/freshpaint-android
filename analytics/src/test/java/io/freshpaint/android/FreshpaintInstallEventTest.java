@@ -31,7 +31,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import androidx.lifecycle.Lifecycle;
@@ -40,10 +39,7 @@ import io.freshpaint.android.integrations.Logger;
 import io.freshpaint.android.integrations.TrackPayload;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -60,126 +56,6 @@ import org.junit.Test;
  * Android Handler, allowing direct assertions on dispatched events.
  */
 public class FreshpaintInstallEventTest {
-
-  // -------------------------------------------------------------------------
-  // FakeSharedPreferences — supports String, int, and boolean in one map
-  // -------------------------------------------------------------------------
-
-  /** Minimal in-memory SharedPreferences that persists all edits immediately. */
-  static class FakeSharedPreferences implements SharedPreferences {
-    final Map<String, Object> store = new HashMap<>();
-
-    @Override
-    public Map<String, ?> getAll() {
-      return store;
-    }
-
-    @Override
-    public String getString(String key, String def) {
-      Object val = store.get(key);
-      return val instanceof String ? (String) val : def;
-    }
-
-    @Override
-    public Set<String> getStringSet(String k, Set<String> d) {
-      return d;
-    }
-
-    @Override
-    public int getInt(String key, int def) {
-      Object val = store.get(key);
-      return val instanceof Integer ? (Integer) val : def;
-    }
-
-    @Override
-    public long getLong(String key, long def) {
-      Object val = store.get(key);
-      return val instanceof Long ? (Long) val : def;
-    }
-
-    @Override
-    public float getFloat(String k, float d) {
-      return d;
-    }
-
-    @Override
-    public boolean getBoolean(String key, boolean def) {
-      Object val = store.get(key);
-      return val instanceof Boolean ? (Boolean) val : def;
-    }
-
-    @Override
-    public boolean contains(String k) {
-      return store.containsKey(k);
-    }
-
-    @Override
-    public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener l) {}
-
-    @Override
-    public void unregisterOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener l) {}
-
-    @Override
-    public SharedPreferences.Editor edit() {
-      return new SharedPreferences.Editor() {
-        @Override
-        public Editor putString(String key, String value) {
-          store.put(key, value);
-          return this;
-        }
-
-        @Override
-        public Editor putStringSet(String k, Set<String> v) {
-          return this;
-        }
-
-        @Override
-        public Editor putInt(String key, int value) {
-          store.put(key, value);
-          return this;
-        }
-
-        @Override
-        public Editor putLong(String key, long value) {
-          store.put(key, value);
-          return this;
-        }
-
-        @Override
-        public Editor putFloat(String k, float v) {
-          return this;
-        }
-
-        @Override
-        public Editor putBoolean(String key, boolean value) {
-          store.put(key, value);
-          return this;
-        }
-
-        @Override
-        public Editor remove(String key) {
-          store.remove(key);
-          return this;
-        }
-
-        @Override
-        public Editor clear() {
-          store.clear();
-          return this;
-        }
-
-        @Override
-        public boolean commit() {
-          return true;
-        }
-
-        @Override
-        public void apply() {
-          // Changes are already written via the put* calls above.
-        }
-      };
-    }
-  }
 
   // -------------------------------------------------------------------------
   // SynchronousExecutor — runs submitted tasks on the calling thread

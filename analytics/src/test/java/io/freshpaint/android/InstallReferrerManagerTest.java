@@ -33,13 +33,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import com.android.installreferrer.api.InstallReferrerClient;
 import com.android.installreferrer.api.InstallReferrerStateListener;
 import com.android.installreferrer.api.ReferrerDetails;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
@@ -54,125 +51,6 @@ import org.mockito.MockedStatic;
  * the timeout test, where the listener is intentionally never fired.
  */
 public class InstallReferrerManagerTest {
-
-  // -------------------------------------------------------------------------
-  // FakeSharedPreferences — full type support (String, Long, Boolean, Integer)
-  // -------------------------------------------------------------------------
-
-  static class FakeSharedPreferences implements SharedPreferences {
-    final Map<String, Object> store = new HashMap<>();
-
-    @Override
-    public Map<String, ?> getAll() {
-      return store;
-    }
-
-    @Override
-    public String getString(String key, String def) {
-      Object val = store.get(key);
-      return val instanceof String ? (String) val : def;
-    }
-
-    @Override
-    public Set<String> getStringSet(String k, Set<String> d) {
-      return d;
-    }
-
-    @Override
-    public int getInt(String key, int def) {
-      Object val = store.get(key);
-      return val instanceof Integer ? (Integer) val : def;
-    }
-
-    @Override
-    public long getLong(String key, long def) {
-      Object val = store.get(key);
-      return val instanceof Long ? (Long) val : def;
-    }
-
-    @Override
-    public float getFloat(String k, float d) {
-      return d;
-    }
-
-    @Override
-    public boolean getBoolean(String key, boolean def) {
-      Object val = store.get(key);
-      return val instanceof Boolean ? (Boolean) val : def;
-    }
-
-    @Override
-    public boolean contains(String k) {
-      return store.containsKey(k);
-    }
-
-    @Override
-    public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener l) {}
-
-    @Override
-    public void unregisterOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener l) {}
-
-    @Override
-    public Editor edit() {
-      return new Editor() {
-        @Override
-        public Editor putString(String key, String value) {
-          store.put(key, value);
-          return this;
-        }
-
-        @Override
-        public Editor putStringSet(String k, Set<String> v) {
-          return this;
-        }
-
-        @Override
-        public Editor putInt(String key, int value) {
-          store.put(key, value);
-          return this;
-        }
-
-        @Override
-        public Editor putLong(String key, long value) {
-          store.put(key, value);
-          return this;
-        }
-
-        @Override
-        public Editor putFloat(String k, float v) {
-          return this;
-        }
-
-        @Override
-        public Editor putBoolean(String key, boolean value) {
-          store.put(key, value);
-          return this;
-        }
-
-        @Override
-        public Editor remove(String key) {
-          store.remove(key);
-          return this;
-        }
-
-        @Override
-        public Editor clear() {
-          store.clear();
-          return this;
-        }
-
-        @Override
-        public boolean commit() {
-          return true;
-        }
-
-        @Override
-        public void apply() {
-          // Changes already written by put* above.
-        }
-      };
-    }
-  }
 
   // -------------------------------------------------------------------------
   // Test state
