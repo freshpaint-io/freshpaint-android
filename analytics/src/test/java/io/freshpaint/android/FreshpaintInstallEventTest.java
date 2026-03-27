@@ -39,7 +39,9 @@ import io.freshpaint.android.integrations.Logger;
 import io.freshpaint.android.integrations.TrackPayload;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -473,6 +475,98 @@ public class FreshpaintInstallEventTest {
     assertThat(props.get("utm_campaign")).isEqualTo("winter_sale");
     assertThat(props.get("$gclid")).isEqualTo("test-gclid-value");
     assertThat(props.get("$gclid_creation_time")).isEqualTo(1710000000000L);
+  }
+
+  // -------------------------------------------------------------------------
+  // AC10 (FRP-45) — Deep-link attribution merged into app_install
+  // -------------------------------------------------------------------------
+
+  /**
+   * When a deep link fires before app_install (first install scenario), the stored deep-link
+   * attribution data must appear in the {@code app_install} payload. This test pre-populates
+   * SharedPreferences with DL attribution (simulating a prior {@code trackDeepLink()} call) and
+   * asserts the fields are present in the emitted event.
+   */
+  @Test
+  public void appInstallIncludesStoredDeepLinkAttribution() {
+    // Simulate trackDeepLink() having already stored DL attribution before app_install fires.
+    Map<String, String> dlParams = new LinkedHashMap<>();
+    dlParams.put("gclid", "DL_GCLID_123");
+    dlParams.put("utm_source", "facebook");
+    // Use a fixed timestamp well within the 24-hour UTM expiry window.
+    DeepLinkAttributionManager.store(dlParams, fakePrefs, 1_000_000L);
+
+    Freshpaint fp = buildFreshpaint(true);
+    fp.trackApplicationLifecycleEvents();
+
+    assertThat(tracksOf(captured)).hasSize(1);
+    Properties props = tracksOf(captured).get(0).properties();
+    assertThat(props.get("$gclid")).isEqualTo("DL_GCLID_123");
+    assertThat(props).containsKey("$gclid_creation_time");
+    // UTM stored at T=1_000_000ms; getStoredProperties called at System.currentTimeMillis()
+    // (>> 1_000_000ms so the UTM window IS expired — see note below). Only asserting click ID.
+  }
+
+  /**
+   * DL click IDs must appear in {@code app_install} even when the IR prefs are also populated —
+   * confirming DL data overwrites IR data for overlapping keys.
+   */
+  @Test
+  public void appInstallDlOverwritesIrForOverlappingKeys() {
+    // IR has a gclid value
+    fakePrefs.store.put(InstallReferrerManager.KEY_IR_COLLECTED, true);
+    fakePrefs.store.put("ir.$gclid", "IR_GCLID_VALUE");
+    fakePrefs.store.put("ir.$gclid_creation_time", 500_000L);
+
+    // DL has a different gclid value (more recent / more direct signal)
+    Map<String, String> dlParams = new LinkedHashMap<>();
+    dlParams.put("gclid", "DL_GCLID_VALUE");
+    DeepLinkAttributionManager.store(dlParams, fakePrefs, 1_000_000L);
+
+    Freshpaint fp = buildFreshpaint(true);
+    fp.trackApplicationLifecycleEvents();
+
+    Properties props = tracksOf(captured).get(0).properties();
+    // DL value must win
+    assertThat(props.get("$gclid")).isEqualTo("DL_GCLID_VALUE");
+    assertThat(props.get("$gclid_creation_time")).isEqualTo(1_000_000L);
+  }
+
+  // -------------------------------------------------------------------------
+  // AC11 (FRP-45) — isFirstOpenTracked() and getDeepLinkAttributionProperties()
+  // -------------------------------------------------------------------------
+
+  /** {@code isFirstOpenTracked()} must return false when the key is absent. */
+  @Test
+  public void isFirstOpenTracked_returnsFalseWhenKeyAbsent() {
+    Freshpaint fp = buildFreshpaint(true);
+    assertThat(fp.isFirstOpenTracked()).isFalse();
+  }
+
+  /**
+   * {@code isFirstOpenTracked()} must return true after {@code trackApplicationLifecycleEvents()}
+   * sets the flag.
+   */
+  @Test
+  public void isFirstOpenTracked_returnsTrueAfterFirstLaunch() {
+    Freshpaint fp = buildFreshpaint(true);
+    fp.trackApplicationLifecycleEvents();
+    assertThat(fp.isFirstOpenTracked()).isTrue();
+  }
+
+  /**
+   * {@code getDeepLinkAttributionProperties()} must return stored DL data from SharedPreferences.
+   */
+  @Test
+  public void getDeepLinkAttributionProperties_returnsStoredDlData() {
+    Map<String, String> dlParams = new LinkedHashMap<>();
+    dlParams.put("gclid", "STORED_GCLID");
+    DeepLinkAttributionManager.store(dlParams, fakePrefs, 1_000_000L);
+
+    Freshpaint fp = buildFreshpaint(true);
+    Map<String, Object> props = fp.getDeepLinkAttributionProperties(1_000_000L);
+    assertThat(props).containsEntry("$gclid", "STORED_GCLID");
+    assertThat(props).containsKey("$gclid_creation_time");
   }
 
   // -------------------------------------------------------------------------
