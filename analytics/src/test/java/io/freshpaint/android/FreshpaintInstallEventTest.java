@@ -31,7 +31,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import androidx.lifecycle.Lifecycle;
@@ -40,10 +39,7 @@ import io.freshpaint.android.integrations.Logger;
 import io.freshpaint.android.integrations.TrackPayload;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -60,124 +56,6 @@ import org.junit.Test;
  * Android Handler, allowing direct assertions on dispatched events.
  */
 public class FreshpaintInstallEventTest {
-
-  // -------------------------------------------------------------------------
-  // FakeSharedPreferences — supports String, int, and boolean in one map
-  // -------------------------------------------------------------------------
-
-  /** Minimal in-memory SharedPreferences that persists all edits immediately. */
-  static class FakeSharedPreferences implements SharedPreferences {
-    final Map<String, Object> store = new HashMap<>();
-
-    @Override
-    public Map<String, ?> getAll() {
-      return store;
-    }
-
-    @Override
-    public String getString(String key, String def) {
-      Object val = store.get(key);
-      return val instanceof String ? (String) val : def;
-    }
-
-    @Override
-    public Set<String> getStringSet(String k, Set<String> d) {
-      return d;
-    }
-
-    @Override
-    public int getInt(String key, int def) {
-      Object val = store.get(key);
-      return val instanceof Integer ? (Integer) val : def;
-    }
-
-    @Override
-    public long getLong(String k, long d) {
-      return d;
-    }
-
-    @Override
-    public float getFloat(String k, float d) {
-      return d;
-    }
-
-    @Override
-    public boolean getBoolean(String key, boolean def) {
-      Object val = store.get(key);
-      return val instanceof Boolean ? (Boolean) val : def;
-    }
-
-    @Override
-    public boolean contains(String k) {
-      return store.containsKey(k);
-    }
-
-    @Override
-    public void registerOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener l) {}
-
-    @Override
-    public void unregisterOnSharedPreferenceChangeListener(OnSharedPreferenceChangeListener l) {}
-
-    @Override
-    public SharedPreferences.Editor edit() {
-      return new SharedPreferences.Editor() {
-        @Override
-        public Editor putString(String key, String value) {
-          store.put(key, value);
-          return this;
-        }
-
-        @Override
-        public Editor putStringSet(String k, Set<String> v) {
-          return this;
-        }
-
-        @Override
-        public Editor putInt(String key, int value) {
-          store.put(key, value);
-          return this;
-        }
-
-        @Override
-        public Editor putLong(String k, long v) {
-          return this;
-        }
-
-        @Override
-        public Editor putFloat(String k, float v) {
-          return this;
-        }
-
-        @Override
-        public Editor putBoolean(String key, boolean value) {
-          store.put(key, value);
-          return this;
-        }
-
-        @Override
-        public Editor remove(String key) {
-          store.remove(key);
-          return this;
-        }
-
-        @Override
-        public Editor clear() {
-          store.clear();
-          return this;
-        }
-
-        @Override
-        public boolean commit() {
-          return true;
-        }
-
-        @Override
-        public void apply() {
-          // Changes are already written via the put* calls above.
-        }
-      };
-    }
-  }
 
   // -------------------------------------------------------------------------
   // SynchronousExecutor — runs submitted tasks on the calling thread
@@ -563,6 +441,38 @@ public class FreshpaintInstallEventTest {
     assertThat(tracksOf(captured)).hasSize(1);
     Object limitAdTracking = tracksOf(captured).get(0).properties().get("limit_ad_tracking");
     assertThat(limitAdTracking).isEqualTo(true);
+  }
+
+  // -------------------------------------------------------------------------
+  // AC13 — Install Referrer data merged into app_install payload (FRP-44)
+  // -------------------------------------------------------------------------
+
+  /**
+   * When Install Referrer data is pre-populated in SharedPreferences (as
+   * trackAttributionInformation does before trackApplicationLifecycleEvents runs), app_install must
+   * include those fields.
+   */
+  @Test
+  public void irDataMergedIntoAppInstallPayload() {
+    // Simulate InstallReferrerManager.collectAndStore() having already run on the executor.
+    fakePrefs.store.put(InstallReferrerManager.KEY_IR_COLLECTED, true);
+    fakePrefs.store.put("ir.install_referrer", "utm_source=google&utm_campaign=winter_sale");
+    fakePrefs.store.put("ir.utm_source", "google");
+    fakePrefs.store.put("ir.utm_campaign", "winter_sale");
+    fakePrefs.store.put("ir.$gclid", "test-gclid-value");
+    fakePrefs.store.put("ir.$gclid_creation_time", 1710000000000L);
+
+    Freshpaint fp = buildFreshpaint(true);
+    fp.trackApplicationLifecycleEvents();
+
+    assertThat(tracksOf(captured)).hasSize(1);
+    Properties props = tracksOf(captured).get(0).properties();
+    assertThat(props.get("install_referrer"))
+        .isEqualTo("utm_source=google&utm_campaign=winter_sale");
+    assertThat(props.get("utm_source")).isEqualTo("google");
+    assertThat(props.get("utm_campaign")).isEqualTo("winter_sale");
+    assertThat(props.get("$gclid")).isEqualTo("test-gclid-value");
+    assertThat(props.get("$gclid_creation_time")).isEqualTo(1710000000000L);
   }
 
   // -------------------------------------------------------------------------

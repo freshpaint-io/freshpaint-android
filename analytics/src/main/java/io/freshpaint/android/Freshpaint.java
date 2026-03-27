@@ -296,7 +296,24 @@ public class Freshpaint {
 
   @Private
   void trackAttributionInformation() {
-    // Hook for FRP-44: Install Referrer data will be merged here.
+    // Both this method and trackApplicationLifecycleEvents() call
+    // Utils.getFreshpaintSharedPreferences(application, tag), which resolves to
+    // context.getSharedPreferences("analytics-android-" + tag, MODE_PRIVATE). Android returns
+    // the same SharedPreferences instance for the same name+mode pair, so data written here by
+    // collectAndStore() is visible to getStoredProperties() in trackApplicationLifecycleEvents().
+    //
+    // The two idempotency guards (TRACKED_ATTRIBUTION_KEY here and KEY_IR_COLLECTED inside
+    // collectAndStore) are complementary, not redundant: KEY_IR_COLLECTED prevents a redundant
+    // Play Store call if the process is killed between collectAndStore() completing and
+    // TRACKED_ATTRIBUTION_KEY being written. Both guards use the same SharedPreferences file.
+    SharedPreferences prefs = Utils.getFreshpaintSharedPreferences(application, tag);
+    if (prefs.getBoolean(TRACKED_ATTRIBUTION_KEY, false)) {
+      return;
+    }
+    // Blocks the calling thread up to 5 seconds waiting for the Play Store service.
+    // Must only be called from a background thread (analyticsExecutor).
+    InstallReferrerManager.collectAndStore(application, prefs, 5_000L, logger);
+    prefs.edit().putBoolean(TRACKED_ATTRIBUTION_KEY, true).apply();
   }
 
   @Private
@@ -341,6 +358,15 @@ public class Freshpaint {
         // with the resolved value once the GAID worker completes.
         if (gaid != null) {
           installProps.putValue("gaid", gaid);
+        }
+        // Merge Install Referrer data collected by trackAttributionInformation(). On first
+        // launch when trackAttributionInformation == true, this data is available because the
+        // combined executor task runs trackAttributionInformation() before
+        // trackApplicationLifecycleEvents(). When trackAttributionInformation == false, the
+        // map is empty and no fields are added.
+        Map<String, Object> irData = InstallReferrerManager.getStoredProperties(sharedPreferences);
+        for (Map.Entry<String, Object> entry : irData.entrySet()) {
+          installProps.putValue(entry.getKey(), entry.getValue());
         }
         track("app_install", installProps);
       }
