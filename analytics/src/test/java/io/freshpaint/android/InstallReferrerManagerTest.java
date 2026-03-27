@@ -344,7 +344,7 @@ public class InstallReferrerManagerTest {
 
     long originalCreationTime = (Long) prefs.store.get("ir.$gclid_creation_time");
 
-    Thread.sleep(2); // ensure a new timestamp is different
+    Thread.sleep(50); // ensure a new timestamp is different (50ms guards against coarse CI clocks)
 
     // Second collection with DIFFERENT value
     prefs.store.remove(InstallReferrerManager.KEY_IR_COLLECTED);
