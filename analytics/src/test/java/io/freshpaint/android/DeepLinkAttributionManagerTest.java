@@ -268,6 +268,56 @@ public class DeepLinkAttributionManagerTest {
   }
 
   // -------------------------------------------------------------------------
+  // UTM atomic replacement — partial update must not mix with stale values
+  // -------------------------------------------------------------------------
+
+  /**
+   * When a second deep link carries only a subset of UTM params, the UTM keys absent from the new
+   * URL must be cleared. This prevents cross-campaign contamination (e.g. utm_source=facebook mixed
+   * with utm_campaign=summer_sale from a previous Google campaign).
+   */
+  @Test
+  public void store_partialUtmUpdate_clearsPreviousUtmKeys() {
+    // First deep link: utm_source + utm_campaign
+    Map<String, String> params1 = new LinkedHashMap<>();
+    params1.put("utm_source", "google");
+    params1.put("utm_campaign", "summer_sale");
+    DeepLinkAttributionManager.store(params1, prefs, T0);
+
+    // Second deep link: only utm_source — utm_campaign must NOT survive
+    Map<String, String> params2 = new LinkedHashMap<>();
+    params2.put("utm_source", "facebook");
+    DeepLinkAttributionManager.store(params2, prefs, T1);
+
+    Map<String, Object> stored = DeepLinkAttributionManager.getStoredProperties(prefs, T1);
+    assertThat(stored).containsEntry("utm_source", "facebook");
+    assertThat(stored).doesNotContainKey("utm_campaign");
+    assertThat(stored).doesNotContainKey("utm_medium");
+    assertThat(stored).doesNotContainKey("utm_term");
+    assertThat(stored).doesNotContainKey("utm_content");
+  }
+
+  /**
+   * utm_stored_at must be updated to the new timestamp on partial updates so the expiry window is
+   * anchored to the most recent deep link, not the original one.
+   */
+  @Test
+  public void store_partialUtmUpdate_refreshesStoredAtTimestamp() {
+    Map<String, String> params1 = new LinkedHashMap<>();
+    params1.put("utm_source", "google");
+    DeepLinkAttributionManager.store(params1, prefs, T0);
+
+    Map<String, String> params2 = new LinkedHashMap<>();
+    params2.put("utm_medium", "cpc");
+    DeepLinkAttributionManager.store(params2, prefs, T1);
+
+    // utm_stored_at is now T1; both reads at T1 must return the new UTM set only
+    Map<String, Object> stored = DeepLinkAttributionManager.getStoredProperties(prefs, T1);
+    assertThat(stored).containsEntry("utm_medium", "cpc");
+    assertThat(stored).doesNotContainKey("utm_source");
+  }
+
+  // -------------------------------------------------------------------------
   // fp_click_id stored without $ prefix
   // -------------------------------------------------------------------------
 

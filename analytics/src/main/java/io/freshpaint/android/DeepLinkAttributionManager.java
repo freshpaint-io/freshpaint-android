@@ -151,16 +151,26 @@ final class DeepLinkAttributionManager {
       }
     }
 
-    // UTM params — stored with a timestamp for expiry evaluation at read time
+    // UTM params — atomically replaced per deep link. When any UTM param is present, ALL five
+    // UTM keys are evaluated: present keys are written, absent keys are explicitly removed. This
+    // prevents stale values from a previous deep link mixing with partial updates (e.g. a URL
+    // with only utm_source must not re-surface a utm_campaign stored from a different campaign).
     boolean anyUtm = false;
     for (String utmKey : UTM_PARAMS) {
-      String val = queryParams.get(utmKey);
-      if (val != null && !val.isEmpty()) {
-        editor.putString(DL_PREFIX + "utm." + utmKey, val);
+      if (queryParams.get(utmKey) != null && !queryParams.get(utmKey).isEmpty()) {
         anyUtm = true;
+        break;
       }
     }
     if (anyUtm) {
+      for (String utmKey : UTM_PARAMS) {
+        String val = queryParams.get(utmKey);
+        if (val != null && !val.isEmpty()) {
+          editor.putString(DL_PREFIX + "utm." + utmKey, val);
+        } else {
+          editor.remove(DL_PREFIX + "utm." + utmKey);
+        }
+      }
       editor.putLong(KEY_UTM_STORED_AT, now);
     }
 
