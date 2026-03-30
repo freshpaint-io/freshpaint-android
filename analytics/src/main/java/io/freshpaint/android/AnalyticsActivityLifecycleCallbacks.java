@@ -32,6 +32,8 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -137,14 +139,31 @@ class AnalyticsActivityLifecycleCallbacks
 
     Properties properties = new Properties();
     Uri uri = intent.getData();
+    Map<String, String> queryParams = new LinkedHashMap<>();
     for (String parameter : uri.getQueryParameterNames()) {
       String value = uri.getQueryParameter(parameter);
       if (value != null && !value.trim().isEmpty()) {
         properties.put(parameter, value);
+        queryParams.put(parameter, value);
       }
     }
 
     properties.put("url", uri.toString());
+
+    // Store deep-link attribution data (FRP-45). commit() runs synchronously on the main thread;
+    // the trade-off is a small disk-write latency here in exchange for a guaranteed-visible read
+    // on the analyticsExecutor thread. apply() cannot substitute: the executor may be scheduled
+    // before apply()'s async flush completes, leaving getStoredProperties() reading stale data.
+    long now = System.currentTimeMillis();
+    freshpaint.storeDeepLinkAttribution(queryParams, now);
+
+    // If app_install has already been tracked, enrich Deep Link Opened with the stored
+    // attribution fields ($gclid, utm_source, etc.). When app_install has not yet fired, the
+    // attribution is already stored and will be merged by trackApplicationLifecycleEvents().
+    if (freshpaint.isFirstOpenTracked()) {
+      properties.putAll(freshpaint.getDeepLinkAttributionProperties(now));
+    }
+
     freshpaint.track("Deep Link Opened", properties);
   }
 

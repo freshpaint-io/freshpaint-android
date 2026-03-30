@@ -294,6 +294,42 @@ public class Freshpaint {
     lifecycle.addObserver(activityLifecycleCallback);
   }
 
+  // -------------------------------------------------------------------------
+  // Deep-link attribution (FRP-45)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Persists deep-link attribution data (click IDs and UTM params) extracted from the Intent URI to
+   * SharedPreferences. Called from {@link AnalyticsActivityLifecycleCallbacks#trackDeepLink} on the
+   * main thread; uses {@code commit()} so data is visible to the {@code analyticsExecutor}
+   * background thread immediately.
+   */
+  @Private
+  void storeDeepLinkAttribution(Map<String, String> queryParams, long now) {
+    SharedPreferences prefs = Utils.getFreshpaintSharedPreferences(application, tag);
+    DeepLinkAttributionManager.store(queryParams, prefs, now);
+  }
+
+  /**
+   * Returns {@code true} if the {@code app_install} first-open event has already been tracked (i.e.
+   * {@code FIRST_OPEN_TRACKED_KEY} is set in SharedPreferences).
+   */
+  @Private
+  boolean isFirstOpenTracked() {
+    SharedPreferences prefs = Utils.getFreshpaintSharedPreferences(application, tag);
+    return prefs.getBoolean(FIRST_OPEN_TRACKED_KEY, false);
+  }
+
+  /**
+   * Returns stored deep-link attribution properties ready to be merged into an event payload. UTM
+   * params are omitted when they have expired (older than 24 hours from {@code now}).
+   */
+  @Private
+  Map<String, Object> getDeepLinkAttributionProperties(long now) {
+    SharedPreferences prefs = Utils.getFreshpaintSharedPreferences(application, tag);
+    return DeepLinkAttributionManager.getStoredProperties(prefs, now);
+  }
+
   @Private
   void trackAttributionInformation() {
     // Both this method and trackApplicationLifecycleEvents() call
@@ -368,6 +404,13 @@ public class Freshpaint {
         for (Map.Entry<String, Object> entry : irData.entrySet()) {
           installProps.putValue(entry.getKey(), entry.getValue());
         }
+        // Merge deep-link attribution data (FRP-45). If a deep link fired before app_install,
+        // trackDeepLink() will have persisted click IDs and UTM params via commit() on the main
+        // thread before this executor task runs. Deep-link values overwrite IR values for
+        // overlapping keys (e.g. $gclid) since the deep link represents a more direct signal.
+        installProps.putAll(
+            DeepLinkAttributionManager.getStoredProperties(
+                sharedPreferences, System.currentTimeMillis()));
         track("app_install", installProps);
       }
     } else if (currentBuild != previousBuild) {
@@ -388,6 +431,10 @@ public class Freshpaint {
     // users who skip previousBuild==-1 are also guarded against future re-fires. This key means
     // "app_install will not fire again", not "app_install was fired on this device".
     editor.putBoolean(FIRST_OPEN_TRACKED_KEY, true);
+    // apply() updates the in-memory SharedPreferences cache synchronously before returning, so
+    // isFirstOpenTracked() reads the new value immediately on the same thread. The async disk
+    // write is sufficient here — unlike store() in DeepLinkAttributionManager, this write does
+    // not need to be visible to a background thread before the next line.
     editor.apply();
   }
 
