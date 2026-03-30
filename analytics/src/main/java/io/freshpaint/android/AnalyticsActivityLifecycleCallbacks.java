@@ -112,7 +112,15 @@ class AnalyticsActivityLifecycleCallbacks
             new Runnable() {
               @Override
               public void run() {
-                freshpaint.trackAttributionInformation();
+                try {
+                  freshpaint.trackAttributionInformation();
+                } catch (Exception e) {
+                  freshpaint
+                      .getLogger()
+                      .error(
+                          e,
+                          "trackAttributionInformation failed; lifecycle events will still fire.");
+                }
                 freshpaint.trackApplicationLifecycleEvents();
               }
             });
