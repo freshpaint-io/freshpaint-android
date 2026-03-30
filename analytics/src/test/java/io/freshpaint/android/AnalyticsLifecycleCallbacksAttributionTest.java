@@ -23,13 +23,16 @@
  */
 package io.freshpaint.android;
 
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.content.pm.PackageInfo;
 import androidx.lifecycle.LifecycleOwner;
+import io.freshpaint.android.integrations.Logger;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
@@ -46,6 +49,9 @@ import org.mockito.InOrder;
  *
  * <p>REG2 — {@code trackApplicationLifecycleEvents()} fires directly (not via executor) and {@code
  * trackAttributionInformation()} is never called when attribution is disabled.
+ *
+ * <p>REG3 — when {@code trackAttributionInformation()} throws, {@code
+ * trackApplicationLifecycleEvents()} still fires and the exception is logged (FRP-57).
  */
 public class AnalyticsLifecycleCallbacksAttributionTest {
 
@@ -117,6 +123,36 @@ public class AnalyticsLifecycleCallbacksAttributionTest {
     InOrder order = inOrder(mockFreshpaint);
     order.verify(mockFreshpaint).trackAttributionInformation();
     order.verify(mockFreshpaint).trackApplicationLifecycleEvents();
+  }
+
+  // -------------------------------------------------------------------------
+  // REG3 — attribution throws → lifecycle events still fire; exception is logged
+  // -------------------------------------------------------------------------
+
+  /**
+   * When {@code trackAttributionInformation()} throws a {@link RuntimeException}, the catch block
+   * must log the error via {@code freshpaint.getLogger().error(...)} and then {@code
+   * trackApplicationLifecycleEvents()} must still be called unconditionally.
+   */
+  @Test
+  public void onCreate_attributionThrows_lifecycleEventsStillFire() {
+    Freshpaint mockFreshpaint = mock(Freshpaint.class);
+    Logger mockLogger = mock(Logger.class);
+    when(mockFreshpaint.getLogger()).thenReturn(mockLogger);
+    doThrow(new RuntimeException("simulated attribution failure"))
+        .when(mockFreshpaint)
+        .trackAttributionInformation();
+
+    AnalyticsActivityLifecycleCallbacks callbacks = buildCallbacks(mockFreshpaint, true);
+    callbacks.onCreate(mock(LifecycleOwner.class));
+
+    // Lifecycle events must fire despite the attribution exception (AC2, AC6).
+    verify(mockFreshpaint).trackApplicationLifecycleEvents();
+    // Exception must be logged — not silently dropped (AC3).
+    verify(mockLogger)
+        .error(
+            org.mockito.ArgumentMatchers.any(RuntimeException.class),
+            org.mockito.ArgumentMatchers.anyString());
   }
 
   // -------------------------------------------------------------------------
