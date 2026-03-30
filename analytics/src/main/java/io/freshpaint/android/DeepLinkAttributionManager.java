@@ -39,6 +39,11 @@ import java.util.Map;
  * read time using a caller-supplied {@code now} timestamp to keep the class testable without mocks.
  *
  * <p>All public methods are static and never throw. Instances are not created.
+ *
+ * <p><b>Naming convention:</b> all ad-platform click IDs are stored and returned with a {@code $}
+ * prefix (e.g. {@code $gclid}, {@code $fbclid}). The Freshpaint-native click ID ({@code
+ * fp_click_id}) is stored and returned <em>without</em> the {@code $} prefix, matching the Install
+ * Referrer convention established in FRP-44.
  */
 final class DeepLinkAttributionManager {
 
@@ -90,65 +95,34 @@ final class DeepLinkAttributionManager {
     for (String id : AttributionConstants.CLICK_IDS) {
       String val = queryParams.get(id);
       if (val != null && !val.isEmpty()) {
-        String prefKey = DL_PREFIX + "$" + id;
-        String creationTimeKey = DL_PREFIX + "$" + id + "_creation_time";
-        String existing = prefs.getString(prefKey, null);
-        editor.putString(prefKey, val);
-        // Dedup: only update creation_time when the value changes.
-        if (!val.equals(existing)) {
-          editor.putLong(creationTimeKey, now);
-        }
+        putWithDedup(prefs, editor, DL_PREFIX + "$" + id, val, now);
       }
     }
 
     // Freshpaint click ID (stored without $ prefix, matching Install Referrer convention)
     String fpClickId = queryParams.get("fp_click_id");
     if (fpClickId != null && !fpClickId.isEmpty()) {
-      String existing = prefs.getString(KEY_FP_CLICK_ID, null);
-      editor.putString(KEY_FP_CLICK_ID, fpClickId);
-      if (!fpClickId.equals(existing)) {
-        editor.putLong(KEY_FP_CLICK_ID + "_creation_time", now);
-      }
+      putWithDedup(prefs, editor, KEY_FP_CLICK_ID, fpClickId, now);
     }
 
     // Google special: gacid → $gclid_campaign_id
     String gacid = queryParams.get("gacid");
     if (gacid != null && !gacid.isEmpty()) {
-      String key = DL_PREFIX + "$gclid_campaign_id";
-      String existing = prefs.getString(key, null);
-      editor.putString(key, gacid);
-      if (!gacid.equals(existing)) {
-        editor.putLong(key + "_creation_time", now);
-      }
+      putWithDedup(prefs, editor, DL_PREFIX + "$gclid_campaign_id", gacid, now);
     }
 
     // Facebook special fields
     String adId = queryParams.get("ad_id");
     if (adId != null && !adId.isEmpty()) {
-      String key = DL_PREFIX + "$fbclid_ad_id";
-      String existing = prefs.getString(key, null);
-      editor.putString(key, adId);
-      if (!adId.equals(existing)) {
-        editor.putLong(key + "_creation_time", now);
-      }
+      putWithDedup(prefs, editor, DL_PREFIX + "$fbclid_ad_id", adId, now);
     }
     String adsetId = queryParams.get("adset_id");
     if (adsetId != null && !adsetId.isEmpty()) {
-      String key = DL_PREFIX + "$fbclid_adset_id";
-      String existing = prefs.getString(key, null);
-      editor.putString(key, adsetId);
-      if (!adsetId.equals(existing)) {
-        editor.putLong(key + "_creation_time", now);
-      }
+      putWithDedup(prefs, editor, DL_PREFIX + "$fbclid_adset_id", adsetId, now);
     }
     String campaignId = queryParams.get("campaign_id");
     if (campaignId != null && !campaignId.isEmpty()) {
-      String key = DL_PREFIX + "$fbclid_campaign_id";
-      String existing = prefs.getString(key, null);
-      editor.putString(key, campaignId);
-      if (!campaignId.equals(existing)) {
-        editor.putLong(key + "_creation_time", now);
-      }
+      putWithDedup(prefs, editor, DL_PREFIX + "$fbclid_campaign_id", campaignId, now);
     }
 
     // UTM params — atomically replaced per deep link. When any UTM param is present, ALL five
@@ -157,7 +131,8 @@ final class DeepLinkAttributionManager {
     // with only utm_source must not re-surface a utm_campaign stored from a different campaign).
     boolean anyUtm = false;
     for (String utmKey : UTM_PARAMS) {
-      if (queryParams.get(utmKey) != null && !queryParams.get(utmKey).isEmpty()) {
+      String val = queryParams.get(utmKey);
+      if (val != null && !val.isEmpty()) {
         anyUtm = true;
         break;
       }
@@ -192,61 +167,19 @@ final class DeepLinkAttributionManager {
 
     // 24 ad-platform click IDs (no expiry)
     for (String id : AttributionConstants.CLICK_IDS) {
-      String val = prefs.getString(DL_PREFIX + "$" + id, null);
-      if (val != null) {
-        result.put("$" + id, val);
-        long creationTime = prefs.getLong(DL_PREFIX + "$" + id + "_creation_time", 0L);
-        if (creationTime != 0L) {
-          result.put("$" + id + "_creation_time", creationTime);
-        }
-      }
+      addWithCreationTime(prefs, result, DL_PREFIX + "$" + id, "$" + id);
     }
 
     // Freshpaint click ID
-    String fpClickId = prefs.getString(KEY_FP_CLICK_ID, null);
-    if (fpClickId != null) {
-      result.put("fp_click_id", fpClickId);
-      long ct = prefs.getLong(KEY_FP_CLICK_ID + "_creation_time", 0L);
-      if (ct != 0L) {
-        result.put("fp_click_id_creation_time", ct);
-      }
-    }
+    addWithCreationTime(prefs, result, KEY_FP_CLICK_ID, "fp_click_id");
 
     // Google special field
-    String gclidCampaignId = prefs.getString(DL_PREFIX + "$gclid_campaign_id", null);
-    if (gclidCampaignId != null) {
-      result.put("$gclid_campaign_id", gclidCampaignId);
-      long ct = prefs.getLong(DL_PREFIX + "$gclid_campaign_id_creation_time", 0L);
-      if (ct != 0L) {
-        result.put("$gclid_campaign_id_creation_time", ct);
-      }
-    }
+    addWithCreationTime(prefs, result, DL_PREFIX + "$gclid_campaign_id", "$gclid_campaign_id");
 
     // Facebook special fields
-    String fbclidAdId = prefs.getString(DL_PREFIX + "$fbclid_ad_id", null);
-    if (fbclidAdId != null) {
-      result.put("$fbclid_ad_id", fbclidAdId);
-      long ct = prefs.getLong(DL_PREFIX + "$fbclid_ad_id_creation_time", 0L);
-      if (ct != 0L) {
-        result.put("$fbclid_ad_id_creation_time", ct);
-      }
-    }
-    String fbclidAdsetId = prefs.getString(DL_PREFIX + "$fbclid_adset_id", null);
-    if (fbclidAdsetId != null) {
-      result.put("$fbclid_adset_id", fbclidAdsetId);
-      long ct = prefs.getLong(DL_PREFIX + "$fbclid_adset_id_creation_time", 0L);
-      if (ct != 0L) {
-        result.put("$fbclid_adset_id_creation_time", ct);
-      }
-    }
-    String fbclidCampaignId = prefs.getString(DL_PREFIX + "$fbclid_campaign_id", null);
-    if (fbclidCampaignId != null) {
-      result.put("$fbclid_campaign_id", fbclidCampaignId);
-      long ct = prefs.getLong(DL_PREFIX + "$fbclid_campaign_id_creation_time", 0L);
-      if (ct != 0L) {
-        result.put("$fbclid_campaign_id_creation_time", ct);
-      }
-    }
+    addWithCreationTime(prefs, result, DL_PREFIX + "$fbclid_ad_id", "$fbclid_ad_id");
+    addWithCreationTime(prefs, result, DL_PREFIX + "$fbclid_adset_id", "$fbclid_adset_id");
+    addWithCreationTime(prefs, result, DL_PREFIX + "$fbclid_campaign_id", "$fbclid_campaign_id");
 
     // UTM params — only include if stored within the last 24 hours
     long utmStoredAt = prefs.getLong(KEY_UTM_STORED_AT, 0L);
@@ -260,5 +193,43 @@ final class DeepLinkAttributionManager {
     }
 
     return result;
+  }
+
+  // -------------------------------------------------------------------------
+  // Private helpers
+  // -------------------------------------------------------------------------
+
+  /**
+   * Stores {@code value} under {@code prefKey} and updates {@code prefKey + "_creation_time"} to
+   * {@code now} only when the value has changed (deduplication).
+   */
+  private static void putWithDedup(
+      SharedPreferences prefs,
+      SharedPreferences.Editor editor,
+      String prefKey,
+      String value,
+      long now) {
+    String existing = prefs.getString(prefKey, null);
+    editor.putString(prefKey, value);
+    if (!value.equals(existing)) {
+      editor.putLong(prefKey + "_creation_time", now);
+    }
+  }
+
+  /**
+   * Reads {@code prefKey} from {@code prefs} and, if non-null, adds the value under {@code
+   * outputKey} and its creation timestamp under {@code outputKey + "_creation_time"} to {@code
+   * result}.
+   */
+  private static void addWithCreationTime(
+      SharedPreferences prefs, Map<String, Object> result, String prefKey, String outputKey) {
+    String val = prefs.getString(prefKey, null);
+    if (val != null) {
+      result.put(outputKey, val);
+      long ct = prefs.getLong(prefKey + "_creation_time", 0L);
+      if (ct != 0L) {
+        result.put(outputKey + "_creation_time", ct);
+      }
+    }
   }
 }

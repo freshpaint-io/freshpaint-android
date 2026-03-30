@@ -160,10 +160,7 @@ class AnalyticsActivityLifecycleCallbacks
     // attribution fields ($gclid, utm_source, etc.). When app_install has not yet fired, the
     // attribution is already stored and will be merged by trackApplicationLifecycleEvents().
     if (freshpaint.isFirstOpenTracked()) {
-      Map<String, Object> attributionProps = freshpaint.getDeepLinkAttributionProperties(now);
-      for (Map.Entry<String, Object> entry : attributionProps.entrySet()) {
-        properties.put(entry.getKey(), entry.getValue());
-      }
+      properties.putAll(freshpaint.getDeepLinkAttributionProperties(now));
     }
 
     freshpaint.track("Deep Link Opened", properties);

@@ -503,8 +503,9 @@ public class FreshpaintInstallEventTest {
     Properties props = tracksOf(captured).get(0).properties();
     assertThat(props.get("$gclid")).isEqualTo("DL_GCLID_123");
     assertThat(props).containsKey("$gclid_creation_time");
-    // UTM stored at T=1_000_000ms; getStoredProperties called at System.currentTimeMillis()
-    // (>> 1_000_000ms so the UTM window IS expired — see note below). Only asserting click ID.
+    // TODO: FRP-46 — assert UTM params in app_install once clock injection is available.
+    // trackApplicationLifecycleEvents() calls System.currentTimeMillis() (~1.7e12 ms), which
+    // makes the UTM stored at T=1_000_000ms always appear expired. Only asserting click ID here.
   }
 
   /**
