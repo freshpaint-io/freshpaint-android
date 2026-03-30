@@ -289,7 +289,7 @@ public final class Utils {
     if (!isNullOrEmpty(androidId)
         && !"9774d56d682e549c".equals(androidId)
         && !"unknown".equals(androidId)
-        && !"000000000000000".equals(androidId)) {
+        && !"0000000000000000".equals(androidId)) {
       return androidId;
     }
 

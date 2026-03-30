@@ -32,6 +32,7 @@ import static org.robolectric.annotation.Config.NONE;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.provider.Settings;
 import com.google.common.collect.ImmutableMap;
 import io.freshpaint.android.core.BuildConfig;
 import java.util.Map;
@@ -257,6 +258,24 @@ public class AnalyticsContextTest {
 
     context.putReferrer(referrer);
     assertThat(context).containsEntry("referrer", referrer);
+  }
+
+  // ---------------------------------------------------------------------------
+  // putDevice() — android_id capture via Settings.Secure
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void putDevice_collectDeviceIdTrue_capturesValidAndroidId() {
+    Context context = RuntimeEnvironment.application;
+    Settings.Secure.putString(
+        context.getContentResolver(), Settings.Secure.ANDROID_ID, "abcdef1234567890");
+
+    Traits traits = Traits.create();
+    AnalyticsContext ctx = Utils.createContext(traits);
+    ctx.putDevice(context, /* collectDeviceID= */ true);
+
+    assertThat(ctx.device()).isNotNull();
+    assertThat(ctx.device()).containsEntry("android_id", "abcdef1234567890");
   }
 
   @Test

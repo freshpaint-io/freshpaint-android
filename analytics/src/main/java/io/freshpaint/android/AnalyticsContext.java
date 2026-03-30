@@ -38,6 +38,7 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
+import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -233,6 +234,7 @@ public class AnalyticsContext extends ValueMap {
   }
 
   /** Fill this instance with device info from the provided {@link Context}. */
+  @SuppressLint("HardwareIds")
   void putDevice(Context context, boolean collectDeviceID) {
     Device device = new Device();
     String identifier = collectDeviceID ? Utils.getDeviceId(context) : traits().anonymousId();
@@ -241,6 +243,14 @@ public class AnalyticsContext extends ValueMap {
     device.put(Device.DEVICE_MODEL_KEY, Build.MODEL);
     device.put(Device.DEVICE_NAME_KEY, Build.DEVICE);
     device.put(Device.DEVICE_TYPE_KEY, "android");
+    // android_id is captured as a secondary attribution signal alongside device_id (FRP-54).
+    // Gated on collectDeviceID to honour the hardware-identifier opt-out. Placeholder values are
+    // filtered inside putAndroidId().
+    if (collectDeviceID) {
+      String rawAndroidId =
+          Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+      device.putAndroidId(rawAndroidId);
+    }
     put(DEVICE_KEY, device);
   }
 
@@ -433,6 +443,7 @@ public class AnalyticsContext extends ValueMap {
     @Private static final String DEVICE_ADVERTISING_ID_KEY = "advertisingId";
     @Private static final String DEVICE_AD_TRACKING_ENABLED_KEY = "adTrackingEnabled";
     @Private static final String DEVICE_LIMIT_AD_TRACKING_KEY = "limit_ad_tracking";
+    @Private static final String DEVICE_ANDROID_ID_KEY = "android_id";
 
     @Private
     Device() {}
@@ -457,6 +468,26 @@ public class AnalyticsContext extends ValueMap {
       }
       put(DEVICE_AD_TRACKING_ENABLED_KEY, adTrackingEnabled);
       put(DEVICE_LIMIT_AD_TRACKING_KEY, !adTrackingEnabled);
+    }
+
+    /**
+     * Store the Android ID for this device if it is not a known placeholder value.
+     *
+     * <p>Filtered values: {@code null}, empty string, {@code "9774d56d682e549c"} (emulator fake),
+     * {@code "0000000000000000"} (bogus), {@code "unknown"}.
+     */
+    void putAndroidId(String androidId) {
+      if (!isPlaceholderAndroidId(androidId)) {
+        put(DEVICE_ANDROID_ID_KEY, androidId);
+      }
+    }
+
+    private static boolean isPlaceholderAndroidId(String id) {
+      return id == null
+          || id.isEmpty()
+          || "9774d56d682e549c".equals(id)
+          || "0000000000000000".equals(id)
+          || "unknown".equals(id);
     }
 
     /** Set a device token. */

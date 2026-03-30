@@ -27,9 +27,9 @@ import io.freshpaint.android.integrations.BasePayload;
 
 /**
  * A {@link Middleware} that enriches every outgoing event with attribution fields: {@code gaid},
- * {@code limit_ad_tracking}, and {@code device_id}. Values are read non-blockingly from the live
- * {@link AnalyticsContext.Device} — if GAID has not yet been fetched, {@code null} is used and
- * event dispatch is never blocked.
+ * {@code limit_ad_tracking}, {@code device_id}, and {@code android_id}. Values are read
+ * non-blockingly from the live {@link AnalyticsContext.Device} — if GAID has not yet been fetched,
+ * {@code null} is used and event dispatch is never blocked.
  */
 class AttributionMiddleware implements Middleware {
 
@@ -70,6 +70,10 @@ class AttributionMiddleware implements Middleware {
         payloadDevice.put(AnalyticsContext.Device.DEVICE_LIMIT_AD_TRACKING_KEY, limitAdTracking);
         if (deviceId != null) {
           payloadDevice.put(AnalyticsContext.Device.DEVICE_ID_KEY, deviceId);
+        }
+        String androidId = sourceDevice.getString(AnalyticsContext.Device.DEVICE_ANDROID_ID_KEY);
+        if (androidId != null) {
+          payloadDevice.put(AnalyticsContext.Device.DEVICE_ANDROID_ID_KEY, androidId);
         }
       }
     } finally {
