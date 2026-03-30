@@ -150,9 +150,10 @@ class AnalyticsActivityLifecycleCallbacks
 
     properties.put("url", uri.toString());
 
-    // Store deep-link attribution data (FRP-45). commit() is used so the data is visible to the
-    // analyticsExecutor background thread that may run trackApplicationLifecycleEvents() and
-    // read the same SharedPreferences immediately after this method returns.
+    // Store deep-link attribution data (FRP-45). commit() runs synchronously on the main thread;
+    // the trade-off is a small disk-write latency here in exchange for a guaranteed-visible read
+    // on the analyticsExecutor thread. apply() cannot substitute: the executor may be scheduled
+    // before apply()'s async flush completes, leaving getStoredProperties() reading stale data.
     long now = System.currentTimeMillis();
     freshpaint.storeDeepLinkAttribution(queryParams, now);
 
