@@ -286,10 +286,7 @@ public final class Utils {
   @SuppressLint("HardwareIds")
   public static String getDeviceId(Context context) {
     String androidId = getString(context.getContentResolver(), ANDROID_ID);
-    if (!isNullOrEmpty(androidId)
-        && !"9774d56d682e549c".equals(androidId)
-        && !"unknown".equals(androidId)
-        && !"0000000000000000".equals(androidId)) {
+    if (!isPlaceholderAndroidId(androidId)) {
       return androidId;
     }
 
@@ -310,6 +307,24 @@ public final class Utils {
 
     // If this still fails, generate random identifier that does not persist across installations
     return UUID.randomUUID().toString();
+  }
+
+  /**
+   * Returns {@code true} if the given ANDROID_ID value is a known placeholder that should not be
+   * used as a device or attribution identifier.
+   *
+   * <p>Filtered values: {@code null}, empty/whitespace-only, {@code "9774d56d682e549c"} (emulator
+   * fake — compared case-insensitively since some OEMs return uppercase hex), {@code
+   * "0000000000000000"} (bogus 64-bit zero), {@code "unknown"}.
+   *
+   * <p>This is the single source of truth for ANDROID_ID placeholder detection. Both {@link
+   * #getDeviceId(Context)} and {@code AnalyticsContext.Device#putAndroidId} delegate here.
+   */
+  public static boolean isPlaceholderAndroidId(String id) {
+    return isNullOrEmpty(id)
+        || "9774d56d682e549c".equalsIgnoreCase(id)
+        || "0000000000000000".equals(id)
+        || "unknown".equals(id);
   }
 
   /** Returns a shared preferences for storing any library preferences. */

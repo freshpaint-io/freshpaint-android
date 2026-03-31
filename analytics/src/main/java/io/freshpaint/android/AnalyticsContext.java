@@ -473,21 +473,18 @@ public class AnalyticsContext extends ValueMap {
     /**
      * Store the Android ID for this device if it is not a known placeholder value.
      *
-     * <p>Filtered values: {@code null}, empty string, {@code "9774d56d682e549c"} (emulator fake),
-     * {@code "0000000000000000"} (bogus), {@code "unknown"}.
+     * <p>Placeholder detection delegates to {@link Utils#isPlaceholderAndroidId(String)} — the
+     * single source of truth shared with {@link Utils#getDeviceId(Context)}.
+     *
+     * <p>Not synchronized: {@code android_id} is written exactly once at SDK init (inside {@link
+     * AnalyticsContext#putDevice}), before any executor task or middleware invocation. If the
+     * capture path ever becomes async, synchronization will be required here — see {@link
+     * #putAdvertisingInfo} for the pattern.
      */
     void putAndroidId(String androidId) {
-      if (!isPlaceholderAndroidId(androidId)) {
+      if (!Utils.isPlaceholderAndroidId(androidId)) {
         put(DEVICE_ANDROID_ID_KEY, androidId);
       }
-    }
-
-    private static boolean isPlaceholderAndroidId(String id) {
-      return id == null
-          || id.isEmpty()
-          || "9774d56d682e549c".equals(id)
-          || "0000000000000000".equals(id)
-          || "unknown".equals(id);
     }
 
     /** Set a device token. */
