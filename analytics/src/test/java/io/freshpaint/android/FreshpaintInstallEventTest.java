@@ -571,6 +571,90 @@ public class FreshpaintInstallEventTest {
   }
 
   // -------------------------------------------------------------------------
+  // AC3/AC4 — android_id in app_install payload
+  // -------------------------------------------------------------------------
+
+  /**
+   * When the device context has a valid {@code android_id}, it must appear in the {@code
+   * app_install} event properties.
+   */
+  @Test
+  public void appInstall_containsAndroidId_whenPresent() {
+    Middleware captureMiddleware =
+        chain -> {
+          captured.add(chain.payload());
+          chain.proceed(chain.payload());
+        };
+
+    Traits traits = Traits.create();
+    Traits.Cache traitsCache = mock(Traits.Cache.class);
+    when(traitsCache.get()).thenReturn(traits);
+    AnalyticsContext analyticsContext = io.freshpaint.android.Utils.createContext(traits);
+
+    // Populate a device entry with android_id so the snapshot in
+    // trackApplicationLifecycleEvents() picks it up.
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+    device.putAndroidId("real-android-id-xyz");
+    analyticsContext.put("device", device);
+
+    BooleanPreference optOut = new BooleanPreference(fakePrefs, "opt-out", false);
+    Freshpaint fp =
+        new Freshpaint(
+            application,
+            mock(ExecutorService.class),
+            mock(Stats.class),
+            traitsCache,
+            analyticsContext,
+            new Options(),
+            Logger.with(Freshpaint.LogLevel.NONE),
+            "test",
+            Collections.emptyList(),
+            mock(Client.class),
+            Cartographer.INSTANCE,
+            mock(ProjectSettings.Cache.class),
+            "test-key",
+            20,
+            30_000L,
+            300,
+            new SynchronousExecutor(),
+            false,
+            new CountDownLatch(0),
+            false,
+            false,
+            false,
+            optOut,
+            Crypto.none(),
+            Collections.singletonList(captureMiddleware),
+            Collections.emptyMap(),
+            new ValueMap(),
+            mock(Lifecycle.class),
+            false,
+            true);
+
+    fp.trackApplicationLifecycleEvents();
+
+    assertThat(tracksOf(captured)).hasSize(1);
+    assertThat(tracksOf(captured).get(0).event()).isEqualTo("app_install");
+    assertThat(tracksOf(captured).get(0).properties())
+        .containsEntry("android_id", "real-android-id-xyz");
+  }
+
+  /**
+   * When the device context has no valid android_id (null), the {@code android_id} key must be
+   * absent from the {@code app_install} event properties.
+   */
+  @Test
+  public void appInstall_doesNotContainAndroidId_whenNull() {
+    // buildFreshpaint uses Utils.createContext which has no device entry → device() returns null
+    // → androidId snapshot is null → "android_id" key absent from installProps.
+    Freshpaint fp = buildFreshpaint(true);
+    fp.trackApplicationLifecycleEvents();
+
+    assertThat(tracksOf(captured)).hasSize(1);
+    assertThat(tracksOf(captured).get(0).properties()).doesNotContainKey("android_id");
+  }
+
+  // -------------------------------------------------------------------------
   // Helper
   // -------------------------------------------------------------------------
 

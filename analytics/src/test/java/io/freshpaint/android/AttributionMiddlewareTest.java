@@ -28,6 +28,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.content.Context;
 import io.freshpaint.android.integrations.BasePayload;
 import java.util.LinkedHashMap;
 import org.junit.Test;
@@ -49,9 +50,12 @@ public class AttributionMiddlewareTest {
 
   /**
    * Build a source {@link AnalyticsContext} that already has device advertising fields populated.
+   *
+   * @param androidId optional Android ID value; if non-null (and not a placeholder), stored at
+   *     {@code "android_id"} in the device map.
    */
   private AnalyticsContext buildSourceContext(
-      String deviceId, String gaid, boolean adTrackingEnabled) {
+      String deviceId, String gaid, boolean adTrackingEnabled, String androidId) {
     LinkedHashMap<String, Object> deviceMap = new LinkedHashMap<>();
     LinkedHashMap<String, Object> contextMap = new LinkedHashMap<>();
     contextMap.put("device", deviceMap);
@@ -62,6 +66,7 @@ public class AttributionMiddlewareTest {
       device.put(AnalyticsContext.Device.DEVICE_ID_KEY, deviceId);
     }
     device.putAdvertisingInfo(gaid, adTrackingEnabled);
+    device.putAndroidId(androidId);
     return sourceContext;
   }
 
@@ -91,7 +96,11 @@ public class AttributionMiddlewareTest {
   @Test
   public void enrichesPayloadDeviceWithGaidAndLimitAdTracking() {
     AnalyticsContext sourceContext =
-        buildSourceContext("test-device-id", "test-gaid-1234", /* adTrackingEnabled= */ true);
+        buildSourceContext(
+            "test-device-id",
+            "test-gaid-1234",
+            /* adTrackingEnabled= */ true,
+            /* androidId= */ null);
 
     AnalyticsContext payloadContext = buildPayloadContext("test-device-id");
 
@@ -122,7 +131,11 @@ public class AttributionMiddlewareTest {
   public void nullGaidDoesNotBlockChainProceed() {
     // No gaid — simulates pre-fetch state
     AnalyticsContext sourceContext =
-        buildSourceContext("test-device-id", /* gaid= */ null, /* adTrackingEnabled= */ false);
+        buildSourceContext(
+            "test-device-id",
+            /* gaid= */ null,
+            /* adTrackingEnabled= */ false,
+            /* androidId= */ null);
 
     AnalyticsContext payloadContext = buildPayloadContext("test-device-id");
 
@@ -172,7 +185,8 @@ public class AttributionMiddlewareTest {
   @Test
   public void chainProceedCalledExactlyOnceWhenPayloadContextIsNull() {
     AnalyticsContext sourceContext =
-        buildSourceContext("device-id", "gaid-1234", /* adTrackingEnabled= */ true);
+        buildSourceContext(
+            "device-id", "gaid-1234", /* adTrackingEnabled= */ true, /* androidId= */ null);
 
     BasePayload payload = mock(BasePayload.class);
     when(payload.context()).thenReturn(null);
@@ -193,7 +207,8 @@ public class AttributionMiddlewareTest {
   @Test
   public void chainProceedCalledExactlyOnceWhenPayloadDeviceIsNull() {
     AnalyticsContext sourceContext =
-        buildSourceContext("device-id", "gaid-1234", /* adTrackingEnabled= */ true);
+        buildSourceContext(
+            "device-id", "gaid-1234", /* adTrackingEnabled= */ true, /* androidId= */ null);
 
     // Payload context with no "device" key → payloadContext.device() returns null
     AnalyticsContext payloadContext = new AnalyticsContext(new LinkedHashMap<String, Object>());
@@ -208,5 +223,174 @@ public class AttributionMiddlewareTest {
     middleware.intercept(chain);
 
     verify(chain).proceed(payload);
+  }
+
+  // ---------------------------------------------------------------------------
+  // AC5 — android_id enrichment
+  // ---------------------------------------------------------------------------
+
+  /**
+   * When the source device has a valid android_id, the middleware must propagate it to the payload
+   * device at key {@code "android_id"}.
+   */
+  @Test
+  public void androidIdPropagatedToPayloadDeviceWhenValid() {
+    AnalyticsContext sourceContext =
+        buildSourceContext(
+            "dev-id",
+            "gaid-1234",
+            /* adTrackingEnabled= */ true,
+            /* androidId= */ "test-android-id-abc");
+
+    AnalyticsContext payloadContext = buildPayloadContext("dev-id");
+
+    BasePayload payload = mock(BasePayload.class);
+    when(payload.context()).thenReturn(payloadContext);
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(payload);
+
+    AttributionMiddleware middleware = new AttributionMiddleware(sourceContext);
+    middleware.intercept(chain);
+
+    verify(chain).proceed(payload);
+
+    AnalyticsContext.Device resultDevice = payloadContext.device();
+    assertThat(resultDevice).isNotNull();
+    assertThat(resultDevice).containsEntry("android_id", "test-android-id-abc");
+  }
+
+  /**
+   * When the source device has no android_id (null passed to putAndroidId, which stores nothing),
+   * the middleware must NOT write an {@code "android_id"} key to the payload device.
+   */
+  @Test
+  public void androidIdAbsentFromPayloadDeviceWhenNull() {
+    AnalyticsContext sourceContext =
+        buildSourceContext(
+            "dev-id", "gaid-1234", /* adTrackingEnabled= */ true, /* androidId= */ null);
+
+    AnalyticsContext payloadContext = buildPayloadContext("dev-id");
+
+    BasePayload payload = mock(BasePayload.class);
+    when(payload.context()).thenReturn(payloadContext);
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(payload);
+
+    AttributionMiddleware middleware = new AttributionMiddleware(sourceContext);
+    middleware.intercept(chain);
+
+    verify(chain).proceed(payload);
+
+    AnalyticsContext.Device resultDevice = payloadContext.device();
+    assertThat(resultDevice).isNotNull();
+    assertThat(resultDevice).doesNotContainKey("android_id");
+  }
+
+  // ---------------------------------------------------------------------------
+  // AC6 — android_id does not conflict with device_id or gaid
+  // ---------------------------------------------------------------------------
+
+  /**
+   * When all three fields (android_id, device_id, gaid) are set, the middleware must propagate all
+   * three independently — no field overwrites another.
+   */
+  @Test
+  public void androidIdDoesNotConflictWithDeviceIdOrGaid() {
+    AnalyticsContext sourceContext =
+        buildSourceContext(
+            "keystore-uuid",
+            "test-gaid-5678",
+            /* adTrackingEnabled= */ true,
+            /* androidId= */ "valid-android-id");
+
+    AnalyticsContext payloadContext = buildPayloadContext("keystore-uuid");
+
+    BasePayload payload = mock(BasePayload.class);
+    when(payload.context()).thenReturn(payloadContext);
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(payload);
+
+    AttributionMiddleware middleware = new AttributionMiddleware(sourceContext);
+    middleware.intercept(chain);
+
+    verify(chain).proceed(payload);
+
+    AnalyticsContext.Device resultDevice = payloadContext.device();
+    assertThat(resultDevice).isNotNull();
+    // All three must coexist at their own distinct keys
+    assertThat(resultDevice).containsEntry("id", "keystore-uuid");
+    assertThat(resultDevice).containsEntry("advertisingId", "test-gaid-5678");
+    assertThat(resultDevice).containsEntry("android_id", "valid-android-id");
+  }
+
+  // ---------------------------------------------------------------------------
+  // AC1 (rev 2) — collectDeviceID=false suppresses android_id
+  // ---------------------------------------------------------------------------
+
+  /**
+   * When {@code collectDeviceID=false}, {@link AnalyticsContext#putDevice} must NOT capture {@code
+   * android_id} — the hardware-identifier opt-out governs both {@code device.id} and {@code
+   * android_id}. Context is never accessed in this path (the Settings.Secure read is gated), so a
+   * mock Context is safe to pass.
+   */
+  @Test
+  public void putDevice_collectDeviceIdFalse_doesNotCaptureAndroidId() {
+    Traits traits = Traits.create();
+    AnalyticsContext ctx = Utils.createContext(traits);
+    // context is not accessed when collectDeviceID=false (Settings.Secure block is skipped)
+    ctx.putDevice(mock(Context.class), /* collectDeviceID= */ false);
+    assertThat(ctx.device()).isNotNull();
+    assertThat(ctx.device()).doesNotContainKey("android_id");
+  }
+
+  // ---------------------------------------------------------------------------
+  // AC2 — Device.putAndroidId() placeholder filtering
+  // (Pure-JVM tests: Device is a LinkedHashMap subclass, no Robolectric required.
+  // Long-term home is AnalyticsContextTest once Robolectric is upgraded — FU1.)
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void putAndroidId_validId_stored() {
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+    device.putAndroidId("abc123valid");
+    assertThat(device).containsEntry("android_id", "abc123valid");
+  }
+
+  @Test
+  public void putAndroidId_placeholder9774_filtered() {
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+    device.putAndroidId("9774d56d682e549c");
+    assertThat(device).doesNotContainKey("android_id");
+  }
+
+  @Test
+  public void putAndroidId_placeholder0000_filtered() {
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+    device.putAndroidId("0000000000000000");
+    assertThat(device).doesNotContainKey("android_id");
+  }
+
+  @Test
+  public void putAndroidId_unknown_filtered() {
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+    device.putAndroidId("unknown");
+    assertThat(device).doesNotContainKey("android_id");
+  }
+
+  @Test
+  public void putAndroidId_empty_filtered() {
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+    device.putAndroidId("");
+    assertThat(device).doesNotContainKey("android_id");
+  }
+
+  @Test
+  public void putAndroidId_null_filtered() {
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+    device.putAndroidId(null);
+    assertThat(device).doesNotContainKey("android_id");
   }
 }

@@ -379,6 +379,8 @@ public class Freshpaint {
             device != null
                 ? device.getString(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY)
                 : null;
+        String androidId =
+            device != null ? device.getString(AnalyticsContext.Device.DEVICE_ANDROID_ID_KEY) : null;
         boolean limitAdTracking =
             device == null
                 || device.getBoolean(AnalyticsContext.Device.DEVICE_LIMIT_AD_TRACKING_KEY, true);
@@ -394,6 +396,11 @@ public class Freshpaint {
         // with the resolved value once the GAID worker completes.
         if (gaid != null) {
           installProps.putValue("gaid", gaid);
+        }
+        // android_id is captured synchronously at SDK init (putDevice), so it is available here
+        // unless the device returned a placeholder value (filtered by Device.putAndroidId).
+        if (androidId != null) {
+          installProps.putValue("android_id", androidId);
         }
         // Merge Install Referrer data collected by trackAttributionInformation(). On first
         // launch when trackAttributionInformation == true, this data is available because the
