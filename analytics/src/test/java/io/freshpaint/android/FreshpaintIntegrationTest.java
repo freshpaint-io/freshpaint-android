@@ -146,23 +146,23 @@ public class FreshpaintIntegrationTest {
     verify(payloadQueue).add(captor.capture());
     String got = new String(captor.getValue(), FreshpaintIntegration.UTF_8);
 
-    // Verify the structural fields that the integration serialization is responsible for.
-    // The "properties" field now contains session metadata injected by performEnqueue()
-    // ($session_id, $is_first_event_in_session), so we assert it field-by-field instead of
-    // comparing the full JSON string.
-    assertThat(got)
-        .contains("\"channel\":\"mobile\"")
-        .contains("\"type\":\"track\"")
-        .contains("\"messageId\":\"a161304c-498c-4830-9291-fcfb8498877b\"")
-        .contains("\"timestamp\":\"2014-12-15T20:32:44.000Z\"")
-        .contains("\"integrations\":{\"All\":false,\"foo\":true}")
-        .contains("\"userId\":\"userId\"")
-        .contains("\"event\":\"foo\"")
-        // Session fields are injected by performEnqueue() into every event's properties.
-        .contains("\"$session_id\":")
-        .contains("\"$is_first_event_in_session\":")
-        // The Freshpaint integration key must be stripped from the outgoing payload.
-        .doesNotContain("\"Freshpaint\"");
+    Map<String, Object> parsed = Cartographer.INSTANCE.fromJson(got);
+    assertThat(parsed.get("channel")).isEqualTo("mobile");
+    assertThat(parsed.get("type")).isEqualTo("track");
+    assertThat(parsed.get("messageId")).isEqualTo("a161304c-498c-4830-9291-fcfb8498877b");
+    assertThat(parsed.get("timestamp")).isEqualTo("2014-12-15T20:32:44.000Z");
+    assertThat(parsed.get("userId")).isEqualTo("userId");
+    assertThat(parsed.get("event")).isEqualTo("foo");
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> parsedIntegrations = (Map<String, Object>) parsed.get("integrations");
+    assertThat(parsedIntegrations).containsEntry("All", false).containsEntry("foo", true);
+    assertThat(parsedIntegrations).doesNotContainKey("Freshpaint");
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> properties = (Map<String, Object>) parsed.get("properties");
+    assertThat(properties).containsKey("$session_id");
+    assertThat(properties).containsKey("$is_first_event_in_session");
   }
 
   @Test

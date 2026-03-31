@@ -55,7 +55,7 @@ public class AnalyticsLifecycleCallbacksAttributionTest {
       Freshpaint freshpaint, boolean trackAttribution) {
     return new AnalyticsActivityLifecycleCallbacks.Builder()
         .analytics(freshpaint)
-        .analyticsExecutor(new io.freshpaint.android.SynchronousExecutor())
+        .analyticsExecutor(new TestUtils.SynchronousExecutor())
         .shouldTrackApplicationLifecycleEvents(true)
         .trackAttributionInformation(trackAttribution)
         .trackDeepLinks(false)

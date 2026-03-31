@@ -78,7 +78,6 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
-import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 
@@ -87,47 +86,9 @@ import org.robolectric.annotation.LooperMode;
 @LooperMode(LooperMode.Mode.PAUSED)
 public class AnalyticsTest {
 
-  /**
-   * Runs tasks synchronously, then drains the main looper so that HANDLER.post() runnables (posted
-   * inside the task) execute before verify() calls in tests.
-   *
-   * <p>Uses {@link Shadows#shadowOf(android.os.Looper)} instead of the deprecated {@link
-   * org.robolectric.shadows.ShadowLooper#idleMainLooper()} because the deprecated method asserts it
-   * is not called from the main thread (which is where Robolectric runs tests).
-   */
-  private static class LooperDrainingExecutor extends TestUtils.SynchronousExecutor {
-    @Override
-    public void execute(Runnable r) {
-      super.execute(r);
-      Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
-    }
-  }
-
-  private static final String SETTINGS =
-      "{\n"
-          + "  \"integrations\": {\n"
-          + "    \"test\": {\n"
-          + "      \"foo\": \"bar\"\n"
-          + "    }\n"
-          + "  },\n"
-          + "  \"plan\": {\n"
-          + "    \n"
-          + "  }\n"
-          + "}";
-
-  private static ValueMap testProjectSettings() {
-    try {
-      ValueMap settings = new ValueMap();
-      settings.putAll(Cartographer.INSTANCE.fromJson(SETTINGS));
-      return settings;
-    } catch (IOException e) {
-      throw new AssertionError(e);
-    }
-  }
-
   @Mock Traits.Cache traitsCache;
   @Spy Utils.AnalyticsNetworkExecutorService networkExecutor;
-  @Spy ExecutorService analyticsExecutor = new LooperDrainingExecutor();
+  @Spy ExecutorService analyticsExecutor = new TestUtils.LooperDrainingExecutor();
   @Mock Client client;
   @Mock Stats stats;
   @Mock ProjectSettings.Cache projectSettingsCache;
@@ -174,7 +135,7 @@ public class AnalyticsTest {
           }
         };
     when(projectSettingsCache.get()) //
-        .thenReturn(ProjectSettings.create(Cartographer.INSTANCE.fromJson(SETTINGS)));
+        .thenReturn(ProjectSettings.create(TestUtils.testProjectSettings()));
 
     SharedPreferences sharedPreferences =
         RuntimeEnvironment.application.getSharedPreferences("analytics-test-qaz", MODE_PRIVATE);
@@ -208,7 +169,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -851,7 +812,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -946,7 +907,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1018,7 +979,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1093,7 +1054,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1169,7 +1130,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1245,7 +1206,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1313,7 +1274,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1384,7 +1345,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1462,7 +1423,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1532,7 +1493,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1602,7 +1563,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1693,7 +1654,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1791,7 +1752,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1869,7 +1830,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             true,
             true);
@@ -1912,7 +1873,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            testProjectSettings(),
+            TestUtils.testProjectSettings(),
             lifecycle,
             false,
             true);

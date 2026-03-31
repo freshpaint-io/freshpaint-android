@@ -128,7 +128,7 @@ public class MmpIntegrationTest {
         20,
         30_000L,
         300,
-        new SynchronousExecutor(),
+        new TestUtils.SynchronousExecutor(),
         false, // shouldTrackApplicationLifecycleEvents — called directly in tests
         new CountDownLatch(0),
         false,
@@ -138,7 +138,7 @@ public class MmpIntegrationTest {
         Crypto.none(),
         Collections.singletonList(captureMiddleware),
         Collections.emptyMap(),
-        new ValueMap(),
+        TestUtils.testProjectSettings(),
         mock(Lifecycle.class),
         false,
         true); // trackFirstOpen = true
@@ -320,6 +320,46 @@ public class MmpIntegrationTest {
     assertThat(props).doesNotContainKey("utm_source"); // UTM expired
   }
 
+  /**
+   * At exactly 24 hours after storage, UTM params are still included (boundary is inclusive). One
+   * millisecond later they are omitted.
+   */
+  @Test
+  public void it4c_attributedInstall_deepLink_utmIncludedAtExact24hBoundary() {
+    long storedAt = 1_000_000L;
+    long exactly24h = 24L * 60L * 60L * 1_000L;
+    Map<String, String> dlParams = new LinkedHashMap<>();
+    dlParams.put("gclid", "DL_GCLID");
+    dlParams.put("utm_source", "facebook");
+    DeepLinkAttributionManager.store(dlParams, fakePrefs, storedAt);
+
+    Freshpaint fp = buildFreshpaint(emptyContext());
+    fp.trackApplicationLifecycleEvents(storedAt + exactly24h); // exactly 24h, inclusive boundary
+
+    assertThat(tracksOf(captured)).hasSize(1);
+    Properties props = tracksOf(captured).get(0).properties();
+    assertThat(props.get("$gclid")).isEqualTo("DL_GCLID");
+    assertThat(props.get("utm_source")).isEqualTo("facebook"); // still present at boundary
+  }
+
+  @Test
+  public void it4d_attributedInstall_deepLink_utmOmittedOnemsAfter24hBoundary() {
+    long storedAt = 1_000_000L;
+    long exactly24h = 24L * 60L * 60L * 1_000L;
+    Map<String, String> dlParams = new LinkedHashMap<>();
+    dlParams.put("gclid", "DL_GCLID");
+    dlParams.put("utm_source", "facebook");
+    DeepLinkAttributionManager.store(dlParams, fakePrefs, storedAt);
+
+    Freshpaint fp = buildFreshpaint(emptyContext());
+    fp.trackApplicationLifecycleEvents(storedAt + exactly24h + 1L); // 24h + 1ms, expired
+
+    assertThat(tracksOf(captured)).hasSize(1);
+    Properties props = tracksOf(captured).get(0).properties();
+    assertThat(props.get("$gclid")).isEqualTo("DL_GCLID"); // click ID persists
+    assertThat(props).doesNotContainKey("utm_source"); // UTM expired
+  }
+
   // -------------------------------------------------------------------------
   // IT5 — Sideloaded app: no Install Referrer available
   // -------------------------------------------------------------------------
@@ -396,8 +436,9 @@ public class MmpIntegrationTest {
     assertThat(limitAdTracking).isNotNull();
     assertThat(limitAdTracking).isInstanceOf(Boolean.class);
 
-    // os_version: key present (Build.VERSION.RELEASE is null in the pure-JVM Android stub;
-    // non-null value is guaranteed on a real device or under Robolectric)
+    // os_version: Build.VERSION.RELEASE is null in the pure-JVM Android stub, so we can only
+    // assert key presence here. AnalyticsContextTest (Robolectric 4.x) validates the non-null
+    // String value via Build.VERSION.RELEASE in its create() and copyDevice() tests.
     assertThat(props).containsKey("os_version");
 
     // app_version: matches mocked PackageInfo.versionName
@@ -477,7 +518,7 @@ public class MmpIntegrationTest {
     AnalyticsActivityLifecycleCallbacks callbacks =
         new AnalyticsActivityLifecycleCallbacks.Builder()
             .analytics(fp)
-            .analyticsExecutor(new SynchronousExecutor())
+            .analyticsExecutor(new TestUtils.SynchronousExecutor())
             .shouldTrackApplicationLifecycleEvents(false)
             .trackAttributionInformation(false)
             .trackDeepLinks(true)

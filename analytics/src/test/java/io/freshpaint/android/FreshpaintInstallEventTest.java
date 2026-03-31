@@ -117,7 +117,7 @@ public class FreshpaintInstallEventTest {
         20,
         30_000L,
         300,
-        new SynchronousExecutor(),
+        new TestUtils.SynchronousExecutor(),
         false, // shouldTrackApplicationLifecycleEvents — we call the method directly
         new CountDownLatch(0),
         false,
@@ -127,7 +127,7 @@ public class FreshpaintInstallEventTest {
         Crypto.none(),
         Collections.singletonList(captureMiddleware),
         Collections.emptyMap(),
-        new ValueMap(),
+        TestUtils.testProjectSettings(),
         mock(Lifecycle.class),
         false,
         trackFirstOpen);
@@ -378,7 +378,7 @@ public class FreshpaintInstallEventTest {
             20,
             30_000L,
             300,
-            new SynchronousExecutor(),
+            new TestUtils.SynchronousExecutor(),
             false,
             new CountDownLatch(0),
             false,
@@ -388,7 +388,7 @@ public class FreshpaintInstallEventTest {
             Crypto.none(),
             Collections.singletonList(captureMiddleware),
             Collections.emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             mock(Lifecycle.class),
             false,
             true);
@@ -587,7 +587,7 @@ public class FreshpaintInstallEventTest {
             20,
             30_000L,
             300,
-            new SynchronousExecutor(),
+            new TestUtils.SynchronousExecutor(),
             false,
             new CountDownLatch(0),
             false,
@@ -597,7 +597,7 @@ public class FreshpaintInstallEventTest {
             Crypto.none(),
             Collections.singletonList(captureMiddleware),
             Collections.emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             mock(Lifecycle.class),
             false,
             true);

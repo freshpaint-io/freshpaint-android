@@ -35,6 +35,7 @@ import android.app.Application;
 import io.freshpaint.android.integrations.TrackPayload;
 import io.freshpaint.android.internal.Utils;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.Collections;
 import java.util.List;
@@ -53,6 +54,28 @@ import org.robolectric.Shadows;
 import org.robolectric.shadows.ShadowApplication;
 
 public final class TestUtils {
+
+  private static final String DEFAULT_PROJECT_SETTINGS_JSON =
+      "{\n"
+          + "  \"integrations\": {\n"
+          + "    \"test\": {\n"
+          + "      \"foo\": \"bar\"\n"
+          + "    }\n"
+          + "  },\n"
+          + "  \"plan\": {\n"
+          + "    \n"
+          + "  }\n"
+          + "}";
+
+  public static ValueMap testProjectSettings() {
+    try {
+      ValueMap settings = new ValueMap();
+      settings.putAll(Cartographer.INSTANCE.fromJson(DEFAULT_PROJECT_SETTINGS_JSON));
+      return settings;
+    } catch (IOException e) {
+      throw new AssertionError(e);
+    }
+  }
 
   public static final String PROJECT_SETTINGS_JSON_SAMPLE =
       "{\n"
@@ -208,6 +231,19 @@ public final class TestUtils {
     @Override
     public void execute(Runnable command) {
       command.run();
+    }
+  }
+
+  /**
+   * Extends {@link SynchronousExecutor} to drain the Robolectric main looper after each task.
+   * Required under {@code @LooperMode(PAUSED)} so that {@code HANDLER.post()} runnables execute
+   * before {@code verify()} calls in tests.
+   */
+  public static class LooperDrainingExecutor extends SynchronousExecutor {
+    @Override
+    public void execute(Runnable command) {
+      super.execute(command);
+      Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
     }
   }
 
