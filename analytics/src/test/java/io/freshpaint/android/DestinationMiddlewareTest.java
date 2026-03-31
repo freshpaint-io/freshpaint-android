@@ -33,7 +33,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.Manifest;
 import androidx.annotation.NonNull;
-import com.google.common.util.concurrent.MoreExecutors;
 import io.freshpaint.android.integrations.BasePayload;
 import io.freshpaint.android.integrations.IdentifyPayload;
 import io.freshpaint.android.integrations.Integration;
@@ -50,11 +49,22 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
+@LooperMode(LooperMode.Mode.PAUSED)
 public class DestinationMiddlewareTest {
+
+  private static class LooperDrainingExecutor extends TestUtils.SynchronousExecutor {
+    @Override
+    public void execute(Runnable r) {
+      super.execute(r);
+      Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+    }
+  }
 
   Freshpaint.Builder builder;
 
@@ -106,7 +116,7 @@ public class DestinationMiddlewareTest {
                     return "bar";
                   }
                 })
-            .executor(MoreExecutors.newDirectExecutorService());
+            .executor(new LooperDrainingExecutor());
   }
 
   @Test

@@ -32,6 +32,7 @@ import static org.robolectric.annotation.Config.NONE;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.os.Build;
 import android.provider.Settings;
 import com.google.common.collect.ImmutableMap;
 import io.freshpaint.android.core.BuildConfig;
@@ -73,34 +74,39 @@ public class AnalyticsContextTest {
         .containsKey("timezone") // value depends on where the tests are run
         .containsKey("traits");
 
+    String packageName = RuntimeEnvironment.application.getPackageName();
     assertThat(context.getValueMap("app")) //
-        .containsEntry("name", "org.robolectric.default")
-        .containsEntry("version", "undefined")
-        .containsEntry("namespace", "org.robolectric.default")
+        .containsEntry("namespace", packageName)
         .containsEntry("build", "0");
 
     assertThat(context.getValueMap("device")) //
-        .containsEntry("id", "unknown")
-        .containsEntry("manufacturer", "unknown")
-        .containsEntry("model", "unknown")
-        .containsEntry("name", "unknown")
+        .containsEntry("manufacturer", Build.MANUFACTURER)
+        .containsEntry("model", Build.MODEL)
+        .containsEntry("name", Build.DEVICE)
         .containsEntry("type", "android");
 
     assertThat(context.getValueMap("library")) //
         .containsEntry("name", "analytics-android")
         .containsEntry("version", BuildConfig.VERSION_NAME);
 
-    // TODO: mock network state?
-    assertThat(context.getValueMap("network")).isEmpty();
+    // Robolectric 4.x: TelephonyManager.getNetworkOperatorName() returns "" instead of null,
+    // so "carrier" is present as an empty string. No wifi/bluetooth/cellular since
+    // ConnectivityManager is not mocked in this test.
+    assertThat(context.getValueMap("network")).containsOnlyKeys("carrier");
 
     assertThat(context.getValueMap("os")) //
         .containsEntry("name", "Android") //
-        .containsEntry("version", "4.1.2_r1");
+        .containsEntry("version", Build.VERSION.RELEASE);
 
+    android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+    ((android.view.WindowManager)
+            RuntimeEnvironment.application.getSystemService(Context.WINDOW_SERVICE))
+        .getDefaultDisplay()
+        .getMetrics(dm);
     assertThat(context.getValueMap("screen")) //
-        .containsEntry("density", 1.5f) //
-        .containsEntry("width", 480) //
-        .containsEntry("height", 800);
+        .containsEntry("density", dm.density) //
+        .containsEntry("width", dm.widthPixels) //
+        .containsEntry("height", dm.heightPixels);
   }
 
   @Test
@@ -109,9 +115,9 @@ public class AnalyticsContextTest {
 
     assertThat(context.getValueMap("device")) //
         .containsEntry("id", traits.anonymousId())
-        .containsEntry("manufacturer", "unknown")
-        .containsEntry("model", "unknown")
-        .containsEntry("name", "unknown")
+        .containsEntry("manufacturer", Build.MANUFACTURER)
+        .containsEntry("model", Build.MODEL)
+        .containsEntry("name", Build.DEVICE)
         .containsEntry("type", "android");
   }
 

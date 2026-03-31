@@ -33,10 +33,6 @@ import static org.mockito.Mockito.when;
 import android.content.pm.PackageInfo;
 import androidx.lifecycle.LifecycleOwner;
 import io.freshpaint.android.integrations.Logger;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.AbstractExecutorService;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -55,46 +51,11 @@ import org.mockito.InOrder;
  */
 public class AnalyticsLifecycleCallbacksAttributionTest {
 
-  /** Runs submitted tasks synchronously on the calling thread. */
-  static class SynchronousExecutor extends AbstractExecutorService {
-    private boolean terminated;
-
-    @Override
-    public void shutdown() {
-      terminated = true;
-    }
-
-    @Override
-    public List<Runnable> shutdownNow() {
-      return Collections.emptyList();
-    }
-
-    @Override
-    public boolean isShutdown() {
-      return terminated;
-    }
-
-    @Override
-    public boolean isTerminated() {
-      return terminated;
-    }
-
-    @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) {
-      return terminated;
-    }
-
-    @Override
-    public void execute(Runnable r) {
-      r.run();
-    }
-  }
-
   private AnalyticsActivityLifecycleCallbacks buildCallbacks(
       Freshpaint freshpaint, boolean trackAttribution) {
     return new AnalyticsActivityLifecycleCallbacks.Builder()
         .analytics(freshpaint)
-        .analyticsExecutor(new SynchronousExecutor())
+        .analyticsExecutor(new io.freshpaint.android.SynchronousExecutor())
         .shouldTrackApplicationLifecycleEvents(true)
         .trackAttributionInformation(trackAttribution)
         .trackDeepLinks(false)

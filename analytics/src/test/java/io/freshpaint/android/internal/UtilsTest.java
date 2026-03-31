@@ -164,13 +164,14 @@ public class UtilsTest {
     target.edit().clear().apply();
 
     Utils.copySharedPreferences(src, target);
-    assertThat(target)
-        .contains("aBool", true)
-        .contains("aString", "foo")
-        .contains("anInt", 2)
-        .contains("aFloat", 3.14f)
-        .contains("aLong", 12345678910L)
-        .contains("aStringSet", new HashSet<>(Arrays.asList("foo", "bar")));
+    // Use individual getter methods instead of assertj-android's SharedPreferences assertions,
+    // which are incompatible with assertj-core 3.x at runtime.
+    Assertions.assertThat(target.getBoolean("aBool", false)).isTrue();
+    Assertions.assertThat(target.getString("aString", null)).isEqualTo("foo");
+    Assertions.assertThat(target.getInt("anInt", 0)).isEqualTo(2);
+    Assertions.assertThat(target.getFloat("aFloat", 0f)).isEqualTo(3.14f);
+    Assertions.assertThat(target.getLong("aLong", 0L)).isEqualTo(12345678910L);
+    Assertions.assertThat(target.getStringSet("aStringSet", null)).containsOnly("foo", "bar");
   }
 
   @Test

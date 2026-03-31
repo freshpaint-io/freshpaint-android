@@ -78,11 +78,30 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
+@LooperMode(LooperMode.Mode.PAUSED)
 public class AnalyticsTest {
+
+  /**
+   * Runs tasks synchronously, then drains the main looper so that HANDLER.post() runnables (posted
+   * inside the task) execute before verify() calls in tests.
+   *
+   * <p>Uses {@link Shadows#shadowOf(android.os.Looper)} instead of the deprecated {@link
+   * org.robolectric.shadows.ShadowLooper#idleMainLooper()} because the deprecated method asserts it
+   * is not called from the main thread (which is where Robolectric runs tests).
+   */
+  private static class LooperDrainingExecutor extends TestUtils.SynchronousExecutor {
+    @Override
+    public void execute(Runnable r) {
+      super.execute(r);
+      Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+    }
+  }
 
   private static final String SETTINGS =
       "{\n"
@@ -96,9 +115,19 @@ public class AnalyticsTest {
           + "  }\n"
           + "}";
 
+  private static ValueMap testProjectSettings() {
+    try {
+      ValueMap settings = new ValueMap();
+      settings.putAll(Cartographer.INSTANCE.fromJson(SETTINGS));
+      return settings;
+    } catch (IOException e) {
+      throw new AssertionError(e);
+    }
+  }
+
   @Mock Traits.Cache traitsCache;
   @Spy Utils.AnalyticsNetworkExecutorService networkExecutor;
-  @Spy ExecutorService analyticsExecutor = new TestUtils.SynchronousExecutor();
+  @Spy ExecutorService analyticsExecutor = new LooperDrainingExecutor();
   @Mock Client client;
   @Mock Stats stats;
   @Mock ProjectSettings.Cache projectSettingsCache;
@@ -179,7 +208,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -822,7 +851,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -917,7 +946,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -989,7 +1018,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -999,6 +1028,7 @@ public class AnalyticsTest {
     ActivityInfo info = mock(ActivityInfo.class);
 
     when(activity.getPackageManager()).thenReturn(packageManager);
+    when(activity.getComponentName()).thenReturn(new ComponentName("com.foo", "com.foo.Activity"));
     //noinspection WrongConstant
     when(packageManager.getActivityInfo(any(ComponentName.class), eq(PackageManager.GET_META_DATA)))
         .thenReturn(info);
@@ -1063,7 +1093,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1139,7 +1169,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1215,7 +1245,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1283,7 +1313,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1354,7 +1384,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1432,7 +1462,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1502,7 +1532,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1572,7 +1602,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1663,7 +1693,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1761,7 +1791,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);
@@ -1839,7 +1869,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             true,
             true);
@@ -1882,7 +1912,7 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            testProjectSettings(),
             lifecycle,
             false,
             true);

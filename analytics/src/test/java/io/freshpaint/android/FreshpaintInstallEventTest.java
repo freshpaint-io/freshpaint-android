@@ -42,10 +42,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -58,49 +56,6 @@ import org.junit.Test;
  * Android Handler, allowing direct assertions on dispatched events.
  */
 public class FreshpaintInstallEventTest {
-
-  // -------------------------------------------------------------------------
-  // SynchronousExecutor — runs submitted tasks on the calling thread
-  // -------------------------------------------------------------------------
-
-  /**
-   * Executes every submitted {@link Runnable} synchronously on the calling thread. This makes
-   * {@link Freshpaint#track} and {@link Freshpaint#trackApplicationLifecycleEvents} fully
-   * synchronous so assertions can run immediately after the call.
-   */
-  static class SynchronousExecutor extends AbstractExecutorService {
-    private boolean terminated;
-
-    @Override
-    public void shutdown() {
-      terminated = true;
-    }
-
-    @Override
-    public List<Runnable> shutdownNow() {
-      return Collections.emptyList();
-    }
-
-    @Override
-    public boolean isShutdown() {
-      return terminated;
-    }
-
-    @Override
-    public boolean isTerminated() {
-      return terminated;
-    }
-
-    @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) {
-      return terminated;
-    }
-
-    @Override
-    public void execute(Runnable r) {
-      r.run();
-    }
-  }
 
   // -------------------------------------------------------------------------
   // Test state

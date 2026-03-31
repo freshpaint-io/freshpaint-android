@@ -30,28 +30,30 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import android.app.Activity;
 import android.app.Application;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import androidx.lifecycle.Lifecycle;
 import io.freshpaint.android.integrations.BasePayload;
 import io.freshpaint.android.integrations.Logger;
 import io.freshpaint.android.integrations.TrackPayload;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
- * End-to-end integration tests for the MMP attribution pipeline (FRP-46).
+ * End-to-end integration tests for the MMP attribution pipeline.
  *
  * <p>Each test covers a distinct install scenario, combining multiple attribution components
  * (StableDeviceId, GAID, InstallReferrerManager, DeepLinkAttributionManager) as they interact
@@ -62,44 +64,6 @@ import org.junit.Test;
  * FreshpaintInstallEventTest}.
  */
 public class MmpIntegrationTest {
-
-  // -------------------------------------------------------------------------
-  // SynchronousExecutor — runs submitted tasks on the calling thread
-  // -------------------------------------------------------------------------
-
-  static class SynchronousExecutor extends AbstractExecutorService {
-    private boolean terminated;
-
-    @Override
-    public void shutdown() {
-      terminated = true;
-    }
-
-    @Override
-    public List<Runnable> shutdownNow() {
-      return Collections.emptyList();
-    }
-
-    @Override
-    public boolean isShutdown() {
-      return terminated;
-    }
-
-    @Override
-    public boolean isTerminated() {
-      return terminated;
-    }
-
-    @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) {
-      return terminated;
-    }
-
-    @Override
-    public void execute(Runnable r) {
-      r.run();
-    }
-  }
 
   // -------------------------------------------------------------------------
   // Test state — each test gets fresh instances via @Before
@@ -366,8 +330,10 @@ public class MmpIntegrationTest {
    */
   @Test
   public void it5_sideloadedApp_noInstallReferrer_eventFiresWithoutCrash() {
-    // KEY_IR_COLLECTED absent (false by default) — sideloaded app, Play Store never contacted
-    // No DL prefs either
+    // Explicit false: sideloaded app, Play Store was never contacted so KEY_IR_COLLECTED is
+    // false (vs. IT3 organic where the key is simply absent). Both result in no referrer
+    // fields, but the explicit write makes the sideload intent clear to readers.
+    fakePrefs.store.put(InstallReferrerManager.KEY_IR_COLLECTED, false);
 
     Freshpaint fp = buildFreshpaint(emptyContext());
     fp.trackApplicationLifecycleEvents();
@@ -448,6 +414,9 @@ public class MmpIntegrationTest {
    */
   @Test
   public void it7a_regression_secondLaunch_appInstallNotFired() {
+    // The actual guard is previousBuild != -1 (build=1 here). The first_open_tracked and
+    // version entries are set to reflect a realistic second-launch SharedPreferences state,
+    // not because they are required to suppress app_install on this code path.
     fakePrefs.store.put("first_open_tracked", true);
     fakePrefs.store.put("build", 1);
     fakePrefs.store.put("version", "1.0.0");
@@ -489,21 +458,63 @@ public class MmpIntegrationTest {
   // -------------------------------------------------------------------------
 
   /**
-   * Verifying that {@code Deep Link Opened} includes stored deep-link attribution properties when
-   * {@code app_install} has already been tracked requires invoking {@link
-   * AnalyticsActivityLifecycleCallbacks#trackDeepLink}, which depends on {@code android.net.Uri}
-   * and {@code android.content.Intent}. These Android framework classes cannot be instantiated in a
-   * pure-JVM environment without Robolectric.
+   * When {@code first_open_tracked=true} (app_install already fired on a previous launch) and a
+   * deep link is opened, {@code Deep Link Opened} must include the stored attribution properties
+   * ($gclid, utm params) — proving that {@link AnalyticsActivityLifecycleCallbacks#trackDeepLink}
+   * enriches the event via {@link Freshpaint#getDeepLinkAttributionProperties}.
    *
-   * <p>Blocked by: Robolectric 3.5 / Java 17 incompatibility (pre-existing 20-failure baseline).
-   * Track as FRP-46 carry-forward item pending Robolectric upgrade.
+   * <p>Uses Mockito mocks for {@code Activity}, {@code Intent}, and {@code Uri} so that {@code
+   * uri.getQueryParameterNames()} and {@code uri.getQueryParameter()} can be stubbed without
+   * Robolectric.
    */
-  @Ignore(
-      "Requires android.net.Uri / android.content.Intent (AnalyticsActivityLifecycleCallbacks"
-          + ".trackDeepLink). Blocked by Robolectric 3.5 / Java 17 incompatibility. "
-          + "Carry-forward: upgrade Robolectric to 4.x to enable this test.")
   @Test
   public void it7c_regression_deepLinkOpenedEnrichedWhenFirstOpenAlreadyTracked() {
-    // Placeholder — will be implemented after Robolectric upgrade.
+    // Signal that app_install was already tracked on a prior launch.
+    fakePrefs.store.put("first_open_tracked", true);
+
+    Freshpaint fp = buildFreshpaint(emptyContext());
+
+    AnalyticsActivityLifecycleCallbacks callbacks =
+        new AnalyticsActivityLifecycleCallbacks.Builder()
+            .analytics(fp)
+            .analyticsExecutor(new SynchronousExecutor())
+            .shouldTrackApplicationLifecycleEvents(false)
+            .trackAttributionInformation(false)
+            .trackDeepLinks(true)
+            .shouldRecordScreenViews(false)
+            .packageInfo(new PackageInfo())
+            .build();
+
+    // Mock Activity with an Intent carrying a deep link URI with click ID and UTM params.
+    Uri mockUri = mock(Uri.class);
+    when(mockUri.getQueryParameterNames())
+        .thenReturn(new LinkedHashSet<>(Arrays.asList("gclid", "utm_source")));
+    when(mockUri.getQueryParameter("gclid")).thenReturn("CLICK_ID_123");
+    when(mockUri.getQueryParameter("utm_source")).thenReturn("google_ads");
+    when(mockUri.toString())
+        .thenReturn("https://example.com?gclid=CLICK_ID_123&utm_source=google_ads");
+
+    Intent mockIntent = mock(Intent.class);
+    when(mockIntent.getData()).thenReturn(mockUri);
+
+    Activity mockActivity = mock(Activity.class);
+    when(mockActivity.getIntent()).thenReturn(mockIntent);
+
+    callbacks.onActivityCreated(mockActivity, null);
+
+    // Deep Link Opened must have fired exactly once.
+    List<TrackPayload> tracks = tracksOf(captured);
+    assertThat(tracks).hasSize(1);
+    TrackPayload event = tracks.get(0);
+    assertThat(event.event()).isEqualTo("Deep Link Opened");
+
+    Properties props = event.properties();
+    // url is always present in Deep Link Opened
+    assertThat(props.getString("url"))
+        .isEqualTo("https://example.com?gclid=CLICK_ID_123&utm_source=google_ads");
+    // click ID stored and enriched as $gclid (prefixed by DeepLinkAttributionManager)
+    assertThat(props.get("$gclid")).isEqualTo("CLICK_ID_123");
+    // UTM param enriched (within expiry window — same millisecond stored and retrieved)
+    assertThat(props.get("utm_source")).isEqualTo("google_ads");
   }
 }
