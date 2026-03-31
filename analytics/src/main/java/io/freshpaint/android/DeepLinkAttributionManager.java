@@ -24,6 +24,8 @@
 package io.freshpaint.android;
 
 import android.content.SharedPreferences;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -84,7 +86,7 @@ final class DeepLinkAttributionManager {
    * @param prefs the SDK's SharedPreferences instance
    * @param now current time in Unix milliseconds (caller-supplied for testability)
    */
-  static void store(Map<String, String> queryParams, SharedPreferences prefs, long now) {
+  static void store(@Nullable Map<String, String> queryParams, SharedPreferences prefs, long now) {
     if (queryParams == null || queryParams.isEmpty()) {
       return;
     }
@@ -162,6 +164,7 @@ final class DeepLinkAttributionManager {
    * @param now current time in Unix milliseconds (caller-supplied for testability)
    * @return attribution key-value pairs; empty map if nothing has been stored
    */
+  @NonNull
   static Map<String, Object> getStoredProperties(SharedPreferences prefs, long now) {
     Map<String, Object> result = new LinkedHashMap<>();
 

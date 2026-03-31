@@ -750,6 +750,14 @@ public class AnalyticsTest {
   }
 
   @Test
+  public void buildWithoutSourceMiddlewareDoesNotThrow() {
+    Freshpaint.singleton = null;
+    // Regression: Builder.sourceMiddleware is null when useSourceMiddleware() is never called;
+    // build() must not NPE on addAll(null).
+    new Freshpaint.Builder(RuntimeEnvironment.application, "test-no-middleware").build().shutdown();
+  }
+
+  @Test
   public void getSnapshotInvokesStats() throws Exception {
     freshpaint.getSnapshot();
     verify(stats).createSnapshot();
