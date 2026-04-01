@@ -47,10 +47,14 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 /**
  * End-to-end integration tests for the MMP attribution pipeline.
@@ -59,10 +63,12 @@ import org.junit.Test;
  * (StableDeviceId, GAID, InstallReferrerManager, DeepLinkAttributionManager) as they interact
  * through {@link Freshpaint#trackApplicationLifecycleEvents(long)}.
  *
- * <p>Pure JVM — no Robolectric. Uses {@link FakeSharedPreferences} and a {@link
- * SynchronousExecutor} to run all async work on the calling thread, matching the pattern in {@link
- * FreshpaintInstallEventTest}.
+ * <p>Uses {@link FakeSharedPreferences} and a {@link SynchronousExecutor} to run all async work on
+ * the calling thread. Runs under Robolectric so that Android framework classes referenced
+ * transitively (e.g. {@code PackageInfo}, {@code Build.VERSION}) are safely stubbed.
  */
+@RunWith(RobolectricTestRunner.class)
+@Config(manifest = Config.NONE)
 public class MmpIntegrationTest {
 
   // -------------------------------------------------------------------------
@@ -95,6 +101,40 @@ public class MmpIntegrationTest {
   // -------------------------------------------------------------------------
 
   /**
+   * An {@link AbstractExecutorService} that throws {@link AssertionError} on any submission,
+   * ensuring no unexpected network operations occur during these tests.
+   */
+  private static class FailFastNetworkExecutor extends AbstractExecutorService {
+    @Override
+    public void execute(Runnable command) {
+      throw new AssertionError("Unexpected task submitted to networkExecutor");
+    }
+
+    @Override
+    public void shutdown() {}
+
+    @Override
+    public java.util.List<Runnable> shutdownNow() {
+      return Collections.emptyList();
+    }
+
+    @Override
+    public boolean isShutdown() {
+      return false;
+    }
+
+    @Override
+    public boolean isTerminated() {
+      return false;
+    }
+
+    @Override
+    public boolean awaitTermination(long timeout, TimeUnit unit) {
+      return true;
+    }
+  }
+
+  /**
    * Builds a {@link Freshpaint} instance wired with a capture middleware and synchronous executor.
    * Uses the provided {@code analyticsContext} so tests can inject a pre-configured device entry.
    */
@@ -113,7 +153,7 @@ public class MmpIntegrationTest {
 
     return new Freshpaint(
         application,
-        mock(ExecutorService.class), // networkExecutor — unused in these tests
+        new FailFastNetworkExecutor(),
         mock(Stats.class),
         traitsCache,
         analyticsContext,

@@ -238,6 +238,10 @@ public final class TestUtils {
    * Extends {@link SynchronousExecutor} to drain the Robolectric main looper after each task.
    * Required under {@code @LooperMode(PAUSED)} so that {@code HANDLER.post()} runnables execute
    * before {@code verify()} calls in tests.
+   *
+   * <p><b>Prerequisite:</b> The test class must use {@code @LooperMode(LooperMode.Mode.PAUSED)}
+   * (the Robolectric 4.x default). Under {@code LEGACY} looper mode the shadow looper behaves
+   * differently and {@code idle()} may not drain posted tasks as expected.
    */
   public static class LooperDrainingExecutor extends SynchronousExecutor {
     @Override

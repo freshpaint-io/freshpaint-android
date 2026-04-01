@@ -103,11 +103,14 @@ public class FreshpaintIntegrationTest {
 
   @After
   public void tearDown() {
-    // Robolectric 4.x captures all android.util.Log calls (including Log.d from SDK internals).
-    // Only assert that no WARN or ERROR entries were logged — debug/info output is expected.
+    // Robolectric 4.x captures all android.util.Log calls in ShadowLog, including:
+    //   - Log.d("Session", ...) from performEnqueue() session tracking
+    //   - Log.d("Freshpaint", ...) from SDK lifecycle events
+    // These DEBUG/INFO entries are expected and harmless. We only fail on WARN+ to
+    // catch genuine problems while tolerating the expected verbose output.
     long warnOrWorse =
         ShadowLog.getLogs().stream().filter(l -> l.type >= android.util.Log.WARN).count();
-    assertThat(warnOrWorse).isZero();
+    assertThat(warnOrWorse).as("Expected no WARN/ERROR log entries from SDK internals").isZero();
   }
 
   @Test
@@ -161,8 +164,10 @@ public class FreshpaintIntegrationTest {
 
     @SuppressWarnings("unchecked")
     Map<String, Object> properties = (Map<String, Object>) parsed.get("properties");
-    assertThat(properties).containsKey("$session_id");
+    assertThat(properties.get("$session_id")).isInstanceOf(String.class);
+    assertThat((String) properties.get("$session_id")).isNotEmpty();
     assertThat(properties).containsKey("$is_first_event_in_session");
+    assertThat(properties.get("$is_first_event_in_session")).isInstanceOf(Boolean.class);
   }
 
   @Test
