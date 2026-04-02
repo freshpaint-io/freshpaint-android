@@ -43,7 +43,8 @@ dependencies {
 
   testImplementation 'junit:junit:4.13.2'
   testImplementation 'org.robolectric:robolectric:4.14.1'
-  testImplementation 'com.squareup.assertj:assertj-android:1.2.0'
+  // assertj-android 1.2.0 targets assertj-core 1.x and breaks at runtime with assertj-core 3.x;
+  // use org.assertj.core assertions + Android getters instead (see UtilsTest.copySharedPreferences).
   // Not bumping to 5.21.0 because mockito requires bitebuddy and Java 24, which breaks the app.
   testImplementation 'org.mockito:mockito-core:5.1.0'
   // Pinned to 3.9.1 for Kotlin 2.0.21 compatibility (3.16.4 requires Kotlin 2.2.0)

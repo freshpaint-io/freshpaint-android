@@ -103,11 +103,12 @@ public class FreshpaintIntegrationTest {
 
   @After
   public void tearDown() {
-    // Robolectric 4.x captures all android.util.Log calls in ShadowLog, including:
-    //   - Log.d("Session", ...) from performEnqueue() session tracking
-    //   - Log.d("Freshpaint", ...) from SDK lifecycle events
-    // These DEBUG/INFO entries are expected and harmless. We only fail on WARN+ to
-    // catch genuine problems while tolerating the expected verbose output.
+    // Robolectric 4.x records every android.util.Log call in ShadowLog. Expected noise (do not
+    // treat as failures) under this test runner:
+    //   - Tag "Session", DEBUG — FreshpaintIntegration.performEnqueue() session bookkeeping
+    //   - Tag "Freshpaint", DEBUG/VERBOSE — SDK lifecycle / integration logging
+    // We intentionally do not assert an empty ShadowLog: those lines are normal. WARN and above
+    // still fail the test so new SDK warnings or errors are not silently ignored.
     long warnOrWorse =
         ShadowLog.getLogs().stream().filter(l -> l.type >= android.util.Log.WARN).count();
     assertThat(warnOrWorse).as("Expected no WARN/ERROR log entries from SDK internals").isZero();

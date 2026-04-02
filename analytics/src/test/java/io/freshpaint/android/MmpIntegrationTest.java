@@ -36,6 +36,7 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import androidx.lifecycle.Lifecycle;
 import io.freshpaint.android.integrations.BasePayload;
 import io.freshpaint.android.integrations.Logger;
@@ -63,8 +64,8 @@ import org.robolectric.annotation.Config;
  * (StableDeviceId, GAID, InstallReferrerManager, DeepLinkAttributionManager) as they interact
  * through {@link Freshpaint#trackApplicationLifecycleEvents(long)}.
  *
- * <p>Uses {@link FakeSharedPreferences} and a {@link SynchronousExecutor} to run all async work on
- * the calling thread. Runs under Robolectric so that Android framework classes referenced
+ * <p>Uses {@link FakeSharedPreferences} and {@link TestUtils.SynchronousExecutor} to run all async
+ * work on the calling thread. Runs under Robolectric so that Android framework classes referenced
  * transitively (e.g. {@code PackageInfo}, {@code Build.VERSION}) are safely stubbed.
  */
 @RunWith(RobolectricTestRunner.class)
@@ -476,10 +477,12 @@ public class MmpIntegrationTest {
     assertThat(limitAdTracking).isNotNull();
     assertThat(limitAdTracking).isInstanceOf(Boolean.class);
 
-    // os_version: Build.VERSION.RELEASE is null in the pure-JVM Android stub, so we can only
-    // assert key presence here. AnalyticsContextTest (Robolectric 4.x) validates the non-null
-    // String value via Build.VERSION.RELEASE in its create() and copyDevice() tests.
-    assertThat(props).containsKey("os_version");
+    // os_version: Freshpaint uses Build.VERSION.RELEASE; under Robolectric 4.x it is a non-null
+    // String (see AnalyticsContextTest).
+    assertThat(props.get("os_version"))
+        .isNotNull()
+        .isInstanceOf(String.class)
+        .isEqualTo(Build.VERSION.RELEASE);
 
     // app_version: matches mocked PackageInfo.versionName
     assertThat(props.get("app_version")).isEqualTo("1.0.0");

@@ -27,7 +27,6 @@ import static android.Manifest.permission.ACCESS_NETWORK_STATE;
 import static android.content.pm.PackageManager.FEATURE_TELEPHONY;
 import static android.content.pm.PackageManager.PERMISSION_DENIED;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static org.assertj.android.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -164,8 +163,7 @@ public class UtilsTest {
     target.edit().clear().apply();
 
     Utils.copySharedPreferences(src, target);
-    // Use individual getter methods instead of assertj-android's SharedPreferences assertions,
-    // which are incompatible with assertj-core 3.x at runtime.
+    // Assert via SharedPreferences getters (avoid legacy assertj-android helpers).
     Assertions.assertThat(target.getBoolean("aBool", false)).isTrue();
     Assertions.assertThat(target.getString("aString", null)).isEqualTo("foo");
     Assertions.assertThat(target.getInt("anInt", 0)).isEqualTo(2);
