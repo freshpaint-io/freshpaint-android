@@ -25,7 +25,7 @@ package io.freshpaint.android;
 
 /**
  * Shared attribution constants used by Install Referrer (FRP-44) and deep-link attribution
- * (FRP-45). Centralising the 24-ID list here ensures both sources use the same set and prevents
+ * Centralising the click-id list here ensures both sources use the same set and prevents
  * divergence.
  */
 final class AttributionConstants {
@@ -33,9 +33,12 @@ final class AttributionConstants {
   private AttributionConstants() {}
 
   /**
-   * Canonical list of 24 ad-platform click identifiers captured from the Play Install Referrer
-   * string and from deep-link Intent URI query parameters. Each captured value is stored under the
-   * key {@code "$<id>"} with a companion {@code "$<id>_creation_time"} (Unix milliseconds).
+   * Ad-platform click identifiers captured from the Play Install Referrer string and from deep-link
+   * Intent URI query parameters. Each captured value is stored under the key {@code "$<id>"} with a
+   * companion {@code "$<id>_creation_time"} (Unix milliseconds).
+   *
+   * <p>Includes web-parity IDs (e.g. {@code rdt_cid} alongside {@code rdtcid}, {@code sccid}
+   * alongside {@code ScCid}) in addition to the original Android set.
    */
   static final String[] CLICK_IDS = {
     "gclid",
@@ -61,6 +64,17 @@ final class AttributionConstants {
     "sadclid",
     "amzn_source",
     "atclid",
-    "patclid"
+    "patclid",
+    "aleid",
+    "cntr_auctionId",
+    "ndclid",
+    "gclsrc",
+    "rdt_cid",
+    "sapid",
+    "sccid",
+    "spclid",
+    "ttdimp",
+    "clid_src",
+    "viant_clid"
   };
 }

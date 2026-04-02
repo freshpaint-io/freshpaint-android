@@ -829,8 +829,6 @@ public class AnalyticsTest {
                         && //
                         payload.properties().containsKey("install_timestamp")
                         && //
-                        payload.properties().containsKey("device_id")
-                        && //
                         payload.properties().containsKey("limit_ad_tracking")
                         && //
                         payload.properties().containsKey("os_version")

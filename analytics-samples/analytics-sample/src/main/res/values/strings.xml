@@ -24,18 +24,97 @@
 
 <resources>
 
-  <string name="app_name">Freshpaint Sample</string>
+  <string name="app_name">Freshpaint Android Sample</string>
 
   <string name="action_view_docs">Docs</string>
   <string name="no_browser_available">No browser to open link</string>
-
-  <string name="button_a">Button A</string>
-  <string name="button_b">Button B</string>
+  <string name="tab_home">Home</string>
+  <string name="tab_settings">Settings</string>
+  <string name="home_screen_title">Home Demo</string>
+  <string name="settings_screen_title">Settings</string>
+  <string name="toolbar_subtitle">SDK demo and attribution lab</string>
+  <string name="sample_highlight_title">What this sample covers</string>
+  <string name="sample_highlight_body">Explore the main SDK flows in one app: setup, lifecycle tracking, user identity, group updates, screen calls, purchases, queue flushing, reset behavior, and attribution signals.</string>
+  <string name="configuration_status_label">SDK status</string>
+  <string name="attribution_status_label">Attribution state</string>
+  <string name="latest_action_label">Latest event</string>
+  <string name="auto_events_label">Automatic events</string>
+  <string name="settings_title">Configuration and privacy</string>
+  <string name="settings_body">Use this section to validate that the SDK is configured correctly, inspect attribution readiness, and test privacy controls like global opt-out.</string>
+  <string name="tracking_toggle_label">Send analytics events</string>
+  <string name="tracking_toggle_help">When disabled, the SDK stays initialized but stops sending events until tracking is enabled again.</string>
+  <string name="tracking_enabled">Tracking enabled</string>
+  <string name="tracking_disabled">Tracking disabled</string>
+  <string name="tracking_enabled_detail">Freshpaint will send events and automatic signals from this sample.</string>
+  <string name="tracking_disabled_detail">Freshpaint is opted out. Buttons remain available, but events should not be sent.</string>
+  <string name="auto_event_lifecycle">Application Opened / Backgrounded</string>
+  <string name="auto_event_install">app_install on first open</string>
+  <string name="auto_event_screens">Automatic screen tracking</string>
+  <string name="auto_event_deeplinks">Deep Link Opened handling</string>
 
   <string name="flush">Flush Events</string>
-
   <string name="identify_button">Identify User</string>
-  <string name="identify_user_id">Type in an ID to identify the user</string>
+  <string name="identify_traits_button">Identify Traits Only</string>
+  <string name="group_button">Group Account</string>
+  <string name="alias_button">Alias User</string>
+  <string name="screen_button">Track Screen</string>
+  <string name="track_purchase_button">Track Purchase</string>
+  <string name="track_install_cta_button">Track Install CTA</string>
+  <string name="track_custom_button">Track Custom Event</string>
+  <string name="launch_deep_link_button">Launch Demo Deep Link</string>
+  <string name="reset_button">Reset User</string>
+
+  <string name="sample_title">Freshpaint Android SDK sample</string>
+  <string name="sample_subtitle">A single app to validate the SDK end to end: initialization, automatic events, attribution capture, identity APIs, custom tracking, and operational controls.</string>
+  <string name="sample_setup_title">Initialize the SDK</string>
+  <string name="sample_setup_body">Configure a write key with `freshpaint.sample.writeKey` in `local.properties` or with the `FRESHPAINT_SAMPLE_WRITE_KEY` environment variable. On startup, the sample enables lifecycle events, screen tracking, attribution collection, and deep-link handling.</string>
+  <string name="sample_mmp_title">Attribution and deep links</string>
+  <string name="sample_mmp_body">Use the demo deep link to exercise campaign-style attribution. The sample shows how click IDs and UTM parameters are captured, how `Deep Link Opened` is tracked, and how attribution data can enrich first-open install flows.</string>
+  <string name="sample_event_title">Identity and event APIs</string>
+  <string name="sample_event_body">Trigger representative SDK calls for identify, group, alias, screen, purchase, flush, and reset so this sample works as both a visual demo and an integration reference.</string>
+  <string name="sample_identity_title">Identity and screen APIs</string>
+  <string name="sample_identity_body">Work with user profiles, group membership, aliasing, and screen calls using realistic sample data.</string>
+  <string name="sample_custom_title">Custom events and operations</string>
+  <string name="sample_custom_body">Send a custom event, test a purchase-style event, flush the queue, or reset the current identity from one place.</string>
+
+  <string name="configured_status">Write key configured. The sample SDK instance is ready.</string>
+  <string name="missing_write_key_status">Write key missing. Set `freshpaint.sample.writeKey` or `FRESHPAINT_SAMPLE_WRITE_KEY` before using the sample.</string>
+  <string name="sdk_connected">Connected and ready</string>
+  <string name="sdk_not_connected">Configuration required</string>
+  <string name="attribution_ready">Attribution flow ready</string>
+  <string name="attribution_waiting">Waiting for a deep link</string>
+  <string name="write_key_missing_toast">Freshpaint is not configured yet. Add the sample write key and relaunch the app.</string>
+  <string name="no_deep_link_received">No deep link received yet. Launch the demo flow below to inspect attribution data.</string>
+  <string name="deep_link_received_template">Received deep link: %1$s</string>
+  <string name="latest_action_default">Waiting for your next SDK action.</string>
+  <string name="latest_action_template">%1$s</string>
+
+  <string name="identify_user_id">User ID</string>
+  <string name="identify_email">Email</string>
+  <string name="group_company_id">Company or workspace ID</string>
+  <string name="alias_user_id">Alias / upgraded user ID</string>
+  <string name="deep_link_uri_hint">Deep link URI with attribution parameters</string>
+  <string name="custom_event_name">Custom event name</string>
+  <string name="custom_event_property_key">Custom property key</string>
+  <string name="custom_event_property_value">Custom property value</string>
+
   <string name="id_required">User ID should not be blank or empty</string>
+  <string name="group_required">Group ID should not be blank or empty</string>
+  <string name="alias_required">Alias ID should not be blank or empty</string>
+  <string name="deep_link_required">Deep link URI should not be blank or empty</string>
+  <string name="custom_event_required">Custom event name should not be blank or empty</string>
+
+  <string name="identify_success_template">Identify sent for %1$s</string>
+  <string name="identify_traits_success">Identify sent with traits only.</string>
+  <string name="group_success_template">Group sent for %1$s</string>
+  <string name="alias_success_template">Alias sent for %1$s</string>
+  <string name="screen_success">Screen event sent for MMP Attribution Lab.</string>
+  <string name="track_install_cta_success">Install CTA Clicked event sent.</string>
+  <string name="custom_event_success_template">Custom event sent: %1$s.</string>
+  <string name="purchase_success_template">Order Completed sent for %1$s.</string>
+  <string name="flush_success">Flush requested.</string>
+  <string name="reset_success">Reset completed. A fresh anonymous identity was generated.</string>
+  <string name="tracking_enabled_success">Tracking enabled.</string>
+  <string name="tracking_disabled_success">Tracking disabled with opt-out.</string>
 
 </resources>

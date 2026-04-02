@@ -243,7 +243,7 @@ public class AnalyticsContext extends ValueMap {
     device.put(Device.DEVICE_MODEL_KEY, Build.MODEL);
     device.put(Device.DEVICE_NAME_KEY, Build.DEVICE);
     device.put(Device.DEVICE_TYPE_KEY, "android");
-    // android_id is captured as a secondary attribution signal alongside device_id (FRP-54).
+    // android_id is captured as an explicit attribution signal alongside context device id.
     // Gated on collectDeviceID to honour the hardware-identifier opt-out. Placeholder values are
     // filtered inside putAndroidId().
     if (collectDeviceID) {

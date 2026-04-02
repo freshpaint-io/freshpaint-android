@@ -32,4 +32,10 @@
       android:orderInCategory="100"
       android:showAsAction="never"/>
 
+  <item
+      android:id="@+id/action_flush_toolbar"
+      android:title="@string/flush"
+      android:orderInCategory="10"
+      android:showAsAction="ifRoom|withText"/>
+
 </menu>

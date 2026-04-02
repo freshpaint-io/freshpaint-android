@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ The MIT License (MIT)
   ~
@@ -21,10 +22,7 @@
   ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   ~ SOFTWARE.
   -->
-
-<resources>
-  <!-- Example customization of dimensions originally defined in res/values/dimens.xml
-       (such as screen margins) for screens with more than 820dp of available width. This
-       would include 7" and 10" devices in landscape (~960dp and ~1280dp respectively). -->
-  <dimen name="activity_horizontal_margin">72dp</dimen>
-</resources>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+  <corners android:radius="12dp"/>
+  <solid android:color="@color/sample_warning_bg"/>
+</shape>

@@ -24,14 +24,30 @@
 package io.freshpaint.android;
 
 import io.freshpaint.android.integrations.BasePayload;
+import io.freshpaint.android.integrations.TrackPayload;
 
 /**
- * A {@link Middleware} that enriches every outgoing event with attribution fields: {@code gaid},
- * {@code limit_ad_tracking}, {@code device_id}, and {@code android_id}. Values are read
- * non-blockingly from the live {@link AnalyticsContext.Device} — if GAID has not yet been fetched,
- * {@code null} is used and event dispatch is never blocked.
+ * A {@link Middleware} that enriches every outgoing event with attribution fields: {@code
+ * advertisingId}, {@code limit_ad_tracking}, context {@code device.id}, and {@code android_id},
+ * read non-blockingly from the live {@link AnalyticsContext.Device} — if GAID has not yet been
+ * fetched, {@code null} is used and event dispatch is never blocked.
+ *
+ * <p>For {@link TrackPayload}s that already include {@code limit_ad_tracking} in {@code properties}
+ * (e.g. {@code app_install}), this value is overwritten to match {@code
+ * context.device.limit_ad_tracking} so it cannot disagree with the device block after the GAID
+ * worker has updated the context.
+ *
+ * <p>For {@code app_install} only, {@code properties.advertisingId} is set or updated from the live
+ * device map when available at dispatch time (same key as {@code context.device}), matching the
+ * {@code limit_ad_tracking} fix (snapshot at {@code track()} vs live device at middleware).
  */
 class AttributionMiddleware implements Middleware {
+
+  /** Must match {@link TrackPayload}'s properties key (same package boundary). */
+  private static final String TRACK_PROPERTIES_KEY = "properties";
+
+  /** Event name for first-open install track; {@code properties.advertisingId} is reconciled. */
+  private static final String APP_INSTALL_EVENT = "app_install";
 
   private final AnalyticsContext analyticsContext;
 
@@ -75,9 +91,34 @@ class AttributionMiddleware implements Middleware {
         if (androidId != null) {
           payloadDevice.put(AnalyticsContext.Device.DEVICE_ANDROID_ID_KEY, androidId);
         }
+
+        if (payload instanceof TrackPayload) {
+          TrackPayload trackPayload = (TrackPayload) payload;
+          Properties trackProps = trackPayload.properties();
+          Properties merged = null;
+          if (trackProps.containsKey(AnalyticsContext.Device.DEVICE_LIMIT_AD_TRACKING_KEY)) {
+            merged = mutablePropertiesCopy(trackProps);
+            merged.putValue(AnalyticsContext.Device.DEVICE_LIMIT_AD_TRACKING_KEY, limitAdTracking);
+          }
+          if (APP_INSTALL_EVENT.equals(trackPayload.event()) && gaid != null) {
+            if (merged == null) {
+              merged = mutablePropertiesCopy(trackProps);
+            }
+            merged.putValue(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY, gaid);
+          }
+          if (merged != null) {
+            trackPayload.put(TRACK_PROPERTIES_KEY, merged);
+          }
+        }
       }
     } finally {
       chain.proceed(payload);
     }
+  }
+
+  private static Properties mutablePropertiesCopy(Properties trackProps) {
+    Properties copy = new Properties(trackProps.size() + 2);
+    copy.putAll(trackProps);
+    return copy;
   }
 }

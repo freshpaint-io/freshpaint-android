@@ -30,6 +30,8 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import io.freshpaint.android.integrations.BasePayload;
+import io.freshpaint.android.integrations.TrackPayload;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import org.junit.Test;
 
@@ -90,8 +92,8 @@ public class AttributionMiddlewareTest {
   // ---------------------------------------------------------------------------
 
   /**
-   * M2 fix: source device has gaid + limit_ad_tracking=false + device_id → payload device must
-   * receive all three values, including {@code "id"} (device_id).
+   * M2 fix: source device has gaid + limit_ad_tracking=false + context id → payload device must
+   * receive all three values, including {@code "id"}.
    */
   @Test
   public void enrichesPayloadDeviceWithGaidAndLimitAdTracking() {
@@ -119,7 +121,7 @@ public class AttributionMiddlewareTest {
     assertThat(resultDevice).isNotNull();
     assertThat(resultDevice).containsEntry("advertisingId", "test-gaid-1234");
     assertThat(resultDevice).containsEntry("limit_ad_tracking", false);
-    // M2: device_id must also be propagated
+    // M2: context device id must also be propagated
     assertThat(resultDevice).containsEntry("id", "test-device-id");
   }
 
@@ -156,6 +158,140 @@ public class AttributionMiddlewareTest {
     assertThat(resultDevice).doesNotContainKey("advertisingId");
     // limit_ad_tracking is always written (defaults to true when adTracking disabled)
     assertThat(resultDevice).containsEntry("limit_ad_tracking", true);
+  }
+
+  /**
+   * When a track event carries {@code limit_ad_tracking} in properties (as {@code app_install}
+   * does) but the live device map has since been updated (e.g. GAID finished), properties must
+   * match {@code context.device.limit_ad_tracking} so the payload is self-consistent.
+   */
+  @Test
+  public void syncsLimitAdTrackingInTrackPropertiesWhenKeyPresent() {
+    AnalyticsContext sourceContext =
+        buildSourceContext(
+            "test-device-id",
+            "test-gaid-1234",
+            /* adTrackingEnabled= */ true,
+            /* androidId= */ null);
+
+    AnalyticsContext payloadContext = buildPayloadContext("test-device-id");
+
+    LinkedHashMap<String, Object> propsMap = new LinkedHashMap<>();
+    propsMap.put("limit_ad_tracking", true);
+
+    TrackPayload trackPayload =
+        new TrackPayload.Builder()
+            .event("app_install")
+            .anonymousId("anon")
+            .timestamp(new Date(0))
+            .context(payloadContext)
+            .properties(propsMap)
+            .build();
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(trackPayload);
+
+    AttributionMiddleware middleware = new AttributionMiddleware(sourceContext);
+    middleware.intercept(chain);
+
+    verify(chain).proceed(trackPayload);
+    assertThat(trackPayload.properties().get("limit_ad_tracking")).isEqualTo(false);
+    assertThat(trackPayload.context().device()).containsEntry("limit_ad_tracking", false);
+    assertThat(trackPayload.properties().get("advertisingId")).isEqualTo("test-gaid-1234");
+    assertThat(trackPayload.context().device()).containsEntry("advertisingId", "test-gaid-1234");
+  }
+
+  @Test
+  public void syncsStaleAdvertisingIdInAppInstallPropertiesWhenSourceHasAdvertisingId() {
+    AnalyticsContext sourceContext =
+        buildSourceContext(
+            "test-device-id",
+            "resolved-gaid",
+            /* adTrackingEnabled= */ true,
+            /* androidId= */ null);
+
+    AnalyticsContext payloadContext = buildPayloadContext("test-device-id");
+
+    LinkedHashMap<String, Object> propsMap = new LinkedHashMap<>();
+    propsMap.put("limit_ad_tracking", true);
+    propsMap.put("advertisingId", "stale-gaid");
+
+    TrackPayload trackPayload =
+        new TrackPayload.Builder()
+            .event("app_install")
+            .anonymousId("anon")
+            .timestamp(new Date(0))
+            .context(payloadContext)
+            .properties(propsMap)
+            .build();
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(trackPayload);
+
+    new AttributionMiddleware(sourceContext).intercept(chain);
+
+    verify(chain).proceed(trackPayload);
+    assertThat(trackPayload.properties().get("advertisingId")).isEqualTo("resolved-gaid");
+  }
+
+  @Test
+  public void addsAdvertisingIdToAppInstallPropertiesWhenAbsentButResolved() {
+    AnalyticsContext sourceContext =
+        buildSourceContext(
+            "test-device-id", "fresh-gaid", /* adTrackingEnabled= */ true, /* androidId= */ null);
+
+    AnalyticsContext payloadContext = buildPayloadContext("test-device-id");
+
+    LinkedHashMap<String, Object> propsMap = new LinkedHashMap<>();
+    propsMap.put("limit_ad_tracking", true);
+
+    TrackPayload trackPayload =
+        new TrackPayload.Builder()
+            .event("app_install")
+            .anonymousId("anon")
+            .timestamp(new Date(0))
+            .context(payloadContext)
+            .properties(propsMap)
+            .build();
+
+    assertThat(trackPayload.properties().containsKey("advertisingId")).isFalse();
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(trackPayload);
+
+    new AttributionMiddleware(sourceContext).intercept(chain);
+
+    verify(chain).proceed(trackPayload);
+    assertThat(trackPayload.properties().get("advertisingId")).isEqualTo("fresh-gaid");
+  }
+
+  @Test
+  public void doesNotInjectAdvertisingIdIntoNonAppInstallTrackProperties() {
+    AnalyticsContext sourceContext =
+        buildSourceContext(
+            "test-device-id", "my-gaid", /* adTrackingEnabled= */ true, /* androidId= */ null);
+
+    AnalyticsContext payloadContext = buildPayloadContext("test-device-id");
+
+    LinkedHashMap<String, Object> propsMap = new LinkedHashMap<>();
+    propsMap.put("limit_ad_tracking", true);
+
+    TrackPayload trackPayload =
+        new TrackPayload.Builder()
+            .event("Some Other Event")
+            .anonymousId("anon")
+            .timestamp(new Date(0))
+            .context(payloadContext)
+            .properties(propsMap)
+            .build();
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(trackPayload);
+
+    new AttributionMiddleware(sourceContext).intercept(chain);
+
+    verify(chain).proceed(trackPayload);
+    assertThat(trackPayload.properties().containsKey("advertisingId")).isFalse();
   }
 
   /**
@@ -289,11 +425,11 @@ public class AttributionMiddlewareTest {
   }
 
   // ---------------------------------------------------------------------------
-  // AC6 — android_id does not conflict with device_id or gaid
+  // AC6 — android_id does not conflict with context id or gaid
   // ---------------------------------------------------------------------------
 
   /**
-   * When all three fields (android_id, device_id, gaid) are set, the middleware must propagate all
+   * When all three fields (android_id, context id, gaid) are set, the middleware must propagate all
    * three independently — no field overwrites another.
    */
   @Test

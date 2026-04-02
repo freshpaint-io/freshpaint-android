@@ -26,13 +26,13 @@ package com.freshpaint.android.sample;
 import android.app.Application;
 import android.util.Log;
 import io.freshpaint.android.Freshpaint;
+import io.freshpaint.android.sample.BuildConfig;
 import io.github.inflationx.calligraphy3.CalligraphyConfig;
 import io.github.inflationx.calligraphy3.CalligraphyInterceptor;
 import io.github.inflationx.viewpump.ViewPump;
 
 public class SampleApp extends Application {
-
-  private static final String FRESHPAINT_WRITE_KEY = "cd9d9c79-642f-471f-ab76-7804593ca3c2";
+  private Freshpaint freshpaint;
 
   @Override
   public void onCreate() {
@@ -47,23 +47,36 @@ public class SampleApp extends Application {
                         .build()))
             .build());
 
-    // Initialize a new instance of the Freshpaint client.
+    String writeKey = BuildConfig.FRESHPAINT_SAMPLE_WRITE_KEY.trim();
+    if (writeKey.isEmpty()) {
+      Log.w(
+          "Freshpaint Sample",
+          "Freshpaint write key missing. Set freshpaint.sample.writeKey in Gradle or "
+              + "FRESHPAINT_SAMPLE_WRITE_KEY in the environment.");
+      return;
+    }
+
     Freshpaint.Builder builder =
-        new Freshpaint.Builder(this, FRESHPAINT_WRITE_KEY)
+        new Freshpaint.Builder(this, writeKey)
             .trackApplicationLifecycleEvents()
             .trackAttributionInformation()
+            .trackDeepLinks()
             .recordScreenViews()
-            .sessionTimeoutSeconds(120);
+            .sessionTimeoutSeconds(120)
+            .logLevel(Freshpaint.LogLevel.VERBOSE);
 
-    // Set the initialized instance as a globally accessible instance.
-    Freshpaint.setSingletonInstance(builder.build());
+    freshpaint = builder.build();
+    Freshpaint.setSingletonInstance(freshpaint);
 
-    // Now anytime you call Freshpaint.with, the custom instance will be returned.
-    Freshpaint freshpaint = Freshpaint.with(this);
-
-    // If you need to know when integrations have been initialized, use the onIntegrationReady
-    // listener.
     freshpaint.onIntegrationReady(
         "Freshpaint", instance -> Log.d("Freshpaint Sample", "Freshpaint integration ready."));
+  }
+
+  public boolean isFreshpaintConfigured() {
+    return freshpaint != null;
+  }
+
+  public Freshpaint getFreshpaint() {
+    return freshpaint;
   }
 }

@@ -23,8 +23,20 @@
   -->
 
 <resources>
-  <!-- Example customization of dimensions originally defined in res/values/dimens.xml
-       (such as screen margins) for screens with more than 820dp of available width. This
-       would include 7" and 10" devices in landscape (~960dp and ~1280dp respectively). -->
-  <dimen name="activity_horizontal_margin">72dp</dimen>
+  <color name="sample_primary">#0F4C81</color>
+  <color name="sample_primary_dark">#083154</color>
+  <color name="sample_accent">#28C2A0</color>
+  <color name="sample_background">#F3F7FB</color>
+  <color name="sample_surface">#FFFFFFFF</color>
+  <color name="sample_outline">#D7E2F0</color>
+  <color name="sample_outline_strong">#9FB7D4</color>
+  <color name="sample_text_primary">#162334</color>
+  <color name="sample_text_secondary">#526173</color>
+  <color name="sample_hero_top">#0F4C81</color>
+  <color name="sample_hero_bottom">#1A6AAF</color>
+  <color name="sample_success">#178A55</color>
+  <color name="sample_success_bg">#E8F7EF</color>
+  <color name="sample_warning">#B54708</color>
+  <color name="sample_warning_bg">#FFF2E0</color>
+  <color name="sample_info_bg">#EAF2FB</color>
 </resources>

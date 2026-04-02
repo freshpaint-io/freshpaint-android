@@ -48,11 +48,11 @@ public class DeepLinkAttributionManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC1 + AC2: all 24 click IDs extracted with $ prefix
+  // All CLICK_IDS extracted with $ prefix
   // -------------------------------------------------------------------------
 
   @Test
-  public void store_allTwentyFourClickIds_storedWithDollarPrefix() {
+  public void store_allClickIds_storedWithDollarPrefix() {
     Map<String, String> params = new LinkedHashMap<>();
     for (String id : AttributionConstants.CLICK_IDS) {
       params.put(id, "val_" + id);
@@ -85,7 +85,8 @@ public class DeepLinkAttributionManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC4: gacid → $gclid_campaign_id
+  // gacid → $gclid_campaign_id (legacy when no gclid/wbraid/gbraid), and matching
+  // $wbraid_campaign_id / $gbraid_campaign_id when those click ids are present
   // -------------------------------------------------------------------------
 
   @Test
@@ -125,6 +126,50 @@ public class DeepLinkAttributionManagerTest {
     Map<String, Object> stored = DeepLinkAttributionManager.getStoredProperties(prefs, T1);
     assertThat(stored).containsEntry("$gclid_campaign_id", "NEW_CAMPAIGN");
     assertThat(stored).containsEntry("$gclid_campaign_id_creation_time", T1);
+  }
+
+  @Test
+  public void store_wbraidAndGacid_mapsGacidToWbraidCampaignIdOnly() {
+    Map<String, String> params = new LinkedHashMap<>();
+    params.put("wbraid", "WB123");
+    params.put("gacid", "GCAMP_W");
+
+    DeepLinkAttributionManager.store(params, prefs, T0);
+
+    Map<String, Object> stored = DeepLinkAttributionManager.getStoredProperties(prefs, T0);
+    assertThat(stored).containsEntry("$wbraid", "WB123");
+    assertThat(stored).containsEntry("$wbraid_campaign_id", "GCAMP_W");
+    assertThat(stored).containsEntry("$wbraid_campaign_id_creation_time", T0);
+    assertThat(stored).doesNotContainKey("$gclid_campaign_id");
+  }
+
+  @Test
+  public void store_gbraidAndGacid_mapsGacidToGbraidCampaignIdOnly() {
+    Map<String, String> params = new LinkedHashMap<>();
+    params.put("gbraid", "GB999");
+    params.put("gacid", "GCAMP_G");
+
+    DeepLinkAttributionManager.store(params, prefs, T0);
+
+    Map<String, Object> stored = DeepLinkAttributionManager.getStoredProperties(prefs, T0);
+    assertThat(stored).containsEntry("$gbraid", "GB999");
+    assertThat(stored).containsEntry("$gbraid_campaign_id", "GCAMP_G");
+    assertThat(stored).containsEntry("$gbraid_campaign_id_creation_time", T0);
+    assertThat(stored).doesNotContainKey("$gclid_campaign_id");
+  }
+
+  @Test
+  public void store_gclidAndWbraidAndGacid_setsBothGoogleCampaignIds() {
+    Map<String, String> params = new LinkedHashMap<>();
+    params.put("gclid", "G1");
+    params.put("wbraid", "W1");
+    params.put("gacid", "SHARED_GACID");
+
+    DeepLinkAttributionManager.store(params, prefs, T0);
+
+    Map<String, Object> stored = DeepLinkAttributionManager.getStoredProperties(prefs, T0);
+    assertThat(stored).containsEntry("$gclid_campaign_id", "SHARED_GACID");
+    assertThat(stored).containsEntry("$wbraid_campaign_id", "SHARED_GACID");
   }
 
   // -------------------------------------------------------------------------
