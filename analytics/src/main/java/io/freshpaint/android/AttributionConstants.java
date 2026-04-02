@@ -23,6 +23,8 @@
  */
 package io.freshpaint.android;
 
+import androidx.annotation.Nullable;
+
 /**
  * Shared attribution constants used by Install Referrer (FRP-44) and deep-link attribution
  * Centralising the click-id list here ensures both sources use the same set and prevents
@@ -30,7 +32,51 @@ package io.freshpaint.android;
  */
 final class AttributionConstants {
 
+  /**
+   * Writes a {@code gacid} value into the caller's persistence layer (Install Referrer vs deep
+   * link).
+   */
+  @FunctionalInterface
+  interface GacidCampaignValueWriter {
+    void write(String value);
+  }
+
   private AttributionConstants() {}
+
+  /** True if {@code s} is non-null and not empty. */
+  static boolean nonEmpty(@Nullable String s) {
+    return s != null && !s.isEmpty();
+  }
+
+  /**
+   * Routes Google Ads {@code gacid} to the correct {@code $*_campaign_id} storage keys given which
+   * click IDs are present. {@code gacid} maps to {@code $gclid_campaign_id} when {@code gclid} is
+   * present, or when neither {@code wbraid} nor {@code gbraid} is present (legacy behaviour).
+   *
+   * <p>Callers supply {@link GacidCampaignValueWriter} callbacks because Install Referrer and
+   * deep-link paths use different persistence helpers (e.g. deduplicated vs plain {@code
+   * putString}).
+   *
+   * @param gacid non-null, non-empty Google Ads campaign identifier
+   */
+  static void routeGacidToGoogleCampaignIds(
+      String gacid,
+      boolean hasGclid,
+      boolean hasWbraid,
+      boolean hasGbraid,
+      GacidCampaignValueWriter putGclidCampaignId,
+      GacidCampaignValueWriter putWbraidCampaignId,
+      GacidCampaignValueWriter putGbraidCampaignId) {
+    if (hasGclid || (!hasWbraid && !hasGbraid)) {
+      putGclidCampaignId.write(gacid);
+    }
+    if (hasWbraid) {
+      putWbraidCampaignId.write(gacid);
+    }
+    if (hasGbraid) {
+      putGbraidCampaignId.write(gacid);
+    }
+  }
 
   /**
    * Ad-platform click identifiers captured from the Play Install Referrer string and from deep-link

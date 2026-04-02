@@ -742,8 +742,8 @@ public class AnalyticsTest {
   @Test
   public void buildWithoutSourceMiddlewareDoesNotThrow() {
     Freshpaint.singleton = null;
-    // Regression: Builder.sourceMiddleware is null when useSourceMiddleware() is never called;
-    // build() must not NPE on addAll(null).
+    // Regression: build() copies source middleware via addAll; the list is always non-null
+    // (field initializer) so omitting useSourceMiddleware() must not NPE.
     new Freshpaint.Builder(RuntimeEnvironment.application, "test-no-middleware").build().shutdown();
   }
 

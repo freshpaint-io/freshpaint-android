@@ -60,9 +60,9 @@ import org.robolectric.annotation.Config;
 /**
  * End-to-end integration tests for the MMP attribution pipeline.
  *
- * <p>Each test covers a distinct install scenario, combining multiple attribution components
- * (GAID, InstallReferrerManager, DeepLinkAttributionManager) as they interact
- * through {@link Freshpaint#trackApplicationLifecycleEvents(long)}.
+ * <p>Each test covers a distinct install scenario, combining multiple attribution components (GAID,
+ * InstallReferrerManager, DeepLinkAttributionManager) as they interact through {@link
+ * Freshpaint#trackApplicationLifecycleEvents(long)}.
  *
  * <p>Uses {@link FakeSharedPreferences} and {@link TestUtils.SynchronousExecutor} to run all async
  * work on the calling thread. Runs under Robolectric so that Android framework classes referenced
@@ -255,8 +255,8 @@ public class MmpIntegrationTest {
 
   /**
    * When the GAID worker has not run and no Install Referrer data is available (e.g. device has no
-   * Google Play Services), {@code app_install} fires without {@code advertisingId} or referrer fields.
-   * {@code limit_ad_tracking} defaults to {@code true} (conservative / tracking limited).
+   * Google Play Services), {@code app_install} fires without {@code advertisingId} or referrer
+   * fields. {@code limit_ad_tracking} defaults to {@code true} (conservative / tracking limited).
    */
   @Test
   public void it2_firstOpen_withoutPlayServices_noGaidNoReferrer() {

@@ -122,13 +122,4 @@ public class SettingsActivity extends BaseSampleActivity {
     SharedPreferences prefs = getSharedPreferences("analytics-android-" + tag, MODE_PRIVATE);
     return !prefs.getBoolean("opt-out", false);
   }
-
-  private Freshpaint requireFreshpaint() {
-    SampleApp sampleApp = (SampleApp) getApplication();
-    if (!sampleApp.isFreshpaintConfigured()) {
-      Toast.makeText(this, R.string.write_key_missing_toast, Toast.LENGTH_LONG).show();
-      return null;
-    }
-    return sampleApp.getFreshpaint();
-  }
 }

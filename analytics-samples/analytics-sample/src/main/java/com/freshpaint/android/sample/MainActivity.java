@@ -23,6 +23,7 @@
  */
 package com.freshpaint.android.sample;
 
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -296,7 +297,11 @@ public class MainActivity extends BaseSampleActivity {
 
     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
     intent.setPackage(getPackageName());
-    startActivity(intent);
+    try {
+      startActivity(intent);
+    } catch (ActivityNotFoundException e) {
+      Toast.makeText(this, R.string.deep_link_launch_failed, Toast.LENGTH_LONG).show();
+    }
   }
 
   private void onFlushButtonClicked() {
@@ -317,15 +322,6 @@ public class MainActivity extends BaseSampleActivity {
 
     freshpaint.reset();
     showSuccess(getString(R.string.reset_success));
-  }
-
-  private Freshpaint requireFreshpaint() {
-    SampleApp sampleApp = (SampleApp) getApplication();
-    if (!sampleApp.isFreshpaintConfigured()) {
-      Toast.makeText(this, R.string.write_key_missing_toast, Toast.LENGTH_LONG).show();
-      return null;
-    }
-    return sampleApp.getFreshpaint();
   }
 
   private Options buildOptions(String source) {

@@ -38,7 +38,7 @@
         android:background="@color/sample_primary_dark"
         android:minHeight="?attr/actionBarSize"
         app:titleTextColor="@android:color/white"
-        app:subtitleTextColor="#D5E6F8" />
+        app:subtitleTextColor="@color/sample_toolbar_subtitle" />
 
     <ScrollView
         android:layout_width="match_parent"

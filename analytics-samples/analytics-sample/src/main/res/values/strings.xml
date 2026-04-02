@@ -102,6 +102,7 @@
   <string name="group_required">Group ID should not be blank or empty</string>
   <string name="alias_required">Alias ID should not be blank or empty</string>
   <string name="deep_link_required">Deep link URI should not be blank or empty</string>
+  <string name="deep_link_launch_failed">Could not open that link. Check the URI or that this app can handle it.</string>
   <string name="custom_event_required">Custom event name should not be blank or empty</string>
 
   <string name="identify_success_template">Identify sent for %1$s</string>

@@ -1146,7 +1146,10 @@ public class Freshpaint {
     private ExecutorService executor;
     private ConnectionFactory connectionFactory;
     private final List<Integration.Factory> factories = new ArrayList<>();
+
+    /** Always non-null; {@link #useSourceMiddleware(Middleware)} rejects null entries. */
     private List<Middleware> sourceMiddleware = new ArrayList<>();
+
     private Map<String, List<Middleware>> destinationMiddleware;
     private boolean trackApplicationLifecycleEvents = false;
     private boolean recordScreenViews = false;

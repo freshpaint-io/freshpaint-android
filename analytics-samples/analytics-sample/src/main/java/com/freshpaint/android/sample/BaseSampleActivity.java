@@ -32,6 +32,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -129,5 +130,18 @@ abstract class BaseSampleActivity extends AppCompatActivity {
   @Override
   protected void attachBaseContext(Context newBase) {
     super.attachBaseContext(ViewPumpContextWrapper.wrap(newBase));
+  }
+
+  /**
+   * Returns the configured {@link Freshpaint} instance, or {@code null} after showing a toast if
+   * the sample app has no write key.
+   */
+  protected @Nullable Freshpaint requireFreshpaint() {
+    SampleApp sampleApp = (SampleApp) getApplication();
+    if (!sampleApp.isFreshpaintConfigured()) {
+      Toast.makeText(this, R.string.write_key_missing_toast, Toast.LENGTH_LONG).show();
+      return null;
+    }
+    return sampleApp.getFreshpaint();
   }
 }

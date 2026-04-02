@@ -332,26 +332,20 @@ class InstallReferrerManager {
       }
     }
 
-    // Google special: gacid → $gclid_campaign_id / $wbraid_campaign_id / $gbraid_campaign_id when
-    // the matching click id is present; if none of those are present, legacy behaviour maps gacid
-    // alone to $gclid_campaign_id.
+    // Google special: gacid routing — see AttributionConstants.routeGacidToGoogleCampaignIds.
     String gacid = params.get("gacid");
-    if (gacid != null && !gacid.isEmpty()) {
-      boolean hasGclid = nonEmpty(params.get("gclid"));
-      boolean hasWbraid = nonEmpty(params.get("wbraid"));
-      boolean hasGbraid = nonEmpty(params.get("gbraid"));
-      if (!hasGclid && !hasWbraid && !hasGbraid) {
-        editor.putString(IR_PREFIX + "$gclid_campaign_id", gacid);
-      }
-      if (hasGclid) {
-        editor.putString(IR_PREFIX + "$gclid_campaign_id", gacid);
-      }
-      if (hasWbraid) {
-        editor.putString(IR_PREFIX + "$wbraid_campaign_id", gacid);
-      }
-      if (hasGbraid) {
-        editor.putString(IR_PREFIX + "$gbraid_campaign_id", gacid);
-      }
+    if (AttributionConstants.nonEmpty(gacid)) {
+      boolean hasGclid = AttributionConstants.nonEmpty(params.get("gclid"));
+      boolean hasWbraid = AttributionConstants.nonEmpty(params.get("wbraid"));
+      boolean hasGbraid = AttributionConstants.nonEmpty(params.get("gbraid"));
+      AttributionConstants.routeGacidToGoogleCampaignIds(
+          gacid,
+          hasGclid,
+          hasWbraid,
+          hasGbraid,
+          v -> editor.putString(IR_PREFIX + "$gclid_campaign_id", v),
+          v -> editor.putString(IR_PREFIX + "$wbraid_campaign_id", v),
+          v -> editor.putString(IR_PREFIX + "$gbraid_campaign_id", v));
     }
 
     // Facebook special fields
@@ -405,9 +399,5 @@ class InstallReferrerManager {
       // Malformed referrer — return whatever was parsed so far
     }
     return params;
-  }
-
-  private static boolean nonEmpty(@Nullable String s) {
-    return s != null && !s.isEmpty();
   }
 }

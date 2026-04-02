@@ -39,8 +39,8 @@
   <style name="AppTheme.Toolbar" parent="Widget.MaterialComponents.Toolbar.Primary">
     <item name="titleTextColor">@android:color/white</item>
     <item name="android:textColorPrimary">@android:color/white</item>
-    <item name="subtitleTextColor">#D5E6F8</item>
-    <item name="android:textColorSecondary">#D5E6F8</item>
+    <item name="subtitleTextColor">@color/sample_toolbar_subtitle</item>
+    <item name="android:textColorSecondary">@color/sample_toolbar_subtitle</item>
     <item name="android:elevation">0dp</item>
   </style>
 

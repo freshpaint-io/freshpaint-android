@@ -39,4 +39,5 @@
   <color name="sample_warning">#B54708</color>
   <color name="sample_warning_bg">#FFF2E0</color>
   <color name="sample_info_bg">#EAF2FB</color>
+  <color name="sample_toolbar_subtitle">#D5E6F8</color>
 </resources>

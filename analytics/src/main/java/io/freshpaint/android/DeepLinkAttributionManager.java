@@ -107,27 +107,21 @@ final class DeepLinkAttributionManager {
       putWithDedup(prefs, editor, KEY_FP_CLICK_ID, fpClickId, now);
     }
 
-    // Google special: gacid → $gclid_campaign_id / $wbraid_campaign_id / $gbraid_campaign_id when
-    // the
-    // matching click id is present; if none of those are present, legacy behaviour maps gacid alone
-    // to $gclid_campaign_id.
+    // Google special: gacid → $gclid_campaign_id / $wbraid_campaign_id / $gbraid_campaign_id; see
+    // AttributionConstants.routeGacidToGoogleCampaignIds.
     String gacid = queryParams.get("gacid");
-    if (gacid != null && !gacid.isEmpty()) {
-      boolean hasGclid = nonEmpty(queryParams.get("gclid"));
-      boolean hasWbraid = nonEmpty(queryParams.get("wbraid"));
-      boolean hasGbraid = nonEmpty(queryParams.get("gbraid"));
-      if (!hasGclid && !hasWbraid && !hasGbraid) {
-        putWithDedup(prefs, editor, DL_PREFIX + "$gclid_campaign_id", gacid, now);
-      }
-      if (hasGclid) {
-        putWithDedup(prefs, editor, DL_PREFIX + "$gclid_campaign_id", gacid, now);
-      }
-      if (hasWbraid) {
-        putWithDedup(prefs, editor, DL_PREFIX + "$wbraid_campaign_id", gacid, now);
-      }
-      if (hasGbraid) {
-        putWithDedup(prefs, editor, DL_PREFIX + "$gbraid_campaign_id", gacid, now);
-      }
+    if (AttributionConstants.nonEmpty(gacid)) {
+      boolean hasGclid = AttributionConstants.nonEmpty(queryParams.get("gclid"));
+      boolean hasWbraid = AttributionConstants.nonEmpty(queryParams.get("wbraid"));
+      boolean hasGbraid = AttributionConstants.nonEmpty(queryParams.get("gbraid"));
+      AttributionConstants.routeGacidToGoogleCampaignIds(
+          gacid,
+          hasGclid,
+          hasWbraid,
+          hasGbraid,
+          v -> putWithDedup(prefs, editor, DL_PREFIX + "$gclid_campaign_id", v, now),
+          v -> putWithDedup(prefs, editor, DL_PREFIX + "$wbraid_campaign_id", v, now),
+          v -> putWithDedup(prefs, editor, DL_PREFIX + "$gbraid_campaign_id", v, now));
     }
 
     // Facebook special fields
@@ -253,9 +247,5 @@ final class DeepLinkAttributionManager {
         result.put(outputKey + "_creation_time", ct);
       }
     }
-  }
-
-  private static boolean nonEmpty(@Nullable String s) {
-    return s != null && !s.isEmpty();
   }
 }
