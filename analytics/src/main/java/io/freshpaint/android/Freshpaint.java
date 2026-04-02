@@ -39,6 +39,7 @@ import android.os.Looper;
 import android.os.Message;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import io.freshpaint.android.integrations.AliasPayload;
@@ -354,6 +355,17 @@ public class Freshpaint {
 
   @Private
   void trackApplicationLifecycleEvents() {
+    trackApplicationLifecycleEvents(System.currentTimeMillis());
+  }
+
+  /**
+   * Package-private overload that accepts a caller-supplied {@code nowMillis} timestamp. The no-arg
+   * public method delegates here with {@link System#currentTimeMillis()}. Exposed for tests that
+   * need to control the clock (e.g. to assert UTM expiry in the {@code app_install} payload without
+   * depending on wall-clock time).
+   */
+  @VisibleForTesting
+  void trackApplicationLifecycleEvents(long nowMillis) {
     // Get the current version.
     PackageInfo packageInfo = getPackageInfo(application);
     String currentVersion = packageInfo.versionName;
@@ -415,9 +427,9 @@ public class Freshpaint {
         // trackDeepLink() will have persisted click IDs and UTM params via commit() on the main
         // thread before this executor task runs. Deep-link values overwrite IR values for
         // overlapping keys (e.g. $gclid) since the deep link represents a more direct signal.
+        // nowMillis is caller-supplied so tests can control the UTM expiry window.
         installProps.putAll(
-            DeepLinkAttributionManager.getStoredProperties(
-                sharedPreferences, System.currentTimeMillis()));
+            DeepLinkAttributionManager.getStoredProperties(sharedPreferences, nowMillis));
         track("app_install", installProps);
       }
     } else if (currentBuild != previousBuild) {
@@ -1133,7 +1145,7 @@ public class Freshpaint {
     private ExecutorService executor;
     private ConnectionFactory connectionFactory;
     private final List<Integration.Factory> factories = new ArrayList<>();
-    private List<Middleware> sourceMiddleware;
+    private List<Middleware> sourceMiddleware = new ArrayList<>();
     private Map<String, List<Middleware>> destinationMiddleware;
     private boolean trackApplicationLifecycleEvents = false;
     private boolean recordScreenViews = false;

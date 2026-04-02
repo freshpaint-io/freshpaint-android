@@ -42,11 +42,9 @@ dependencies {
   implementation 'androidx.lifecycle:lifecycle-common-java8:2.10.0'
 
   testImplementation 'junit:junit:4.13.2'
-  testImplementation('org.robolectric:robolectric:3.5') {
-    exclude group: 'commons-logging', module: 'commons-logging'
-    exclude group: 'org.apache.httpcomponents', module: 'httpclient'
-  }
-  testImplementation 'com.squareup.assertj:assertj-android:1.2.0'
+  testImplementation 'org.robolectric:robolectric:4.14.1'
+  // assertj-android 1.2.0 targets assertj-core 1.x and breaks at runtime with assertj-core 3.x;
+  // use org.assertj.core assertions + Android getters instead (see UtilsTest.copySharedPreferences).
   // Not bumping to 5.21.0 because mockito requires bitebuddy and Java 24, which breaks the app.
   testImplementation 'org.mockito:mockito-core:5.1.0'
   // Pinned to 3.9.1 for Kotlin 2.0.21 compatibility (3.16.4 requires Kotlin 2.2.0)
@@ -54,12 +52,6 @@ dependencies {
   testImplementation 'com.squareup.okhttp:mockwebserver:2.7.5'
   testImplementation 'com.squareup.burst:burst-junit4:1.2.0'
 
-  // We're intentionally on assertj 1.7.1 as the latest (3.8.0 as of 22/12/2017) is not compatible
-  // with Android.
-  //noinspection GradleDependency
-  testImplementation 'org.assertj:assertj-core:1.7.1'
-
-  // Conservative assertj version compatible with Kotlin 2.0.21
   testImplementation 'org.assertj:assertj-core:3.26.3'
 
   // Keystore-backed EncryptedSharedPreferences for stable device ID

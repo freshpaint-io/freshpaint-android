@@ -42,10 +42,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -58,49 +56,6 @@ import org.junit.Test;
  * Android Handler, allowing direct assertions on dispatched events.
  */
 public class FreshpaintInstallEventTest {
-
-  // -------------------------------------------------------------------------
-  // SynchronousExecutor — runs submitted tasks on the calling thread
-  // -------------------------------------------------------------------------
-
-  /**
-   * Executes every submitted {@link Runnable} synchronously on the calling thread. This makes
-   * {@link Freshpaint#track} and {@link Freshpaint#trackApplicationLifecycleEvents} fully
-   * synchronous so assertions can run immediately after the call.
-   */
-  static class SynchronousExecutor extends AbstractExecutorService {
-    private boolean terminated;
-
-    @Override
-    public void shutdown() {
-      terminated = true;
-    }
-
-    @Override
-    public List<Runnable> shutdownNow() {
-      return Collections.emptyList();
-    }
-
-    @Override
-    public boolean isShutdown() {
-      return terminated;
-    }
-
-    @Override
-    public boolean isTerminated() {
-      return terminated;
-    }
-
-    @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) {
-      return terminated;
-    }
-
-    @Override
-    public void execute(Runnable r) {
-      r.run();
-    }
-  }
 
   // -------------------------------------------------------------------------
   // Test state
@@ -162,7 +117,7 @@ public class FreshpaintInstallEventTest {
         20,
         30_000L,
         300,
-        new SynchronousExecutor(),
+        new TestUtils.SynchronousExecutor(),
         false, // shouldTrackApplicationLifecycleEvents — we call the method directly
         new CountDownLatch(0),
         false,
@@ -172,7 +127,7 @@ public class FreshpaintInstallEventTest {
         Crypto.none(),
         Collections.singletonList(captureMiddleware),
         Collections.emptyMap(),
-        new ValueMap(),
+        TestUtils.testProjectSettings(),
         mock(Lifecycle.class),
         false,
         trackFirstOpen);
@@ -423,7 +378,7 @@ public class FreshpaintInstallEventTest {
             20,
             30_000L,
             300,
-            new SynchronousExecutor(),
+            new TestUtils.SynchronousExecutor(),
             false,
             new CountDownLatch(0),
             false,
@@ -433,7 +388,7 @@ public class FreshpaintInstallEventTest {
             Crypto.none(),
             Collections.singletonList(captureMiddleware),
             Collections.emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             mock(Lifecycle.class),
             false,
             true);
@@ -482,30 +437,46 @@ public class FreshpaintInstallEventTest {
   // -------------------------------------------------------------------------
 
   /**
-   * When a deep link fires before app_install (first install scenario), the stored deep-link
-   * attribution data must appear in the {@code app_install} payload. This test pre-populates
-   * SharedPreferences with DL attribution (simulating a prior {@code trackDeepLink()} call) and
-   * asserts the fields are present in the emitted event.
+   * When a deep link fires before {@code app_install}, both the click ID and UTM params appear in
+   * the {@code app_install} payload when the UTM data is within the 24-hour expiry window.
    */
   @Test
-  public void appInstallIncludesStoredDeepLinkAttribution() {
-    // Simulate trackDeepLink() having already stored DL attribution before app_install fires.
+  public void appInstall_dlClickIdAndUtm_presentWhenWithinExpiryWindow() {
+    long storedAt = 1_000_000L;
     Map<String, String> dlParams = new LinkedHashMap<>();
     dlParams.put("gclid", "DL_GCLID_123");
     dlParams.put("utm_source", "facebook");
-    // Use a fixed timestamp well within the 24-hour UTM expiry window.
-    DeepLinkAttributionManager.store(dlParams, fakePrefs, 1_000_000L);
+    DeepLinkAttributionManager.store(dlParams, fakePrefs, storedAt);
 
     Freshpaint fp = buildFreshpaint(true);
-    fp.trackApplicationLifecycleEvents();
+    fp.trackApplicationLifecycleEvents(storedAt + 3_600_000L); // +1h, within 24h window
 
     assertThat(tracksOf(captured)).hasSize(1);
     Properties props = tracksOf(captured).get(0).properties();
     assertThat(props.get("$gclid")).isEqualTo("DL_GCLID_123");
     assertThat(props).containsKey("$gclid_creation_time");
-    // TODO: FRP-46 — assert UTM params in app_install once clock injection is available.
-    // trackApplicationLifecycleEvents() calls System.currentTimeMillis() (~1.7e12 ms), which
-    // makes the UTM stored at T=1_000_000ms always appear expired. Only asserting click ID here.
+    assertThat(props.get("utm_source")).isEqualTo("facebook");
+  }
+
+  /**
+   * Click IDs persist indefinitely; UTM params are omitted from {@code app_install} once they have
+   * expired (older than 24 hours at the time {@code trackApplicationLifecycleEvents} runs).
+   */
+  @Test
+  public void appInstall_dlClickIdPersists_utmOmittedAfterExpiry() {
+    long storedAt = 1_000_000L;
+    Map<String, String> dlParams = new LinkedHashMap<>();
+    dlParams.put("gclid", "DL_GCLID_123");
+    dlParams.put("utm_source", "facebook");
+    DeepLinkAttributionManager.store(dlParams, fakePrefs, storedAt);
+
+    Freshpaint fp = buildFreshpaint(true);
+    fp.trackApplicationLifecycleEvents(storedAt + 90_000_000L); // +25h, UTM expired
+
+    assertThat(tracksOf(captured)).hasSize(1);
+    Properties props = tracksOf(captured).get(0).properties();
+    assertThat(props.get("$gclid")).isEqualTo("DL_GCLID_123"); // click ID persists indefinitely
+    assertThat(props).doesNotContainKey("utm_source"); // UTM expired
   }
 
   /**
@@ -616,7 +587,7 @@ public class FreshpaintInstallEventTest {
             20,
             30_000L,
             300,
-            new SynchronousExecutor(),
+            new TestUtils.SynchronousExecutor(),
             false,
             new CountDownLatch(0),
             false,
@@ -626,7 +597,7 @@ public class FreshpaintInstallEventTest {
             Crypto.none(),
             Collections.singletonList(captureMiddleware),
             Collections.emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             mock(Lifecycle.class),
             false,
             true);

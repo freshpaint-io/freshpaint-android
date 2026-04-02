@@ -12,6 +12,11 @@ import org.robolectric.shadows.ShadowLog
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class LoggerTest {
+    @org.junit.Before
+    fun setUp() {
+        ShadowLog.reset()
+    }
+
     @Test
     fun verboseLevelLogsEverything() {
         val logger = Logger.with(Freshpaint.LogLevel.VERBOSE)

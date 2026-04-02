@@ -35,7 +35,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import android.app.Application;
 import android.content.Context;
 import android.content.res.Resources;
-import io.freshpaint.android.core.BuildConfig;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +43,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class, sdk = 18, manifest = Config.NONE)
+@Config(manifest = Config.NONE)
 public class AnalyticsBuilderTest {
 
   private Application context;
