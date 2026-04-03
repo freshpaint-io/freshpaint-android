@@ -60,9 +60,9 @@ import org.robolectric.annotation.Config;
 /**
  * End-to-end integration tests for the MMP attribution pipeline.
  *
- * <p>Each test covers a distinct install scenario, combining multiple attribution components
- * (StableDeviceId, GAID, InstallReferrerManager, DeepLinkAttributionManager) as they interact
- * through {@link Freshpaint#trackApplicationLifecycleEvents(long)}.
+ * <p>Each test covers a distinct install scenario, combining multiple attribution components (GAID,
+ * InstallReferrerManager, DeepLinkAttributionManager) as they interact through {@link
+ * Freshpaint#trackApplicationLifecycleEvents(long)}.
  *
  * <p>Uses {@link FakeSharedPreferences} and {@link TestUtils.SynchronousExecutor} to run all async
  * work on the calling thread. Runs under Robolectric so that Android framework classes referenced
@@ -207,7 +207,7 @@ public class MmpIntegrationTest {
   /**
    * When GAID is resolved and Install Referrer data is pre-populated (as {@code
    * trackAttributionInformation()} would do on a real device), the {@code app_install} event
-   * contains all attribution fields: {@code gaid}, {@code limit_ad_tracking}, {@code
+   * contains all attribution fields: {@code advertisingId}, {@code limit_ad_tracking}, {@code
    * install_referrer}, parsed UTM params, and click IDs.
    */
   @Test
@@ -216,7 +216,7 @@ public class MmpIntegrationTest {
     AnalyticsContext ctx = emptyContext();
     AnalyticsContext.Device device = new AnalyticsContext.Device();
     device.putAdvertisingInfo(
-        "test-gaid-value", true); // adTrackingEnabled=true → gaid set, limit=false
+        "test-gaid-value", true); // adTrackingEnabled=true → advertisingId set, limit=false
     ctx.put("device", device);
 
     // Pre-populate Install Referrer data (simulates collectAndStore() having completed)
@@ -235,7 +235,7 @@ public class MmpIntegrationTest {
     assertThat(event.event()).isEqualTo("app_install");
 
     Properties props = event.properties();
-    assertThat(props.get("gaid")).isEqualTo("test-gaid-value");
+    assertThat(props.get("advertisingId")).isEqualTo("test-gaid-value");
     assertThat(props.get("limit_ad_tracking")).isEqualTo(false);
     assertThat(props.get("install_referrer"))
         .isEqualTo("utm_source=google&utm_campaign=winter_sale");
@@ -245,7 +245,6 @@ public class MmpIntegrationTest {
     assertThat(props.get("$gclid_creation_time")).isEqualTo(1710000000000L);
     // All required fields present
     assertThat(props).containsKey("install_timestamp");
-    assertThat(props).containsKey("device_id");
     assertThat(props).containsKey("os_version");
     assertThat(props).containsKey("app_version");
   }
@@ -256,8 +255,8 @@ public class MmpIntegrationTest {
 
   /**
    * When the GAID worker has not run and no Install Referrer data is available (e.g. device has no
-   * Google Play Services), {@code app_install} fires without {@code gaid} or referrer fields.
-   * {@code limit_ad_tracking} defaults to {@code true} (conservative / tracking limited).
+   * Google Play Services), {@code app_install} fires without {@code advertisingId} or referrer
+   * fields. {@code limit_ad_tracking} defaults to {@code true} (conservative / tracking limited).
    */
   @Test
   public void it2_firstOpen_withoutPlayServices_noGaidNoReferrer() {
@@ -270,12 +269,11 @@ public class MmpIntegrationTest {
     assertThat(event.event()).isEqualTo("app_install");
 
     Properties props = event.properties();
-    assertThat(props).doesNotContainKey("gaid"); // absent, not explicit null
+    assertThat(props).doesNotContainKey("advertisingId"); // absent, not explicit null
     assertThat(props.get("limit_ad_tracking")).isEqualTo(true); // conservative default
     assertThat(props).doesNotContainKey("install_referrer");
     // Required fields still present
     assertThat(props).containsKey("install_timestamp");
-    assertThat(props).containsKey("device_id");
     assertThat(props).containsKey("os_version");
     assertThat(props).containsKey("app_version");
   }
@@ -305,7 +303,6 @@ public class MmpIntegrationTest {
     assertThat(props).doesNotContainKey("install_referrer");
     // Required fields
     assertThat(props).containsKey("install_timestamp");
-    assertThat(props).containsKey("device_id");
     assertThat(props).containsKey("limit_ad_tracking");
     assertThat(props).containsKey("os_version");
     assertThat(props).containsKey("app_version");
@@ -428,7 +425,6 @@ public class MmpIntegrationTest {
     assertThat(props).doesNotContainKey("$gclid");
     // Required fields still present — sideload path does not skip any required field
     assertThat(props).containsKey("install_timestamp");
-    assertThat(props).containsKey("device_id");
     assertThat(props).containsKey("limit_ad_tracking");
     assertThat(props).containsKey("os_version");
     assertThat(props).containsKey("app_version");
@@ -439,9 +435,9 @@ public class MmpIntegrationTest {
   // -------------------------------------------------------------------------
 
   /**
-   * Strict schema test: {@code app_install} must contain exactly the 5 required fields from the
-   * global PRD, each with the correct type, and the event name must match the current SDK
-   * implementation name {@code "app_install"}.
+   * Strict schema test: {@code app_install} must contain the required fields (install timestamp,
+   * limit ad tracking, OS and app version), each with the correct type, and the event name must
+   * match the current SDK implementation name {@code "app_install"}.
    */
   @Test
   public void it6_schemaValidation_requiredFieldsWithCorrectTypes() {
@@ -465,12 +461,6 @@ public class MmpIntegrationTest {
     assertThat(installTimestamp).isNotNull();
     assertThat(installTimestamp).isInstanceOf(String.class);
     assertThat(installTimestamp.toString()).matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*");
-
-    // device_id: non-empty string (UUID from StableDeviceId)
-    Object deviceId = props.get("device_id");
-    assertThat(deviceId).isNotNull();
-    assertThat(deviceId).isInstanceOf(String.class);
-    assertThat(deviceId.toString()).isNotEmpty();
 
     // limit_ad_tracking: boolean (never absent — defaults to true when device is null)
     Object limitAdTracking = props.get("limit_ad_tracking");

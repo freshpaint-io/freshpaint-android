@@ -124,11 +124,11 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC2 — All 24 click IDs extracted with $ prefix and _creation_time
+  // All CLICK_IDS extracted with $ prefix and _creation_time
   // -------------------------------------------------------------------------
 
   @Test
-  public void allTwentyFourClickIdsExtractedWithPrefixAndCreationTime() throws Exception {
+  public void allClickIdsExtractedWithPrefixAndCreationTime() throws Exception {
     StringBuilder referrer = new StringBuilder();
     for (String id : AttributionConstants.CLICK_IDS) {
       if (referrer.length() > 0) referrer.append("&");
@@ -163,7 +163,8 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC4 — Google special: gacid → $gclid_campaign_id
+  // Google special: gacid → $gclid_campaign_id (and $wbraid_campaign_id /
+  // $gbraid_campaign_id)
   // -------------------------------------------------------------------------
 
   @Test
@@ -175,6 +176,17 @@ public class InstallReferrerManagerTest {
 
     assertThat(prefs.store.get("ir.$gclid_campaign_id")).isEqualTo("12345678");
     assertThat(prefs.store.containsKey("ir.$gacid")).isFalse();
+  }
+
+  @Test
+  public void googleGacidWithWbraidStoresWbraidCampaignIdNotGclidWhenNoGclid() throws Exception {
+    ReferrerDetails details = mockDetails("wbraid=WBX&gacid=CAMP_W", 0L, 0L);
+    InstallReferrerClient client = okClient(details);
+
+    InstallReferrerManager.doCollect(client, prefs, 5_000L);
+
+    assertThat(prefs.store.get("ir.$wbraid_campaign_id")).isEqualTo("CAMP_W");
+    assertThat(prefs.store.containsKey("ir.$gclid_campaign_id")).isFalse();
   }
 
   // -------------------------------------------------------------------------

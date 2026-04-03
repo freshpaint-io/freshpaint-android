@@ -30,8 +30,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Extracts and persists deep-link attribution data — 24 ad-platform click IDs, UTM parameters, and
- * the Freshpaint click ID — from Intent URI query parameters captured by {@link
+ * Extracts and persists deep-link attribution data — ad-platform click IDs, UTM parameters, and the
+ * Freshpaint click ID — from Intent URI query parameters captured by {@link
  * AnalyticsActivityLifecycleCallbacks#trackDeepLink}.
  *
  * <p>All SharedPreferences keys use the {@code "dl."} prefix to avoid collisions with the Install
@@ -93,7 +93,7 @@ final class DeepLinkAttributionManager {
 
     SharedPreferences.Editor editor = prefs.edit();
 
-    // 24 ad-platform click IDs
+    // Ad-platform click IDs
     for (String id : AttributionConstants.CLICK_IDS) {
       String val = queryParams.get(id);
       if (val != null && !val.isEmpty()) {
@@ -107,10 +107,21 @@ final class DeepLinkAttributionManager {
       putWithDedup(prefs, editor, KEY_FP_CLICK_ID, fpClickId, now);
     }
 
-    // Google special: gacid → $gclid_campaign_id
+    // Google special: gacid → $gclid_campaign_id / $wbraid_campaign_id / $gbraid_campaign_id; see
+    // AttributionConstants.routeGacidToGoogleCampaignIds.
     String gacid = queryParams.get("gacid");
-    if (gacid != null && !gacid.isEmpty()) {
-      putWithDedup(prefs, editor, DL_PREFIX + "$gclid_campaign_id", gacid, now);
+    if (AttributionConstants.nonEmpty(gacid)) {
+      boolean hasGclid = AttributionConstants.nonEmpty(queryParams.get("gclid"));
+      boolean hasWbraid = AttributionConstants.nonEmpty(queryParams.get("wbraid"));
+      boolean hasGbraid = AttributionConstants.nonEmpty(queryParams.get("gbraid"));
+      AttributionConstants.routeGacidToGoogleCampaignIds(
+          gacid,
+          hasGclid,
+          hasWbraid,
+          hasGbraid,
+          v -> putWithDedup(prefs, editor, DL_PREFIX + "$gclid_campaign_id", v, now),
+          v -> putWithDedup(prefs, editor, DL_PREFIX + "$wbraid_campaign_id", v, now),
+          v -> putWithDedup(prefs, editor, DL_PREFIX + "$gbraid_campaign_id", v, now));
     }
 
     // Facebook special fields
@@ -168,7 +179,7 @@ final class DeepLinkAttributionManager {
   static Map<String, Object> getStoredProperties(SharedPreferences prefs, long now) {
     Map<String, Object> result = new LinkedHashMap<>();
 
-    // 24 ad-platform click IDs (no expiry)
+    // Ad-platform click IDs (no expiry)
     for (String id : AttributionConstants.CLICK_IDS) {
       addWithCreationTime(prefs, result, DL_PREFIX + "$" + id, "$" + id);
     }
@@ -176,8 +187,10 @@ final class DeepLinkAttributionManager {
     // Freshpaint click ID
     addWithCreationTime(prefs, result, KEY_FP_CLICK_ID, "fp_click_id");
 
-    // Google special field
+    // Google special fields
     addWithCreationTime(prefs, result, DL_PREFIX + "$gclid_campaign_id", "$gclid_campaign_id");
+    addWithCreationTime(prefs, result, DL_PREFIX + "$wbraid_campaign_id", "$wbraid_campaign_id");
+    addWithCreationTime(prefs, result, DL_PREFIX + "$gbraid_campaign_id", "$gbraid_campaign_id");
 
     // Facebook special fields
     addWithCreationTime(prefs, result, DL_PREFIX + "$fbclid_ad_id", "$fbclid_ad_id");

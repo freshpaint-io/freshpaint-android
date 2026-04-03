@@ -381,9 +381,9 @@ public class Freshpaint {
     if (previousBuild == -1) {
       if (trackFirstOpen && !firstOpenTracked) {
         AnalyticsContext.Device device = analyticsContext.device();
-        // gaid is snapshotted here, before track() submits to analyticsExecutor and before
-        // waitForAdvertisingId() runs. This means properties.gaid will be null on first launch
-        // if the GAID worker hasn't completed yet. This is intentional:
+        // Advertising ID is snapshotted here, before track() submits to analyticsExecutor and
+        // before waitForAdvertisingId() runs. properties.advertisingId may be absent on first
+        // launch if the GAID worker hasn't completed yet. This is intentional:
         // context.device.advertisingId
         // (attached to all payloads by AttributionMiddleware after the latch) will carry the
         // resolved value. Do not add a latch wait here — it would deadlock the calling thread.
@@ -399,15 +399,16 @@ public class Freshpaint {
         Properties installProps =
             new Properties()
                 .putValue("install_timestamp", Utils.toISO8601String(new Date()))
-                .putValue("device_id", StableDeviceId.get(application))
+                // May be stale vs. context.device until GAID resolves; AttributionMiddleware aligns
+                // properties.limit_ad_tracking with context.device on dispatch.
                 .putValue("limit_ad_tracking", limitAdTracking)
                 .putValue("os_version", Build.VERSION.RELEASE)
                 .putValue("app_version", currentVersion);
-        // Omit gaid when not yet resolved: explicit null vs. absent key are handled differently
-        // by some MMP backends. AttributionMiddleware will populate context.device.advertisingId
-        // with the resolved value once the GAID worker completes.
+        // Omit advertisingId when not yet resolved: explicit null vs. absent key are handled
+        // differently by some MMP backends. AttributionMiddleware reconciles
+        // properties.advertisingId with context.device at dispatch when the GAID worker completes.
         if (gaid != null) {
-          installProps.putValue("gaid", gaid);
+          installProps.putValue(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY, gaid);
         }
         // android_id is captured synchronously at SDK init (putDevice), so it is available here
         // unless the device returned a placeholder value (filtered by Device.putAndroidId).
@@ -1145,7 +1146,10 @@ public class Freshpaint {
     private ExecutorService executor;
     private ConnectionFactory connectionFactory;
     private final List<Integration.Factory> factories = new ArrayList<>();
+
+    /** Always non-null; {@link #useSourceMiddleware(Middleware)} rejects null entries. */
     private List<Middleware> sourceMiddleware = new ArrayList<>();
+
     private Map<String, List<Middleware>> destinationMiddleware;
     private boolean trackApplicationLifecycleEvents = false;
     private boolean recordScreenViews = false;
@@ -1386,9 +1390,6 @@ public class Freshpaint {
      */
     public Builder useSourceMiddleware(Middleware middleware) {
       Utils.assertNotNull(middleware, "middleware");
-      if (sourceMiddleware == null) {
-        sourceMiddleware = new ArrayList<>();
-      }
       if (sourceMiddleware.contains(middleware)) {
         throw new IllegalStateException("Source Middleware is already registered.");
       }

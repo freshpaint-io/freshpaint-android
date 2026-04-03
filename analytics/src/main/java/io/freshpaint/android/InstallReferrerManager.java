@@ -162,7 +162,7 @@ class InstallReferrerManager {
       result.put("fp_click_id", fpClickId);
     }
 
-    // 24 ad-platform click IDs
+    // Ad-platform click IDs
     for (String id : AttributionConstants.CLICK_IDS) {
       String val = prefs.getString(IR_PREFIX + "$" + id, null);
       if (val != null) {
@@ -174,10 +174,18 @@ class InstallReferrerManager {
       }
     }
 
-    // Google special field
+    // Google special fields
     String gclidCampaignId = prefs.getString(IR_PREFIX + "$gclid_campaign_id", null);
     if (gclidCampaignId != null) {
       result.put("$gclid_campaign_id", gclidCampaignId);
+    }
+    String wbraidCampaignId = prefs.getString(IR_PREFIX + "$wbraid_campaign_id", null);
+    if (wbraidCampaignId != null) {
+      result.put("$wbraid_campaign_id", wbraidCampaignId);
+    }
+    String gbraidCampaignId = prefs.getString(IR_PREFIX + "$gbraid_campaign_id", null);
+    if (gbraidCampaignId != null) {
+      result.put("$gbraid_campaign_id", gbraidCampaignId);
     }
 
     // Facebook special fields
@@ -309,7 +317,7 @@ class InstallReferrerManager {
       editor.putString(KEY_FP_CLICK_ID, fpClickId);
     }
 
-    // 24 ad-platform click IDs
+    // Ad-platform click IDs
     for (String id : AttributionConstants.CLICK_IDS) {
       String val = params.get(id);
       if (val != null && !val.isEmpty()) {
@@ -324,10 +332,20 @@ class InstallReferrerManager {
       }
     }
 
-    // Google special: gacid → $gclid_campaign_id
+    // Google special: gacid routing — see AttributionConstants.routeGacidToGoogleCampaignIds.
     String gacid = params.get("gacid");
-    if (gacid != null && !gacid.isEmpty()) {
-      editor.putString(IR_PREFIX + "$gclid_campaign_id", gacid);
+    if (AttributionConstants.nonEmpty(gacid)) {
+      boolean hasGclid = AttributionConstants.nonEmpty(params.get("gclid"));
+      boolean hasWbraid = AttributionConstants.nonEmpty(params.get("wbraid"));
+      boolean hasGbraid = AttributionConstants.nonEmpty(params.get("gbraid"));
+      AttributionConstants.routeGacidToGoogleCampaignIds(
+          gacid,
+          hasGclid,
+          hasWbraid,
+          hasGbraid,
+          v -> editor.putString(IR_PREFIX + "$gclid_campaign_id", v),
+          v -> editor.putString(IR_PREFIX + "$wbraid_campaign_id", v),
+          v -> editor.putString(IR_PREFIX + "$gbraid_campaign_id", v));
     }
 
     // Facebook special fields

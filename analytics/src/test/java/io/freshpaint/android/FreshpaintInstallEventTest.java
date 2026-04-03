@@ -147,7 +147,7 @@ public class FreshpaintInstallEventTest {
     assertThat(tracksOf(captured).get(0).event()).isEqualTo("app_install");
   }
 
-  // AC1 — All 6 required fields present in app_install payload
+  // AC1 — Required fields present in app_install payload
   @Test
   public void firstLaunchAppInstallHasAllRequiredFields() {
     Freshpaint fp = buildFreshpaint(true);
@@ -155,11 +155,10 @@ public class FreshpaintInstallEventTest {
 
     Properties props = tracksOf(captured).get(0).properties();
     assertThat(props).containsKey("install_timestamp");
-    assertThat(props).containsKey("device_id");
     assertThat(props).containsKey("limit_ad_tracking");
     assertThat(props).containsKey("os_version");
     assertThat(props).containsKey("app_version");
-    // gaid is omitted when not yet resolved; see gaidAbsentWhenNotResolved
+    // advertisingId is omitted when not yet resolved; see advertisingIdAbsentWhenNotResolved
   }
 
   // AC5 — install_timestamp is a valid ISO 8601 string
@@ -171,17 +170,6 @@ public class FreshpaintInstallEventTest {
     Object ts = tracksOf(captured).get(0).properties().get("install_timestamp");
     assertThat(ts).isNotNull();
     assertThat(ts.toString()).matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*");
-  }
-
-  // AC6 — device_id is non-empty
-  @Test
-  public void deviceIdIsNonEmpty() {
-    Freshpaint fp = buildFreshpaint(true);
-    fp.trackApplicationLifecycleEvents();
-
-    Object deviceId = tracksOf(captured).get(0).properties().get("device_id");
-    assertThat(deviceId).isNotNull();
-    assertThat(deviceId.toString()).isNotEmpty();
   }
 
   // AC6 — app_version matches the mocked PackageInfo
@@ -296,17 +284,17 @@ public class FreshpaintInstallEventTest {
   }
 
   // -------------------------------------------------------------------------
-  // gaid field — absent when not resolved, present when resolved
+  // advertisingId — absent when not resolved, present when resolved
   // -------------------------------------------------------------------------
 
-  /** gaid must be absent (not explicit null) when the GAID worker hasn't run yet. */
+  /** advertisingId must be absent (not explicit null) when the GAID worker hasn't run yet. */
   @Test
-  public void gaidAbsentWhenNotResolved() {
-    // Device has no advertisingId key (GAID worker hasn't run) → gaid omitted from payload.
+  public void advertisingIdAbsentWhenNotResolved() {
+    // Device has no advertisingId key (GAID worker hasn't run) → property omitted from payload.
     Freshpaint fp = buildFreshpaint(true);
     fp.trackApplicationLifecycleEvents();
 
-    assertThat(tracksOf(captured).get(0).properties()).doesNotContainKey("gaid");
+    assertThat(tracksOf(captured).get(0).properties()).doesNotContainKey("advertisingId");
   }
 
   // -------------------------------------------------------------------------
