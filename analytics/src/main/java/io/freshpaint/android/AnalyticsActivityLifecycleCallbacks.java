@@ -40,6 +40,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 class AnalyticsActivityLifecycleCallbacks
     implements Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver {
+  /**
+   * Context key for the full deep-link URL in {@link #trackDeepLink}. Unlike attribution keys from
+   * {@link DeepLinkAttributionManager}, this is intentionally not {@code $}-prefixed (Segment-style
+   * reserved field for the link itself).
+   */
+  static final String DEEP_LINK_URL_CONTEXT_KEY = "url";
+
   private Freshpaint freshpaint;
   private ExecutorService analyticsExecutor;
   private Boolean shouldTrackApplicationLifecycleEvents;
@@ -151,12 +158,9 @@ class AnalyticsActivityLifecycleCallbacks
     for (String parameter : uri.getQueryParameterNames()) {
       String value = uri.getQueryParameter(parameter);
       if (value != null && !value.trim().isEmpty()) {
-        properties.put(parameter, value);
         queryParams.put(parameter, value);
       }
     }
-
-    properties.put("url", uri.toString());
 
     // Store deep-link attribution data (FRP-45). commit() runs synchronously on the main thread;
     // the trade-off is a small disk-write latency here in exchange for a guaranteed-visible read
@@ -165,14 +169,17 @@ class AnalyticsActivityLifecycleCallbacks
     long now = System.currentTimeMillis();
     freshpaint.storeDeepLinkAttribution(queryParams, now);
 
-    // If app_install has already been tracked, enrich Deep Link Opened with the stored
-    // attribution fields ($gclid, utm_source, etc.). When app_install has not yet fired, the
-    // attribution is already stored and will be merged by trackApplicationLifecycleEvents().
-    if (freshpaint.isFirstOpenTracked()) {
-      properties.putAll(freshpaint.getDeepLinkAttributionProperties(now));
+    // Attribution (UTM, click IDs, Facebook campaign fields, etc.) and the deep-link URL live only
+    // in context — not duplicated in properties. Storage was updated above; read back the same
+    // snapshot the integrations consume.
+    Options dlOpts = freshpaint.getDefaultOptions();
+    dlOpts.putContext(DEEP_LINK_URL_CONTEXT_KEY, uri.toString());
+    for (Map.Entry<String, Object> entry :
+        freshpaint.getDeepLinkAttributionProperties(now).entrySet()) {
+      dlOpts.putContext(entry.getKey(), entry.getValue());
     }
 
-    freshpaint.track("Deep Link Opened", properties);
+    freshpaint.track("Deep Link Opened", properties, dlOpts);
   }
 
   @Override
