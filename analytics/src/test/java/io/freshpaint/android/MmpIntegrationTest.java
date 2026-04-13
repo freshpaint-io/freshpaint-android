@@ -237,16 +237,19 @@ public class MmpIntegrationTest {
     Properties props = event.properties();
     assertThat(props.get("advertisingId")).isEqualTo("test-gaid-value");
     assertThat(props.get("limit_ad_tracking")).isEqualTo(false);
-    assertThat(props.get("install_referrer"))
-        .isEqualTo("utm_source=google&utm_campaign=winter_sale");
-    assertThat(props.get("utm_source")).isEqualTo("google");
-    assertThat(props.get("utm_campaign")).isEqualTo("winter_sale");
-    assertThat(props.get("$gclid")).isEqualTo("test-gclid");
-    assertThat(props.get("$gclid_creation_time")).isEqualTo(1710000000000L);
     // All required fields present
     assertThat(props).containsKey("install_timestamp");
     assertThat(props).containsKey("os_version");
     assertThat(props).containsKey("app_version");
+    // All attribution fields in context (FRP-71)
+    assertThat(props).doesNotContainKey("$gclid");
+    assertThat(props).doesNotContainKey("$gclid_creation_time");
+    assertThat(event.context().get("$gclid")).isEqualTo("test-gclid");
+    assertThat(event.context().get("$gclid_creation_time")).isEqualTo(1710000000000L);
+    assertThat(event.context().get("install_referrer"))
+        .isEqualTo("utm_source=google&utm_campaign=winter_sale");
+    assertThat(event.context().get("utm_source")).isEqualTo("google");
+    assertThat(event.context().get("utm_campaign")).isEqualTo("winter_sale");
   }
 
   // -------------------------------------------------------------------------
@@ -296,11 +299,13 @@ public class MmpIntegrationTest {
     assertThat(event.event()).isEqualTo("app_install");
 
     Properties props = event.properties();
-    // No attribution data
+    // No attribution data in properties or context
     assertThat(props).doesNotContainKey("$gclid");
     assertThat(props).doesNotContainKey("$fbclid");
     assertThat(props).doesNotContainKey("utm_source");
     assertThat(props).doesNotContainKey("install_referrer");
+    assertThat(event.context()).doesNotContainKey("$gclid");
+    assertThat(event.context()).doesNotContainKey("utm_source");
     // Required fields
     assertThat(props).containsKey("install_timestamp");
     assertThat(props).containsKey("limit_ad_tracking");
@@ -330,11 +335,17 @@ public class MmpIntegrationTest {
     fp.trackApplicationLifecycleEvents(storedAt + 3_600_000L); // +1h, within 24h window
 
     assertThat(tracksOf(captured)).hasSize(1);
-    Properties props = tracksOf(captured).get(0).properties();
-    assertThat(props.get("$gclid")).isEqualTo("DL_GCLID");
-    assertThat(props.get("$fbclid")).isEqualTo("DL_FBCLID");
-    assertThat(props.get("utm_source")).isEqualTo("facebook");
-    assertThat(props.get("utm_campaign")).isEqualTo("summer_sale");
+    TrackPayload payload4 = tracksOf(captured).get(0);
+    Properties props4 = payload4.properties();
+    // All attribution fields in context (FRP-71)
+    assertThat(props4).doesNotContainKey("$gclid");
+    assertThat(props4).doesNotContainKey("$fbclid");
+    assertThat(props4).doesNotContainKey("utm_source");
+    assertThat(props4).doesNotContainKey("utm_campaign");
+    assertThat(payload4.context().get("$gclid")).isEqualTo("DL_GCLID");
+    assertThat(payload4.context().get("$fbclid")).isEqualTo("DL_FBCLID");
+    assertThat(payload4.context().get("utm_source")).isEqualTo("facebook");
+    assertThat(payload4.context().get("utm_campaign")).isEqualTo("summer_sale");
   }
 
   /**
@@ -353,9 +364,13 @@ public class MmpIntegrationTest {
     fp.trackApplicationLifecycleEvents(storedAt + 90_000_000L); // +25h, UTM expired
 
     assertThat(tracksOf(captured)).hasSize(1);
-    Properties props = tracksOf(captured).get(0).properties();
-    assertThat(props.get("$gclid")).isEqualTo("DL_GCLID"); // click ID persists indefinitely
-    assertThat(props).doesNotContainKey("utm_source"); // UTM expired
+    TrackPayload payload4b = tracksOf(captured).get(0);
+    // Click ID in context and persists indefinitely (FRP-71)
+    assertThat(payload4b.properties()).doesNotContainKey("$gclid");
+    assertThat(payload4b.context().get("$gclid")).isEqualTo("DL_GCLID");
+    // UTM expired — absent from both properties and context
+    assertThat(payload4b.properties()).doesNotContainKey("utm_source");
+    assertThat(payload4b.context()).doesNotContainKey("utm_source");
   }
 
   /**
@@ -375,9 +390,13 @@ public class MmpIntegrationTest {
     fp.trackApplicationLifecycleEvents(storedAt + exactly24h); // exactly 24h, inclusive boundary
 
     assertThat(tracksOf(captured)).hasSize(1);
-    Properties props = tracksOf(captured).get(0).properties();
-    assertThat(props.get("$gclid")).isEqualTo("DL_GCLID");
-    assertThat(props.get("utm_source")).isEqualTo("facebook"); // still present at boundary
+    TrackPayload payload4c = tracksOf(captured).get(0);
+    // Click ID in context (FRP-71)
+    assertThat(payload4c.properties()).doesNotContainKey("$gclid");
+    assertThat(payload4c.context().get("$gclid")).isEqualTo("DL_GCLID");
+    // UTM still present at boundary — in context
+    assertThat(payload4c.properties()).doesNotContainKey("utm_source");
+    assertThat(payload4c.context().get("utm_source")).isEqualTo("facebook");
   }
 
   @Test
@@ -393,9 +412,13 @@ public class MmpIntegrationTest {
     fp.trackApplicationLifecycleEvents(storedAt + exactly24h + 1L); // 24h + 1ms, expired
 
     assertThat(tracksOf(captured)).hasSize(1);
-    Properties props = tracksOf(captured).get(0).properties();
-    assertThat(props.get("$gclid")).isEqualTo("DL_GCLID"); // click ID persists
-    assertThat(props).doesNotContainKey("utm_source"); // UTM expired
+    TrackPayload payload4d = tracksOf(captured).get(0);
+    // Click ID in context (FRP-71)
+    assertThat(payload4d.properties()).doesNotContainKey("$gclid");
+    assertThat(payload4d.context().get("$gclid")).isEqualTo("DL_GCLID");
+    // UTM expired — absent from both properties and context
+    assertThat(payload4d.properties()).doesNotContainKey("utm_source");
+    assertThat(payload4d.context()).doesNotContainKey("utm_source");
   }
 
   // -------------------------------------------------------------------------
@@ -532,10 +555,62 @@ public class MmpIntegrationTest {
   // -------------------------------------------------------------------------
 
   /**
+   * When a deep link opens on the FIRST launch (before {@code app_install} fires,
+   * {@code first_open_tracked=false}), {@code Deep Link Opened} must still carry stored attribution
+   * in {@code context}. The guard {@code isFirstOpenTracked()} was intentionally removed — the data
+   * is available the moment {@code storeDeepLinkAttribution()} returns, and enriching Deep Link
+   * Opened unconditionally is more correct than skipping it on the first launch.
+   */
+  @Test
+  public void it7c_deepLinkOpenedEnrichedOnFirstLaunch_beforeAppInstallFires() {
+    // first_open_tracked is absent — app_install has not yet fired.
+    assertThat(fakePrefs.store).doesNotContainKey("first_open_tracked");
+
+    Freshpaint fp = buildFreshpaint(emptyContext());
+
+    AnalyticsActivityLifecycleCallbacks callbacks =
+        new AnalyticsActivityLifecycleCallbacks.Builder()
+            .analytics(fp)
+            .analyticsExecutor(new TestUtils.SynchronousExecutor())
+            .shouldTrackApplicationLifecycleEvents(false)
+            .trackAttributionInformation(false)
+            .trackDeepLinks(true)
+            .shouldRecordScreenViews(false)
+            .packageInfo(new PackageInfo())
+            .build();
+
+    Uri mockUri = mock(Uri.class);
+    when(mockUri.getQueryParameterNames())
+        .thenReturn(new LinkedHashSet<>(Arrays.asList("gclid", "utm_source")));
+    when(mockUri.getQueryParameter("gclid")).thenReturn("FIRST_LAUNCH_GCLID");
+    when(mockUri.getQueryParameter("utm_source")).thenReturn("google_ads");
+    when(mockUri.toString()).thenReturn("https://example.com?gclid=FIRST_LAUNCH_GCLID");
+
+    Intent mockIntent = mock(Intent.class);
+    when(mockIntent.getData()).thenReturn(mockUri);
+
+    Activity mockActivity = mock(Activity.class);
+    when(mockActivity.getIntent()).thenReturn(mockIntent);
+
+    callbacks.onActivityCreated(mockActivity, null);
+
+    List<TrackPayload> tracks = tracksOf(captured);
+    assertThat(tracks).hasSize(1);
+    TrackPayload event = tracks.get(0);
+    assertThat(event.event()).isEqualTo("Deep Link Opened");
+    // Attribution is present in context even on first launch (no isFirstOpenTracked guard).
+    assertThat(event.context().get("$gclid")).isEqualTo("FIRST_LAUNCH_GCLID");
+    assertThat(event.context().get("utm_source")).isEqualTo("google_ads");
+    assertThat(event.context().get("url")).isEqualTo("https://example.com?gclid=FIRST_LAUNCH_GCLID");
+    assertThat(event.properties()).doesNotContainKey("$gclid");
+  }
+
+  /**
    * When {@code first_open_tracked=true} (app_install already fired on a previous launch) and a
-   * deep link is opened, {@code Deep Link Opened} must include the stored attribution properties
-   * ($gclid, utm params) — proving that {@link AnalyticsActivityLifecycleCallbacks#trackDeepLink}
-   * enriches the event via {@link Freshpaint#getDeepLinkAttributionProperties}.
+   * deep link is opened, {@code Deep Link Opened} must carry stored attribution ($gclid, UTM, url)
+   * in {@code context} only — proving that {@link
+   * AnalyticsActivityLifecycleCallbacks#trackDeepLink} enriches via {@link
+   * Freshpaint#getDeepLinkAttributionProperties} and {@link Options#putContext}.
    *
    * <p>Uses Mockito mocks for {@code Activity}, {@code Intent}, and {@code Uri} so that {@code
    * uri.getQueryParameterNames()} and {@code uri.getQueryParameter()} can be stubbed without
@@ -583,12 +658,12 @@ public class MmpIntegrationTest {
     assertThat(event.event()).isEqualTo("Deep Link Opened");
 
     Properties props = event.properties();
-    // url is always present in Deep Link Opened
-    assertThat(props.getString("url"))
+    assertThat(props).doesNotContainKey("url");
+    assertThat(props).doesNotContainKey("utm_source");
+    assertThat(props).doesNotContainKey("gclid");
+    assertThat(event.context().get("url"))
         .isEqualTo("https://example.com?gclid=CLICK_ID_123&utm_source=google_ads");
-    // click ID stored and enriched as $gclid (prefixed by DeepLinkAttributionManager)
-    assertThat(props.get("$gclid")).isEqualTo("CLICK_ID_123");
-    // UTM param enriched (within expiry window — same millisecond stored and retrieved)
-    assertThat(props.get("utm_source")).isEqualTo("google_ads");
+    assertThat(event.context().get("$gclid")).isEqualTo("CLICK_ID_123");
+    assertThat(event.context().get("utm_source")).isEqualTo("google_ads");
   }
 }

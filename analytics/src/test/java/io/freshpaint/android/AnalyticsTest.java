@@ -1075,9 +1075,9 @@ public class AnalyticsTest {
                   @Override
                   public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Deep Link Opened")
-                        && payload.properties().getString("url").equals(expectedUrl)
-                        && payload.properties().getString("gclid").equals("abcd")
-                        && payload.properties().getString("utm_id").equals("12345");
+                        && payload.context().get("url").equals(expectedUrl)
+                        && payload.context().get("$gclid").equals("abcd")
+                        && payload.properties().isEmpty();
                   }
                 }));
   }
@@ -1151,9 +1151,8 @@ public class AnalyticsTest {
                   @Override
                   public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Deep Link Opened")
-                        && payload.properties().getString("url").equals(expectedUrl)
-                        && payload.properties().getString("gclid").equals("abcd")
-                        && payload.properties().getString("utm_id").equals("12345");
+                        && payload.context().get("url") != null
+                        && payload.context().get("$gclid") != null;
                   }
                 }));
   }

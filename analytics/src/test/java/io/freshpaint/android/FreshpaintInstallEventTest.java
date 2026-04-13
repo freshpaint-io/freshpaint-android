@@ -411,13 +411,20 @@ public class FreshpaintInstallEventTest {
     fp.trackApplicationLifecycleEvents();
 
     assertThat(tracksOf(captured)).hasSize(1);
-    Properties props = tracksOf(captured).get(0).properties();
-    assertThat(props.get("install_referrer"))
+    TrackPayload payload = tracksOf(captured).get(0);
+    Properties props = payload.properties();
+    // All attribution fields in context (FRP-71)
+    assertThat(props).doesNotContainKey("$gclid");
+    assertThat(props).doesNotContainKey("$gclid_creation_time");
+    assertThat(props).doesNotContainKey("utm_source");
+    assertThat(props).doesNotContainKey("utm_campaign");
+    assertThat(props).doesNotContainKey("install_referrer");
+    assertThat(payload.context().get("$gclid")).isEqualTo("test-gclid-value");
+    assertThat(payload.context().get("$gclid_creation_time")).isEqualTo(1710000000000L);
+    assertThat(payload.context().get("install_referrer"))
         .isEqualTo("utm_source=google&utm_campaign=winter_sale");
-    assertThat(props.get("utm_source")).isEqualTo("google");
-    assertThat(props.get("utm_campaign")).isEqualTo("winter_sale");
-    assertThat(props.get("$gclid")).isEqualTo("test-gclid-value");
-    assertThat(props.get("$gclid_creation_time")).isEqualTo(1710000000000L);
+    assertThat(payload.context().get("utm_source")).isEqualTo("google");
+    assertThat(payload.context().get("utm_campaign")).isEqualTo("winter_sale");
   }
 
   // -------------------------------------------------------------------------
@@ -440,10 +447,15 @@ public class FreshpaintInstallEventTest {
     fp.trackApplicationLifecycleEvents(storedAt + 3_600_000L); // +1h, within 24h window
 
     assertThat(tracksOf(captured)).hasSize(1);
-    Properties props = tracksOf(captured).get(0).properties();
-    assertThat(props.get("$gclid")).isEqualTo("DL_GCLID_123");
-    assertThat(props).containsKey("$gclid_creation_time");
-    assertThat(props.get("utm_source")).isEqualTo("facebook");
+    TrackPayload payload = tracksOf(captured).get(0);
+    Properties props = payload.properties();
+    // All attribution fields in context (FRP-71)
+    assertThat(props).doesNotContainKey("$gclid");
+    assertThat(props).doesNotContainKey("$gclid_creation_time");
+    assertThat(props).doesNotContainKey("utm_source");
+    assertThat(payload.context().get("$gclid")).isEqualTo("DL_GCLID_123");
+    assertThat(payload.context()).containsKey("$gclid_creation_time");
+    assertThat(payload.context().get("utm_source")).isEqualTo("facebook");
   }
 
   /**
@@ -462,9 +474,14 @@ public class FreshpaintInstallEventTest {
     fp.trackApplicationLifecycleEvents(storedAt + 90_000_000L); // +25h, UTM expired
 
     assertThat(tracksOf(captured)).hasSize(1);
-    Properties props = tracksOf(captured).get(0).properties();
-    assertThat(props.get("$gclid")).isEqualTo("DL_GCLID_123"); // click ID persists indefinitely
-    assertThat(props).doesNotContainKey("utm_source"); // UTM expired
+    TrackPayload payload = tracksOf(captured).get(0);
+    Properties props = payload.properties();
+    // Click ID in context and persists indefinitely (FRP-71)
+    assertThat(props).doesNotContainKey("$gclid");
+    assertThat(payload.context().get("$gclid")).isEqualTo("DL_GCLID_123");
+    // UTM expired — absent from both properties and context
+    assertThat(props).doesNotContainKey("utm_source");
+    assertThat(payload.context()).doesNotContainKey("utm_source");
   }
 
   /**
@@ -486,10 +503,14 @@ public class FreshpaintInstallEventTest {
     Freshpaint fp = buildFreshpaint(true);
     fp.trackApplicationLifecycleEvents();
 
-    Properties props = tracksOf(captured).get(0).properties();
-    // DL value must win
-    assertThat(props.get("$gclid")).isEqualTo("DL_GCLID_VALUE");
-    assertThat(props.get("$gclid_creation_time")).isEqualTo(1_000_000L);
+    TrackPayload payload = tracksOf(captured).get(0);
+    Properties props = payload.properties();
+    // Click IDs in context, not properties (FRP-71)
+    assertThat(props).doesNotContainKey("$gclid");
+    assertThat(props).doesNotContainKey("$gclid_creation_time");
+    // DL value wins in context
+    assertThat(payload.context().get("$gclid")).isEqualTo("DL_GCLID_VALUE");
+    assertThat(payload.context().get("$gclid_creation_time")).isEqualTo(1_000_000L);
   }
 
   // -------------------------------------------------------------------------
