@@ -331,6 +331,12 @@ public class Freshpaint {
     return DeepLinkAttributionManager.getStoredProperties(prefs, now);
   }
 
+  private static void putAllIntoContext(Options options, Map<String, Object> values) {
+    for (Map.Entry<String, Object> entry : values.entrySet()) {
+      options.putContext(entry.getKey(), entry.getValue());
+    }
+  }
+
   @Private
   void trackAttributionInformation() {
     // Both this method and trackApplicationLifecycleEvents() call
@@ -424,9 +430,7 @@ public class Freshpaint {
 
         Options installOpts = getDefaultOptions();
 
-        for (Map.Entry<String, Object> entry : irData.entrySet()) {
-          installOpts.putContext(entry.getKey(), entry.getValue());
-        }
+        putAllIntoContext(installOpts, irData);
         // Merge deep-link attribution data (FRP-45). If a deep link fired before app_install,
         // trackDeepLink() will have persisted click IDs and UTM params via commit() on the main
         // thread before this executor task runs. Deep-link values overwrite IR values for
@@ -434,9 +438,7 @@ public class Freshpaint {
         // nowMillis is caller-supplied so tests can control the UTM expiry window.
         Map<String, Object> dlData =
             DeepLinkAttributionManager.getStoredProperties(sharedPreferences, nowMillis);
-        for (Map.Entry<String, Object> entry : dlData.entrySet()) {
-          installOpts.putContext(entry.getKey(), entry.getValue());
-        }
+        putAllIntoContext(installOpts, dlData);
         track("app_install", installProps, installOpts);
       }
     } else if (currentBuild != previousBuild) {

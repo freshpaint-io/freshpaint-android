@@ -40,6 +40,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 class AnalyticsActivityLifecycleCallbacks
     implements Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver {
+  /**
+   * Context key for the full deep-link URL in {@link #trackDeepLink}. Unlike attribution keys from
+   * {@link DeepLinkAttributionManager}, this is intentionally not {@code $}-prefixed (Segment-style
+   * reserved field for the link itself).
+   */
+  static final String DEEP_LINK_URL_CONTEXT_KEY = "url";
+
   private Freshpaint freshpaint;
   private ExecutorService analyticsExecutor;
   private Boolean shouldTrackApplicationLifecycleEvents;
@@ -166,7 +173,7 @@ class AnalyticsActivityLifecycleCallbacks
     // in context — not duplicated in properties. Storage was updated above; read back the same
     // snapshot the integrations consume.
     Options dlOpts = freshpaint.getDefaultOptions();
-    dlOpts.putContext("url", uri.toString());
+    dlOpts.putContext(DEEP_LINK_URL_CONTEXT_KEY, uri.toString());
     for (Map.Entry<String, Object> entry :
         freshpaint.getDeepLinkAttributionProperties(now).entrySet()) {
       dlOpts.putContext(entry.getKey(), entry.getValue());

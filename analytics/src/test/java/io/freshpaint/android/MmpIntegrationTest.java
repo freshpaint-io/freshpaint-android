@@ -555,11 +555,11 @@ public class MmpIntegrationTest {
   // -------------------------------------------------------------------------
 
   /**
-   * When a deep link opens on the FIRST launch (before {@code app_install} fires,
-   * {@code first_open_tracked=false}), {@code Deep Link Opened} must still carry stored attribution
-   * in {@code context}. The guard {@code isFirstOpenTracked()} was intentionally removed — the data
-   * is available the moment {@code storeDeepLinkAttribution()} returns, and enriching Deep Link
-   * Opened unconditionally is more correct than skipping it on the first launch.
+   * When a deep link opens on the FIRST launch (before {@code app_install} fires, {@code
+   * first_open_tracked=false}), {@code Deep Link Opened} must still carry stored attribution in
+   * {@code context}. The guard {@code isFirstOpenTracked()} was intentionally removed — the data is
+   * available the moment {@code storeDeepLinkAttribution()} returns, and enriching Deep Link Opened
+   * unconditionally is more correct than skipping it on the first launch.
    */
   @Test
   public void it7c_deepLinkOpenedEnrichedOnFirstLaunch_beforeAppInstallFires() {
@@ -601,8 +601,14 @@ public class MmpIntegrationTest {
     // Attribution is present in context even on first launch (no isFirstOpenTracked guard).
     assertThat(event.context().get("$gclid")).isEqualTo("FIRST_LAUNCH_GCLID");
     assertThat(event.context().get("utm_source")).isEqualTo("google_ads");
-    assertThat(event.context().get("url")).isEqualTo("https://example.com?gclid=FIRST_LAUNCH_GCLID");
-    assertThat(event.properties()).doesNotContainKey("$gclid");
+    assertThat(event.context().get(AnalyticsActivityLifecycleCallbacks.DEEP_LINK_URL_CONTEXT_KEY))
+        .isEqualTo("https://example.com?gclid=FIRST_LAUNCH_GCLID");
+    Properties props = event.properties();
+    assertThat(props)
+        .doesNotContainKey(AnalyticsActivityLifecycleCallbacks.DEEP_LINK_URL_CONTEXT_KEY);
+    assertThat(props).doesNotContainKey("utm_source");
+    assertThat(props).doesNotContainKey("gclid");
+    assertThat(props).doesNotContainKey("$gclid");
   }
 
   /**
@@ -661,7 +667,7 @@ public class MmpIntegrationTest {
     assertThat(props).doesNotContainKey("url");
     assertThat(props).doesNotContainKey("utm_source");
     assertThat(props).doesNotContainKey("gclid");
-    assertThat(event.context().get("url"))
+    assertThat(event.context().get(AnalyticsActivityLifecycleCallbacks.DEEP_LINK_URL_CONTEXT_KEY))
         .isEqualTo("https://example.com?gclid=CLICK_ID_123&utm_source=google_ads");
     assertThat(event.context().get("$gclid")).isEqualTo("CLICK_ID_123");
     assertThat(event.context().get("utm_source")).isEqualTo("google_ads");

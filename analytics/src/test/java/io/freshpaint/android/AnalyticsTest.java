@@ -1075,7 +1075,10 @@ public class AnalyticsTest {
                   @Override
                   public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Deep Link Opened")
-                        && payload.context().get("url").equals(expectedUrl)
+                        && payload
+                            .context()
+                            .get(AnalyticsActivityLifecycleCallbacks.DEEP_LINK_URL_CONTEXT_KEY)
+                            .equals(expectedUrl)
                         && payload.context().get("$gclid").equals("abcd")
                         && payload.properties().isEmpty();
                   }
@@ -1151,7 +1154,10 @@ public class AnalyticsTest {
                   @Override
                   public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Deep Link Opened")
-                        && payload.context().get("url") != null
+                        && payload
+                                .context()
+                                .get(AnalyticsActivityLifecycleCallbacks.DEEP_LINK_URL_CONTEXT_KEY)
+                            != null
                         && payload.context().get("$gclid") != null;
                   }
                 }));
