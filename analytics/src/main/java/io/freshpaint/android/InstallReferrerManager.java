@@ -41,11 +41,11 @@ import java.util.concurrent.TimeUnit;
  * Collects Google Play Install Referrer data and persists it to {@link SharedPreferences} for
  * merging into the {@code app_install} event payload.
  *
- * <p>The {@code com.android.installreferrer} library is an optional dependency ({@code compileOnly}
- * in the SDK's build.gradle). If absent at runtime, {@link #collectAndStore} returns silently via
- * the {@link NoClassDefFoundError} catch block. All other code paths that reference {@link
- * InstallReferrerClient} are isolated in {@link #doCollect} so the outer class loads cleanly even
- * when the library is missing.
+ * <p>The {@code com.android.installreferrer} library is a normal transitive dependency of the SDK
+ * ({@code implementation} in {@code analytics/build.gradle}). If a host app excludes it or strips
+ * those classes, {@link #collectAndStore} returns silently via the {@link NoClassDefFoundError}
+ * catch block. All other code paths that reference {@link InstallReferrerClient} are isolated in
+ * {@link #doCollect} so the outer class still loads when resolution fails at first use.
  *
  * <p>All public methods are static and never throw. Instances are not created.
  */
@@ -81,8 +81,8 @@ class InstallReferrerManager {
    * <p>This method blocks the calling thread for up to {@code timeoutMs} milliseconds and must only
    * be called from a background thread (e.g. the SDK's {@code analyticsExecutor}).
    *
-   * <p>If the {@code com.android.installreferrer} library is absent at runtime, or if any exception
-   * occurs, the method returns silently — it never throws.
+   * <p>If install referrer classes are missing at runtime (e.g. host excluded the artifact), or if
+   * any exception occurs, the method returns silently — it never throws.
    *
    * <p>Idempotent: a second call is a no-op if {@link #KEY_IR_COLLECTED} is already {@code true}.
    */
@@ -111,7 +111,7 @@ class InstallReferrerManager {
       // Restore interrupt status so the calling executor thread can honour shutdown signals.
       Thread.currentThread().interrupt();
     } catch (Exception | NoClassDefFoundError e) {
-      // Optional dependency absent, service error, or unexpected failure — skip silently.
+      // Missing classes, Play service error, or unexpected failure — skip silently.
       if (logger != null) {
         logger.debug("Install Referrer collection failed: %s", e.toString());
       }

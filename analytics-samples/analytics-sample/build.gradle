@@ -7,6 +7,19 @@ def RUN_E2E_TESTS = false
 def FRESHPAINT_SAMPLE_WRITE_KEY = ""
 def rootLocalPropertiesFile = rootProject.file('local.properties')
 
+def MMP_STORE_FILE = ""
+def MMP_STORE_PASSWORD = ""
+def MMP_KEY_ALIAS = ""
+def MMP_KEY_PASSWORD = ""
+if (rootLocalPropertiesFile.exists()) {
+  def signingProps = new Properties()
+  rootLocalPropertiesFile.withInputStream { stream -> signingProps.load(stream) }
+  MMP_STORE_FILE     = signingProps.getProperty("mmp.storeFile", "")
+  MMP_STORE_PASSWORD = signingProps.getProperty("mmp.storePassword", "")
+  MMP_KEY_ALIAS      = signingProps.getProperty("mmp.keyAlias", "")
+  MMP_KEY_PASSWORD   = signingProps.getProperty("mmp.keyPassword", "")
+}
+
 // e2e_test.properties is a file with a single line: WEBHOOK_AUTH_USERNAME=<token>
 def e2eTestPropertiesFile = file('e2e_test.properties')
 if (e2eTestPropertiesFile.exists()) {
@@ -42,6 +55,25 @@ android {
 
   namespace 'io.freshpaint.android.sample'
 
+  if (MMP_STORE_FILE) {
+    signingConfigs {
+      release {
+        storeFile file(MMP_STORE_FILE)
+        storePassword MMP_STORE_PASSWORD
+        keyAlias MMP_KEY_ALIAS
+        keyPassword MMP_KEY_PASSWORD
+      }
+    }
+  }
+
+  buildTypes {
+    release {
+      if (MMP_STORE_FILE) {
+        signingConfig signingConfigs.release
+      }
+    }
+  }
+
   lintOptions {
     // Since this is just a sample app, it's ok to ignore these warnings.
     disable 'IconMissingDensityFolder', 'GoogleAppIndexingWarning', 'AllowBackup'
@@ -54,6 +86,7 @@ android {
   }
 
   defaultConfig {
+    applicationId "com.foxbox.freshpaint.mmpintegrator"
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
     buildConfigField 'String', 'WEBHOOK_AUTH_USERNAME', "\"$WEBHOOK_AUTH_USERNAME\""
