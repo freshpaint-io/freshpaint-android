@@ -86,7 +86,6 @@ android {
   }
 
   defaultConfig {
-    applicationId "com.foxbox.freshpaint.mmpintegrator"
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
     buildConfigField 'String', 'WEBHOOK_AUTH_USERNAME', "\"$WEBHOOK_AUTH_USERNAME\""
