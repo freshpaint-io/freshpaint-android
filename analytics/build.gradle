@@ -57,10 +57,9 @@ dependencies {
   // Keystore-backed EncryptedSharedPreferences for stable device ID
   implementation 'androidx.security:security-crypto:1.0.0'
 
-  // Google Play Install Referrer API — optional dependency (compileOnly so host apps can exclude).
-  // The SDK handles absence gracefully via NoClassDefFoundError catch in InstallReferrerManager.
-  compileOnly 'com.android.installreferrer:installreferrer:2.2'
-  testImplementation 'com.android.installreferrer:installreferrer:2.2'
+  // Google Play Install Referrer API — bundled so host apps get UTM/campaign support without an
+  // extra Gradle line. Host apps may exclude this artifact if they truly do not need it.
+  implementation 'com.android.installreferrer:installreferrer:2.2'
 
   // Conservative core dependencies
   implementation "androidx.core:core-ktx:1.16.0"
