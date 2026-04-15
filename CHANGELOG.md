@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 3.0.0 - (15 Apr, 2026)
+
+### Added
+- Added comprehensive Android MMP attribution support, including install and campaign attribution context for downstream analysis.
+
+### Breaking Changes
+- Renamed the first-install lifecycle event from `Application Installed` to `app_install`.
+
 Version 2.0.0 - (10 Jul, 2025)
 
 ### Added
