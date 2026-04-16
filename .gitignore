@@ -150,3 +150,8 @@ build/
 
 # Ignore Gradle GUI config
 gradle-app.setting
+
+.ai-dev/
+.claude/
+analytics-samples/analytics-sample/private
+META-INF/

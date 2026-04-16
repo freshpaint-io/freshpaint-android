@@ -39,6 +39,8 @@ dependencies {
 
   // Conservative lifecycle dependencies compatible with AGP 7.3.1
   implementation 'androidx.lifecycle:lifecycle-process:2.10.0'
+  // lifecycle-common-java8 is redundant since lifecycle 2.4.0 (its contents merged into lifecycle-common);
+  // safe to remove in a follow-up cleanup ticket.
   implementation 'androidx.lifecycle:lifecycle-common-java8:2.10.0'
 
   testImplementation 'junit:junit:4.13.2'
@@ -60,7 +62,7 @@ dependencies {
   testImplementation 'org.assertj:assertj-core:1.7.1'
 
   // Conservative assertj version compatible with Kotlin 2.0.21
-  testImplementation 'org.assertj:assertj-core:3.26.3'
+  testImplementation 'org.assertj:assertj-core:3.27.3'
 
   // Conservative core dependencies
   implementation "androidx.core:core-ktx:1.16.0"
