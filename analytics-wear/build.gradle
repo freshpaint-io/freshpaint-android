@@ -11,7 +11,7 @@ dependencies {
 
   // TODO: we should update this dependency.
   //noinspection GradleDependency
-  api 'com.google.android.gms:play-services-wearable:10.2.6'
+  api 'com.google.android.gms:play-services-wearable:19.0.0'
 }
 
 apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
