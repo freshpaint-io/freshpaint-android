@@ -48,11 +48,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Unit tests for the {@code app_install} first-open event fired from {@link
+ * Unit tests for the {@code Application Installed} first-open event fired from {@link
  * Freshpaint#trackApplicationLifecycleEvents()}.
  *
  * <p>These tests use pure JVM + Mockito (no Robolectric) following the pattern established in
- * FRP-41. A capture {@link Middleware} intercepts payloads synchronously before they reach the
+ * A capture {@link Middleware} intercepts payloads synchronously before they reach the
  * Android Handler, allowing direct assertions on dispatched events.
  */
 public class FreshpaintInstallEventTest {
@@ -134,22 +134,22 @@ public class FreshpaintInstallEventTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC1 — First launch fires app_install
+  // First launch fires Application Installed
   // -------------------------------------------------------------------------
 
   @Test
-  public void firstLaunchFiresAppInstall() {
+  public void firstLaunchFiresApplicationInstalled() {
     // previousBuild defaults to -1 (key absent) → first install
     Freshpaint fp = buildFreshpaint(true);
     fp.trackApplicationLifecycleEvents();
 
     assertThat(tracksOf(captured)).hasSize(1);
-    assertThat(tracksOf(captured).get(0).event()).isEqualTo("app_install");
+    assertThat(tracksOf(captured).get(0).event()).isEqualTo("Application Installed");
   }
 
-  // AC1 — Required fields present in app_install payload
+  // Required fields present in Application Installed payload
   @Test
-  public void firstLaunchAppInstallHasAllRequiredFields() {
+  public void firstLaunchApplicationInstalledHasAllRequiredFields() {
     Freshpaint fp = buildFreshpaint(true);
     fp.trackApplicationLifecycleEvents();
 
@@ -157,11 +157,12 @@ public class FreshpaintInstallEventTest {
     assertThat(props).containsKey("install_timestamp");
     assertThat(props).containsKey("limit_ad_tracking");
     assertThat(props).containsKey("os_version");
-    assertThat(props).containsKey("app_version");
+    assertThat(props).containsKey("version");
+    assertThat(props).containsKey("build");
     // advertisingId is omitted when not yet resolved; see advertisingIdAbsentWhenNotResolved
   }
 
-  // AC5 — install_timestamp is a valid ISO 8601 string
+  // install_timestamp is a valid ISO 8601 string
   @Test
   public void installTimestampIsIso8601() {
     Freshpaint fp = buildFreshpaint(true);
@@ -172,21 +173,21 @@ public class FreshpaintInstallEventTest {
     assertThat(ts.toString()).matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*");
   }
 
-  // AC6 — app_version matches the mocked PackageInfo
+  // version matches the mocked PackageInfo
   @Test
   public void appVersionMatchesPackageInfo() {
     Freshpaint fp = buildFreshpaint(true);
     fp.trackApplicationLifecycleEvents();
 
-    assertThat(tracksOf(captured).get(0).properties().get("app_version")).isEqualTo("1.0.0");
+    assertThat(tracksOf(captured).get(0).properties().get("version")).isEqualTo("1.0.0");
   }
 
   // -------------------------------------------------------------------------
-  // AC2 — Second launch does NOT fire app_install
+  // Second launch does NOT fire Application Installed
   // -------------------------------------------------------------------------
 
   @Test
-  public void secondLaunchDoesNotFireAppInstall() {
+  public void secondLaunchDoesNotFireApplicationInstalled() {
     // Simulate first_open_tracked already set by a prior launch
     fakePrefs.store.put("first_open_tracked", true);
 
@@ -197,7 +198,7 @@ public class FreshpaintInstallEventTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC3 — App upgrade fires Application Updated, not app_install
+  // App upgrade fires Application Updated, not Application Installed
   // -------------------------------------------------------------------------
 
   @Test
@@ -214,7 +215,7 @@ public class FreshpaintInstallEventTest {
   }
 
   @Test
-  public void appUpgradeDoesNotFireAppInstall() {
+  public void appUpgradeDoesNotFireApplicationInstalled() {
     fakePrefs.store.put("build", 0);
     fakePrefs.store.put("version", "0.9.0");
 
@@ -222,16 +223,16 @@ public class FreshpaintInstallEventTest {
     fp.trackApplicationLifecycleEvents();
 
     boolean appInstallFired =
-        tracksOf(captured).stream().anyMatch(p -> "app_install".equals(p.event()));
+        tracksOf(captured).stream().anyMatch(p -> "Application Installed".equals(p.event()));
     assertThat(appInstallFired).isFalse();
   }
 
   // -------------------------------------------------------------------------
-  // AC4 — trackFirstOpen=false suppresses app_install
+  // trackFirstOpen=false suppresses Application Installed
   // -------------------------------------------------------------------------
 
   @Test
-  public void trackFirstOpenFalseSuppressesAppInstall() {
+  public void trackFirstOpenFalseSuppressesApplicationInstalled() {
     Freshpaint fp = buildFreshpaint(false); // trackFirstOpen = false
     fp.trackApplicationLifecycleEvents();
 
@@ -239,21 +240,7 @@ public class FreshpaintInstallEventTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC9 — "Application Installed" is never tracked
-  // -------------------------------------------------------------------------
-
-  @Test
-  public void applicationInstalledStringNeverTracked() {
-    Freshpaint fp = buildFreshpaint(true);
-    fp.trackApplicationLifecycleEvents();
-
-    boolean legacyFired =
-        tracksOf(captured).stream().anyMatch(p -> "Application Installed".equals(p.event()));
-    assertThat(legacyFired).isFalse();
-  }
-
-  // -------------------------------------------------------------------------
-  // AC10 — first_open_tracked written atomically with VERSION_KEY/BUILD_KEY
+  // first_open_tracked written atomically with VERSION_KEY/BUILD_KEY
   // -------------------------------------------------------------------------
 
   @Test
@@ -304,7 +291,7 @@ public class FreshpaintInstallEventTest {
   /**
    * Calling {@link Freshpaint#reset()} must NOT remove {@code first_open_tracked}. If the key were
    * cleared on reset, a subsequent {@link Freshpaint#trackApplicationLifecycleEvents()} call would
-   * re-fire {@code app_install}, double-counting the install in MMP backends.
+   * re-fire {@code Application Installed}, double-counting the install in MMP backends.
    */
   @Test
   public void resetPreservesFirstOpenTrackedKey() {
@@ -389,13 +376,13 @@ public class FreshpaintInstallEventTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC13 — Install Referrer data merged into app_install payload (FRP-44)
+  // Install Referrer data merged into Application Installed payload
   // -------------------------------------------------------------------------
 
   /**
    * When Install Referrer data is pre-populated in SharedPreferences (as
-   * trackAttributionInformation does before trackApplicationLifecycleEvents runs), app_install must
-   * include those fields.
+   * trackAttributionInformation does before trackApplicationLifecycleEvents runs), Application
+   * Installed must include those fields.
    */
   @Test
   public void irDataMergedIntoAppInstallPayload() {
@@ -413,7 +400,7 @@ public class FreshpaintInstallEventTest {
     assertThat(tracksOf(captured)).hasSize(1);
     TrackPayload payload = tracksOf(captured).get(0);
     Properties props = payload.properties();
-    // All attribution fields in context (FRP-71)
+    // All attribution fields in context
     assertThat(props).doesNotContainKey("$gclid");
     assertThat(props).doesNotContainKey("$gclid_creation_time");
     assertThat(props).doesNotContainKey("utm_source");
@@ -428,12 +415,13 @@ public class FreshpaintInstallEventTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC10 (FRP-45) — Deep-link attribution merged into app_install
+  // Deep-link attribution merged into Application Installed
   // -------------------------------------------------------------------------
 
   /**
-   * When a deep link fires before {@code app_install}, both the click ID and UTM params appear in
-   * the {@code app_install} payload when the UTM data is within the 24-hour expiry window.
+   * When a deep link fires before {@code Application Installed}, both the click ID and UTM params
+   * appear in the {@code Application Installed} payload when the UTM data is within the 24-hour
+   * expiry window.
    */
   @Test
   public void appInstall_dlClickIdAndUtm_presentWhenWithinExpiryWindow() {
@@ -449,7 +437,7 @@ public class FreshpaintInstallEventTest {
     assertThat(tracksOf(captured)).hasSize(1);
     TrackPayload payload = tracksOf(captured).get(0);
     Properties props = payload.properties();
-    // All attribution fields in context (FRP-71)
+    // All attribution fields in context
     assertThat(props).doesNotContainKey("$gclid");
     assertThat(props).doesNotContainKey("$gclid_creation_time");
     assertThat(props).doesNotContainKey("utm_source");
@@ -459,8 +447,9 @@ public class FreshpaintInstallEventTest {
   }
 
   /**
-   * Click IDs persist indefinitely; UTM params are omitted from {@code app_install} once they have
-   * expired (older than 24 hours at the time {@code trackApplicationLifecycleEvents} runs).
+   * Click IDs persist indefinitely; UTM params are omitted from {@code Application Installed} once
+   * they have expired (older than 24 hours at the time {@code trackApplicationLifecycleEvents}
+   * runs).
    */
   @Test
   public void appInstall_dlClickIdPersists_utmOmittedAfterExpiry() {
@@ -476,7 +465,7 @@ public class FreshpaintInstallEventTest {
     assertThat(tracksOf(captured)).hasSize(1);
     TrackPayload payload = tracksOf(captured).get(0);
     Properties props = payload.properties();
-    // Click ID in context and persists indefinitely (FRP-71)
+    // Click ID in context and persists indefinitely
     assertThat(props).doesNotContainKey("$gclid");
     assertThat(payload.context().get("$gclid")).isEqualTo("DL_GCLID_123");
     // UTM expired — absent from both properties and context
@@ -485,8 +474,8 @@ public class FreshpaintInstallEventTest {
   }
 
   /**
-   * DL click IDs must appear in {@code app_install} even when the IR prefs are also populated —
-   * confirming DL data overwrites IR data for overlapping keys.
+   * DL click IDs must appear in {@code Application Installed} even when the IR prefs are also
+   * populated — confirming DL data overwrites IR data for overlapping keys.
    */
   @Test
   public void appInstallDlOverwritesIrForOverlappingKeys() {
@@ -505,7 +494,7 @@ public class FreshpaintInstallEventTest {
 
     TrackPayload payload = tracksOf(captured).get(0);
     Properties props = payload.properties();
-    // Click IDs in context, not properties (FRP-71)
+    // Click IDs in context, not properties
     assertThat(props).doesNotContainKey("$gclid");
     assertThat(props).doesNotContainKey("$gclid_creation_time");
     // DL value wins in context
@@ -514,7 +503,7 @@ public class FreshpaintInstallEventTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC11 (FRP-45) — isFirstOpenTracked() and getDeepLinkAttributionProperties()
+  // isFirstOpenTracked() and getDeepLinkAttributionProperties()
   // -------------------------------------------------------------------------
 
   /** {@code isFirstOpenTracked()} must return false when the key is absent. */
@@ -551,12 +540,12 @@ public class FreshpaintInstallEventTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC3/AC4 — android_id in app_install payload
+  // android_id in Application Installed payload
   // -------------------------------------------------------------------------
 
   /**
    * When the device context has a valid {@code android_id}, it must appear in the {@code
-   * app_install} event properties.
+   * Application Installed} event properties.
    */
   @Test
   public void appInstall_containsAndroidId_whenPresent() {
@@ -614,14 +603,14 @@ public class FreshpaintInstallEventTest {
     fp.trackApplicationLifecycleEvents();
 
     assertThat(tracksOf(captured)).hasSize(1);
-    assertThat(tracksOf(captured).get(0).event()).isEqualTo("app_install");
+    assertThat(tracksOf(captured).get(0).event()).isEqualTo("Application Installed");
     assertThat(tracksOf(captured).get(0).properties())
         .containsEntry("android_id", "real-android-id-xyz");
   }
 
   /**
    * When the device context has no valid android_id (null), the {@code android_id} key must be
-   * absent from the {@code app_install} event properties.
+   * absent from the {@code Application Installed} event properties.
    */
   @Test
   public void appInstall_doesNotContainAndroidId_whenNull() {

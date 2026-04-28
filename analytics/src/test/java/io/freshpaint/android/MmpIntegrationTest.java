@@ -201,14 +201,14 @@ public class MmpIntegrationTest {
   }
 
   // -------------------------------------------------------------------------
-  // IT1 — Full first-open: GAID available + Install Referrer available
+  // Full first-open: GAID available + Install Referrer available
   // -------------------------------------------------------------------------
 
   /**
    * When GAID is resolved and Install Referrer data is pre-populated (as {@code
-   * trackAttributionInformation()} would do on a real device), the {@code app_install} event
-   * contains all attribution fields: {@code advertisingId}, {@code limit_ad_tracking}, {@code
-   * install_referrer}, parsed UTM params, and click IDs.
+   * trackAttributionInformation()} would do on a real device), the {@code Application Installed}
+   * event contains all attribution fields: {@code advertisingId}, {@code limit_ad_tracking},
+   * {@code install_referrer}, parsed UTM params, and click IDs.
    */
   @Test
   public void it1_fullFirstOpen_withGaidAndInstallReferrer() {
@@ -232,7 +232,7 @@ public class MmpIntegrationTest {
 
     assertThat(tracksOf(captured)).hasSize(1);
     TrackPayload event = tracksOf(captured).get(0);
-    assertThat(event.event()).isEqualTo("app_install");
+    assertThat(event.event()).isEqualTo("Application Installed");
 
     Properties props = event.properties();
     assertThat(props.get("advertisingId")).isEqualTo("test-gaid-value");
@@ -240,8 +240,9 @@ public class MmpIntegrationTest {
     // All required fields present
     assertThat(props).containsKey("install_timestamp");
     assertThat(props).containsKey("os_version");
-    assertThat(props).containsKey("app_version");
-    // All attribution fields in context (FRP-71)
+    assertThat(props).containsKey("version");
+    assertThat(props).containsKey("build");
+    // All attribution fields in context
     assertThat(props).doesNotContainKey("$gclid");
     assertThat(props).doesNotContainKey("$gclid_creation_time");
     assertThat(event.context().get("$gclid")).isEqualTo("test-gclid");
@@ -253,13 +254,14 @@ public class MmpIntegrationTest {
   }
 
   // -------------------------------------------------------------------------
-  // IT2 — First-open without Play Services (no GAID, no referrer)
+  // First-open without Play Services (no GAID, no referrer)
   // -------------------------------------------------------------------------
 
   /**
    * When the GAID worker has not run and no Install Referrer data is available (e.g. device has no
-   * Google Play Services), {@code app_install} fires without {@code advertisingId} or referrer
-   * fields. {@code limit_ad_tracking} defaults to {@code true} (conservative / tracking limited).
+   * Google Play Services), {@code Application Installed} fires without {@code advertisingId} or
+   * referrer fields. {@code limit_ad_tracking} defaults to {@code true} (conservative / tracking
+   * limited).
    */
   @Test
   public void it2_firstOpen_withoutPlayServices_noGaidNoReferrer() {
@@ -269,7 +271,7 @@ public class MmpIntegrationTest {
 
     assertThat(tracksOf(captured)).hasSize(1);
     TrackPayload event = tracksOf(captured).get(0);
-    assertThat(event.event()).isEqualTo("app_install");
+    assertThat(event.event()).isEqualTo("Application Installed");
 
     Properties props = event.properties();
     assertThat(props).doesNotContainKey("advertisingId"); // absent, not explicit null
@@ -278,16 +280,17 @@ public class MmpIntegrationTest {
     // Required fields still present
     assertThat(props).containsKey("install_timestamp");
     assertThat(props).containsKey("os_version");
-    assertThat(props).containsKey("app_version");
+    assertThat(props).containsKey("version");
+    assertThat(props).containsKey("build");
   }
 
   // -------------------------------------------------------------------------
-  // IT3 — Organic install: no referrer, no deep link
+  // Organic install: no referrer, no deep link
   // -------------------------------------------------------------------------
 
   /**
-   * A clean organic install with no Install Referrer and no deep link. {@code app_install} fires
-   * with exactly the required fields and no attribution fields.
+   * A clean organic install with no Install Referrer and no deep link. {@code Application Installed}
+   * fires with exactly the required fields and no attribution fields.
    */
   @Test
   public void it3_organicInstall_noReferrerNoDeepLink() {
@@ -296,7 +299,7 @@ public class MmpIntegrationTest {
 
     assertThat(tracksOf(captured)).hasSize(1);
     TrackPayload event = tracksOf(captured).get(0);
-    assertThat(event.event()).isEqualTo("app_install");
+    assertThat(event.event()).isEqualTo("Application Installed");
 
     Properties props = event.properties();
     // No attribution data in properties or context
@@ -310,16 +313,18 @@ public class MmpIntegrationTest {
     assertThat(props).containsKey("install_timestamp");
     assertThat(props).containsKey("limit_ad_tracking");
     assertThat(props).containsKey("os_version");
-    assertThat(props).containsKey("app_version");
+    assertThat(props).containsKey("version");
+    assertThat(props).containsKey("build");
   }
 
   // -------------------------------------------------------------------------
-  // IT4 — Attributed install: deep link with click IDs + UTMs (within window)
+  // Attributed install: deep link with click IDs + UTMs (within window)
   // -------------------------------------------------------------------------
 
   /**
-   * When deep-link attribution data is stored before {@code app_install} fires, the click IDs and
-   * UTM params appear in the event payload — provided the UTM data is within the 24-hour window.
+   * When deep-link attribution data is stored before {@code Application Installed} fires, the click
+   * IDs and UTM params appear in the event payload — provided the UTM data is within the 24-hour
+   * window.
    */
   @Test
   public void it4_attributedInstall_deepLinkClickIdsAndUtm_withinExpiryWindow() {
@@ -337,7 +342,7 @@ public class MmpIntegrationTest {
     assertThat(tracksOf(captured)).hasSize(1);
     TrackPayload payload4 = tracksOf(captured).get(0);
     Properties props4 = payload4.properties();
-    // All attribution fields in context (FRP-71)
+    // All attribution fields in context
     assertThat(props4).doesNotContainKey("$gclid");
     assertThat(props4).doesNotContainKey("$fbclid");
     assertThat(props4).doesNotContainKey("utm_source");
@@ -349,8 +354,8 @@ public class MmpIntegrationTest {
   }
 
   /**
-   * After the 24-hour UTM expiry window, click IDs still appear in {@code app_install} but UTM
-   * params are omitted.
+   * After the 24-hour UTM expiry window, click IDs still appear in {@code Application Installed}
+   * but UTM params are omitted.
    */
   @Test
   public void it4b_attributedInstall_deepLink_clickIdPersists_utmExpiredAfter25h() {
@@ -365,7 +370,7 @@ public class MmpIntegrationTest {
 
     assertThat(tracksOf(captured)).hasSize(1);
     TrackPayload payload4b = tracksOf(captured).get(0);
-    // Click ID in context and persists indefinitely (FRP-71)
+    // Click ID in context and persists indefinitely
     assertThat(payload4b.properties()).doesNotContainKey("$gclid");
     assertThat(payload4b.context().get("$gclid")).isEqualTo("DL_GCLID");
     // UTM expired — absent from both properties and context
@@ -391,7 +396,7 @@ public class MmpIntegrationTest {
 
     assertThat(tracksOf(captured)).hasSize(1);
     TrackPayload payload4c = tracksOf(captured).get(0);
-    // Click ID in context (FRP-71)
+    // Click ID in context
     assertThat(payload4c.properties()).doesNotContainKey("$gclid");
     assertThat(payload4c.context().get("$gclid")).isEqualTo("DL_GCLID");
     // UTM still present at boundary — in context
@@ -413,7 +418,7 @@ public class MmpIntegrationTest {
 
     assertThat(tracksOf(captured)).hasSize(1);
     TrackPayload payload4d = tracksOf(captured).get(0);
-    // Click ID in context (FRP-71)
+    // Click ID in context
     assertThat(payload4d.properties()).doesNotContainKey("$gclid");
     assertThat(payload4d.context().get("$gclid")).isEqualTo("DL_GCLID");
     // UTM expired — absent from both properties and context
@@ -422,12 +427,12 @@ public class MmpIntegrationTest {
   }
 
   // -------------------------------------------------------------------------
-  // IT5 — Sideloaded app: no Install Referrer available
+  // Sideloaded app: no Install Referrer available
   // -------------------------------------------------------------------------
 
   /**
    * When the app is sideloaded (installed via APK, not Play Store), Install Referrer data is never
-   * collected. {@code app_install} fires without referrer fields and does not crash.
+   * collected. {@code Application Installed} fires without referrer fields and does not crash.
    */
   @Test
   public void it5_sideloadedApp_noInstallReferrer_eventFiresWithoutCrash() {
@@ -441,7 +446,7 @@ public class MmpIntegrationTest {
 
     assertThat(tracksOf(captured)).hasSize(1);
     TrackPayload event = tracksOf(captured).get(0);
-    assertThat(event.event()).isEqualTo("app_install");
+    assertThat(event.event()).isEqualTo("Application Installed");
 
     Properties props = event.properties();
     assertThat(props).doesNotContainKey("install_referrer");
@@ -450,17 +455,18 @@ public class MmpIntegrationTest {
     assertThat(props).containsKey("install_timestamp");
     assertThat(props).containsKey("limit_ad_tracking");
     assertThat(props).containsKey("os_version");
-    assertThat(props).containsKey("app_version");
+    assertThat(props).containsKey("version");
+    assertThat(props).containsKey("build");
   }
 
   // -------------------------------------------------------------------------
-  // IT6 — Schema validation: strict PRD alignment
+  // Schema validation: strict PRD alignment
   // -------------------------------------------------------------------------
 
   /**
-   * Strict schema test: {@code app_install} must contain the required fields (install timestamp,
-   * limit ad tracking, OS and app version), each with the correct type, and the event name must
-   * match the current SDK implementation name {@code "app_install"}.
+   * Strict schema test: {@code Application Installed} must contain the required fields (install
+   * timestamp, limit ad tracking, OS version, app version, and build), each with the correct type,
+   * and the event name must be {@code "Application Installed"}.
    */
   @Test
   public void it6_schemaValidation_requiredFieldsWithCorrectTypes() {
@@ -470,11 +476,7 @@ public class MmpIntegrationTest {
     assertThat(tracksOf(captured)).hasSize(1);
     TrackPayload event = tracksOf(captured).get(0);
 
-    // Event name — current implementation uses "app_install"
-    // Note: PRD defines "app_first_open"; this discrepancy is tracked as a carry-forward item
-    // pending stakeholder confirmation. Both alternatives are guarded against the legacy name.
-    assertThat(event.event()).isEqualTo("app_install");
-    assertThat(event.event()).isNotEqualTo("Application Installed"); // legacy Segment name
+    assertThat(event.event()).isEqualTo("Application Installed");
     assertThat(event.event()).isNotEqualTo("Application Opened");
 
     Properties props = event.properties();
@@ -497,23 +499,24 @@ public class MmpIntegrationTest {
         .isInstanceOf(String.class)
         .isEqualTo(Build.VERSION.RELEASE);
 
-    // app_version: matches mocked PackageInfo.versionName
-    assertThat(props.get("app_version")).isEqualTo("1.0.0");
+    // version: matches mocked PackageInfo.versionName; build is String.valueOf(versionCode)
+    assertThat(props.get("version")).isEqualTo("1.0.0");
+    assertThat(props.get("build")).isEqualTo("1");
   }
 
   // -------------------------------------------------------------------------
-  // IT7a — Regression: second launch does not re-fire app_install
+  // Regression: second launch does not re-fire Application Installed
   // -------------------------------------------------------------------------
 
   /**
-   * On the second launch (first_open_tracked already set), {@code app_install} must not fire again.
-   * No track event should be emitted when build and version are unchanged.
+   * On the second launch (first_open_tracked already set), {@code Application Installed} must not
+   * fire again. No track event should be emitted when build and version are unchanged.
    */
   @Test
   public void it7a_regression_secondLaunch_appInstallNotFired() {
     // The actual guard is previousBuild != -1 (build=1 here). The first_open_tracked and
     // version entries are set to reflect a realistic second-launch SharedPreferences state,
-    // not because they are required to suppress app_install on this code path.
+    // not because they are required to suppress Application Installed on this code path.
     fakePrefs.store.put("first_open_tracked", true);
     fakePrefs.store.put("build", 1);
     fakePrefs.store.put("version", "1.0.0");
@@ -522,17 +525,17 @@ public class MmpIntegrationTest {
     fp.trackApplicationLifecycleEvents();
 
     boolean appInstallFired =
-        tracksOf(captured).stream().anyMatch(p -> "app_install".equals(p.event()));
+        tracksOf(captured).stream().anyMatch(p -> "Application Installed".equals(p.event()));
     assertThat(appInstallFired).isFalse();
   }
 
   // -------------------------------------------------------------------------
-  // IT7b — Regression: upgrade fires Application Updated, not app_install
+  // Regression: upgrade fires Application Updated, not Application Installed
   // -------------------------------------------------------------------------
 
   /**
    * An app version upgrade ({@code previousBuild != currentBuild}) must fire exactly {@code
-   * "Application Updated"} and must never fire {@code app_install}.
+   * "Application Updated"} and must never fire {@code Application Installed}.
    */
   @Test
   public void it7b_regression_appUpgrade_firesApplicationUpdatedNotAppInstall() {
@@ -546,16 +549,16 @@ public class MmpIntegrationTest {
     assertThat(tracks).hasSize(1);
     assertThat(tracks.get(0).event()).isEqualTo("Application Updated");
 
-    boolean appInstallFired = tracks.stream().anyMatch(p -> "app_install".equals(p.event()));
+    boolean appInstallFired = tracks.stream().anyMatch(p -> "Application Installed".equals(p.event()));
     assertThat(appInstallFired).isFalse();
   }
 
   // -------------------------------------------------------------------------
-  // IT7c — Regression: Deep Link Opened enrichment
+  // Regression: Deep Link Opened enrichment
   // -------------------------------------------------------------------------
 
   /**
-   * When a deep link opens on the FIRST launch (before {@code app_install} fires, {@code
+   * When a deep link opens on the FIRST launch (before {@code Application Installed} fires, {@code
    * first_open_tracked=false}), {@code Deep Link Opened} must still carry stored attribution in
    * {@code context}. The guard {@code isFirstOpenTracked()} was intentionally removed — the data is
    * available the moment {@code storeDeepLinkAttribution()} returns, and enriching Deep Link Opened
@@ -563,7 +566,7 @@ public class MmpIntegrationTest {
    */
   @Test
   public void it7c_deepLinkOpenedEnrichedOnFirstLaunch_beforeAppInstallFires() {
-    // first_open_tracked is absent — app_install has not yet fired.
+    // first_open_tracked is absent — Application Installed has not yet fired.
     assertThat(fakePrefs.store).doesNotContainKey("first_open_tracked");
 
     Freshpaint fp = buildFreshpaint(emptyContext());
@@ -612,7 +615,8 @@ public class MmpIntegrationTest {
   }
 
   /**
-   * When {@code first_open_tracked=true} (app_install already fired on a previous launch) and a
+   * When {@code first_open_tracked=true} ({@code Application Installed} already fired on a previous
+   * launch) and a
    * deep link is opened, {@code Deep Link Opened} must carry stored attribution ($gclid, UTM, url)
    * in {@code context} only — proving that {@link
    * AnalyticsActivityLifecycleCallbacks#trackDeepLink} enriches via {@link
@@ -624,7 +628,7 @@ public class MmpIntegrationTest {
    */
   @Test
   public void it7c_regression_deepLinkOpenedEnrichedWhenFirstOpenAlreadyTracked() {
-    // Signal that app_install was already tracked on a prior launch.
+    // Signal that Application Installed was already tracked on a prior launch.
     fakePrefs.store.put("first_open_tracked", true);
 
     Freshpaint fp = buildFreshpaint(emptyContext());

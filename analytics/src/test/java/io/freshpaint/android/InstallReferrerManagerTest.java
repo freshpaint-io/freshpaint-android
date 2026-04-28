@@ -103,7 +103,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC1 — UTM params parsed correctly
+  // UTM params parsed correctly
   // -------------------------------------------------------------------------
 
   @Test
@@ -148,7 +148,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC3 — fp_click_id stored without $ prefix
+  // fp_click_id stored without $ prefix
   // -------------------------------------------------------------------------
 
   @Test
@@ -190,7 +190,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC5 — Facebook special fields
+  // Facebook special fields
   // -------------------------------------------------------------------------
 
   @Test
@@ -207,7 +207,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC6 — FEATURE_NOT_SUPPORTED → graceful skip
+  // FEATURE_NOT_SUPPORTED → graceful skip
   // -------------------------------------------------------------------------
 
   @Test
@@ -222,7 +222,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC7 — SERVICE_UNAVAILABLE → graceful skip
+  // SERVICE_UNAVAILABLE → graceful skip
   // -------------------------------------------------------------------------
 
   @Test
@@ -237,7 +237,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC8 — DEVELOPER_ERROR → graceful skip
+  // DEVELOPER_ERROR → graceful skip
   // -------------------------------------------------------------------------
 
   @Test
@@ -251,7 +251,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC9 — Timeout → no hang, endConnection() called
+  // Timeout → no hang, endConnection() called
   // -------------------------------------------------------------------------
 
   @Test(timeout = 6_000) // fails if test hangs beyond 6 s
@@ -268,7 +268,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC10 — collectAndStore() never throws (outer exception contract)
+  // collectAndStore() never throws (outer exception contract)
   // (The NoClassDefFoundError path is verified by code inspection since the library
   // cannot be removed from the test classpath at runtime. This test verifies the outer
   // catch is in place by triggering an internal NPE via a mock Context.)
@@ -289,7 +289,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC10 (direct) — NoClassDefFoundError path in collectAndStore()
+  // NoClassDefFoundError path in collectAndStore()
   // Uses mockStatic to simulate the installreferrer library being absent at
   // runtime by making InstallReferrerClient.newBuilder() throw NoClassDefFoundError.
   // -------------------------------------------------------------------------
@@ -317,7 +317,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC11 — Dedup: same click ID value does NOT update _creation_time
+  // Dedup: same click ID value does NOT update _creation_time
   // -------------------------------------------------------------------------
 
   @Test
@@ -344,7 +344,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC12 — Dedup: different click ID value DOES update _creation_time
+  // Dedup: different click ID value DOES update _creation_time
   // -------------------------------------------------------------------------
 
   @Test
@@ -370,7 +370,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC14 — Referrer timestamps stored correctly
+  // Referrer timestamps stored correctly
   // -------------------------------------------------------------------------
 
   @Test
@@ -385,7 +385,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC15 — Raw referrer string stored
+  // Raw referrer string stored
   // -------------------------------------------------------------------------
 
   @Test
@@ -400,7 +400,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC16 — Client always disconnected (no service leak)
+  // Client always disconnected (no service leak)
   // -------------------------------------------------------------------------
 
   @Test
@@ -433,7 +433,7 @@ public class InstallReferrerManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // REG3 — TRACKED_ATTRIBUTION_KEY guard: collectAndStore() is idempotent
+  // TRACKED_ATTRIBUTION_KEY guard: collectAndStore() is idempotent
   // -------------------------------------------------------------------------
 
   @Test

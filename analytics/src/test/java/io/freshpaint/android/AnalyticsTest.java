@@ -825,7 +825,7 @@ public class AnalyticsTest {
                 new TestUtils.NoDescriptionMatcher<TrackPayload>() {
                   @Override
                   public boolean matches(TrackPayload payload) {
-                    return payload.event().equals("app_install")
+                    return payload.event().equals("Application Installed")
                         && //
                         payload.properties().containsKey("install_timestamp")
                         && //
@@ -833,12 +833,12 @@ public class AnalyticsTest {
                         && //
                         payload.properties().containsKey("os_version")
                         && //
-                        payload.properties().containsKey("app_version");
+                        payload.properties().containsKey("version");
                   }
                 }));
 
     callback.get().onCreate(mockLifecycleOwner);
-    verifyNoMoreInteractions(integration); // app_install is not fired twice
+    verifyNoMoreInteractions(integration); // Application Installed is not fired twice
   }
 
   @Test

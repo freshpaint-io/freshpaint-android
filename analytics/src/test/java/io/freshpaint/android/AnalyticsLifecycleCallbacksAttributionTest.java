@@ -40,15 +40,15 @@ import org.mockito.InOrder;
  * Pure-JVM tests for the combined executor task in {@link
  * AnalyticsActivityLifecycleCallbacks#onCreate}. No Robolectric required.
  *
- * <p>REG1 — {@code trackAttributionInformation()} runs before {@code
+ * <p>{@code trackAttributionInformation()} runs before {@code
  * trackApplicationLifecycleEvents()} when attribution is enabled.
  *
- * <p>REG2 — {@code trackApplicationLifecycleEvents()} fires directly (not via executor) and {@code
+ * <p>{@code trackApplicationLifecycleEvents()} fires directly (not via executor) and {@code
  * trackAttributionInformation()} is never called when attribution is disabled.
  *
- * <p>REG3 — when {@code trackAttributionInformation()} throws, {@code
- * trackApplicationLifecycleEvents()} still fires and the exception is logged (FRP-57).
- */
+ * <p>when {@code trackAttributionInformation()} throws, {@code
+ * trackApplicationLifecycleEvents()} still fires and the exception is logged.
+ */ 
 public class AnalyticsLifecycleCallbacksAttributionTest {
 
   private AnalyticsActivityLifecycleCallbacks buildCallbacks(
@@ -65,7 +65,7 @@ public class AnalyticsLifecycleCallbacksAttributionTest {
   }
 
   // -------------------------------------------------------------------------
-  // REG1 — trackAttributionInformation executes before trackApplicationLifecycleEvents
+  // trackAttributionInformation executes before trackApplicationLifecycleEvents
   // -------------------------------------------------------------------------
 
   /**
@@ -87,7 +87,7 @@ public class AnalyticsLifecycleCallbacksAttributionTest {
   }
 
   // -------------------------------------------------------------------------
-  // REG3 — attribution throws → lifecycle events still fire; exception is logged
+  // attribution throws → lifecycle events still fire; exception is logged
   // -------------------------------------------------------------------------
 
   /**
@@ -107,9 +107,9 @@ public class AnalyticsLifecycleCallbacksAttributionTest {
     AnalyticsActivityLifecycleCallbacks callbacks = buildCallbacks(mockFreshpaint, true);
     callbacks.onCreate(mock(LifecycleOwner.class));
 
-    // Lifecycle events must fire despite the attribution exception (AC2, AC6).
+    // Lifecycle events must fire despite the attribution exception.
     verify(mockFreshpaint).trackApplicationLifecycleEvents();
-    // Exception must be logged — not silently dropped (AC3).
+    // Exception must be logged — not silently dropped.
     verify(mockLogger)
         .error(
             org.mockito.ArgumentMatchers.any(RuntimeException.class),
@@ -117,7 +117,7 @@ public class AnalyticsLifecycleCallbacksAttributionTest {
   }
 
   // -------------------------------------------------------------------------
-  // REG2 — without attribution, lifecycle events fire synchronously; no attribution call
+  // without attribution, lifecycle events fire synchronously; no attribution call
   // -------------------------------------------------------------------------
 
   /**

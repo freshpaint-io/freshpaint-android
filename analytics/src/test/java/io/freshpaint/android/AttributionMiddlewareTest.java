@@ -35,15 +35,6 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import org.junit.Test;
 
-/**
- * Pure JVM unit tests for {@link AttributionMiddleware}.
- *
- * <p>No Robolectric — Robolectric 3.5 is incompatible with Java 17. {@link AttributionMiddleware}
- * has no real Android dependency; it only reads from {@link AnalyticsContext.Device} (a {@link
- * ValueMap} / {@link LinkedHashMap} subclass) and calls {@code chain.proceed(payload)}. {@link
- * AnalyticsContext} and {@link AnalyticsContext.Device} are constructed via their package-private
- * map-based constructors, which are accessible from this package.
- */
 public class AttributionMiddlewareTest {
 
   // ---------------------------------------------------------------------------
@@ -92,7 +83,7 @@ public class AttributionMiddlewareTest {
   // ---------------------------------------------------------------------------
 
   /**
-   * M2 fix: source device has gaid + limit_ad_tracking=false + context id → payload device must
+   * source device has gaid + limit_ad_tracking=false + context id → payload device must
    * receive all three values, including {@code "id"}.
    */
   @Test
@@ -121,7 +112,7 @@ public class AttributionMiddlewareTest {
     assertThat(resultDevice).isNotNull();
     assertThat(resultDevice).containsEntry("advertisingId", "test-gaid-1234");
     assertThat(resultDevice).containsEntry("limit_ad_tracking", false);
-    // M2: context device id must also be propagated
+    // context device id must also be propagated
     assertThat(resultDevice).containsEntry("id", "test-device-id");
   }
 
@@ -161,7 +152,7 @@ public class AttributionMiddlewareTest {
   }
 
   /**
-   * When a track event carries {@code limit_ad_tracking} in properties (as {@code app_install}
+   * When a track event carries {@code limit_ad_tracking} in properties (as {@code Application Installed}
    * does) but the live device map has since been updated (e.g. GAID finished), properties must
    * match {@code context.device.limit_ad_tracking} so the payload is self-consistent.
    */
@@ -181,7 +172,7 @@ public class AttributionMiddlewareTest {
 
     TrackPayload trackPayload =
         new TrackPayload.Builder()
-            .event("app_install")
+            .event("Application Installed")
             .anonymousId("anon")
             .timestamp(new Date(0))
             .context(payloadContext)
@@ -218,7 +209,7 @@ public class AttributionMiddlewareTest {
 
     TrackPayload trackPayload =
         new TrackPayload.Builder()
-            .event("app_install")
+            .event("Application Installed")
             .anonymousId("anon")
             .timestamp(new Date(0))
             .context(payloadContext)
@@ -247,7 +238,7 @@ public class AttributionMiddlewareTest {
 
     TrackPayload trackPayload =
         new TrackPayload.Builder()
-            .event("app_install")
+            .event("Application Installed")
             .anonymousId("anon")
             .timestamp(new Date(0))
             .context(payloadContext)
@@ -362,7 +353,7 @@ public class AttributionMiddlewareTest {
   }
 
   // ---------------------------------------------------------------------------
-  // AC5 — android_id enrichment
+  // android_id enrichment
   // ---------------------------------------------------------------------------
 
   /**
@@ -425,7 +416,7 @@ public class AttributionMiddlewareTest {
   }
 
   // ---------------------------------------------------------------------------
-  // AC6 — android_id does not conflict with context id or gaid
+  // android_id does not conflict with context id or gaid
   // ---------------------------------------------------------------------------
 
   /**
@@ -463,7 +454,7 @@ public class AttributionMiddlewareTest {
   }
 
   // ---------------------------------------------------------------------------
-  // AC1 (rev 2) — collectDeviceID=false suppresses android_id
+  // collectDeviceID=false suppresses android_id
   // ---------------------------------------------------------------------------
 
   /**
@@ -483,7 +474,7 @@ public class AttributionMiddlewareTest {
   }
 
   // ---------------------------------------------------------------------------
-  // AC2 — Device.putAndroidId() placeholder filtering
+  // Device.putAndroidId() placeholder filtering
   // (Pure-JVM tests: Device is a LinkedHashMap subclass, no Robolectric required.
   // Long-term home is AnalyticsContextTest once Robolectric is upgraded — FU1.)
   // ---------------------------------------------------------------------------

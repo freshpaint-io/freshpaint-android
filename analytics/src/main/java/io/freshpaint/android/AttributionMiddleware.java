@@ -33,11 +33,11 @@ import io.freshpaint.android.integrations.TrackPayload;
  * fetched, {@code null} is used and event dispatch is never blocked.
  *
  * <p>For {@link TrackPayload}s that already include {@code limit_ad_tracking} in {@code properties}
- * (e.g. {@code app_install}), this value is overwritten to match {@code
+ * (e.g. {@code Application Installed}), this value is overwritten to match {@code
  * context.device.limit_ad_tracking} so it cannot disagree with the device block after the GAID
  * worker has updated the context.
  *
- * <p>For {@code app_install} only, {@code properties.advertisingId} is set or updated from the live
+ * <p>For {@code Application Installed} only, {@code properties.advertisingId} is set or updated from the live
  * device map when available at dispatch time (same key as {@code context.device}), matching the
  * {@code limit_ad_tracking} fix (snapshot at {@code track()} vs live device at middleware).
  */
@@ -47,7 +47,7 @@ class AttributionMiddleware implements Middleware {
   private static final String TRACK_PROPERTIES_KEY = "properties";
 
   /** Event name for first-open install track; {@code properties.advertisingId} is reconciled. */
-  private static final String APP_INSTALL_EVENT = "app_install";
+  private static final String APP_INSTALL_EVENT = "Application Installed";
 
   private final AnalyticsContext analyticsContext;
 

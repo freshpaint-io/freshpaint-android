@@ -63,13 +63,13 @@ public class DeepLinkAttributionManagerTest {
     Map<String, Object> stored = DeepLinkAttributionManager.getStoredProperties(prefs, T0);
     for (String id : AttributionConstants.CLICK_IDS) {
       assertThat(stored).containsEntry("$" + id, "val_" + id);
-      // AC3: each has a creation_time
+      // each has a creation_time
       assertThat(stored).containsKey("$" + id + "_creation_time");
     }
   }
 
   // -------------------------------------------------------------------------
-  // AC3: creation_time set to now on first store
+  // creation_time set to now on first store
   // -------------------------------------------------------------------------
 
   @Test
@@ -85,7 +85,7 @@ public class DeepLinkAttributionManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // gacid → $gclid_campaign_id (legacy when no gclid/wbraid/gbraid), and matching
+  // gacid → $gclid_campaign_id (legacy when no gclid/wbraid/gbraid) and matching
   // $wbraid_campaign_id / $gbraid_campaign_id when those click ids are present
   // -------------------------------------------------------------------------
 
@@ -173,7 +173,7 @@ public class DeepLinkAttributionManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC5: Facebook special fields
+  // Facebook special fields
   // -------------------------------------------------------------------------
 
   @Test
@@ -212,7 +212,7 @@ public class DeepLinkAttributionManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC6: deduplication — same value preserves creation_time
+  // deduplication — same value preserves creation_time
   // -------------------------------------------------------------------------
 
   @Test
@@ -229,7 +229,7 @@ public class DeepLinkAttributionManagerTest {
     assertThat(stored).containsEntry("$gclid_creation_time", T0);
   }
 
-  // AC6: deduplication — different value resets creation_time
+  // deduplication — different value resets creation_time
   @Test
   public void store_differentClickIdValue_updatesCreationTime() {
     Map<String, String> params1 = new LinkedHashMap<>();
@@ -246,7 +246,7 @@ public class DeepLinkAttributionManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC7: click IDs persist after 24 hours (no expiry)
+  // click IDs persist after 24 hours (no expiry)
   // -------------------------------------------------------------------------
 
   @Test
@@ -261,7 +261,7 @@ public class DeepLinkAttributionManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC8: UTM params stored
+  // UTM params stored
   // -------------------------------------------------------------------------
 
   @Test
@@ -284,7 +284,7 @@ public class DeepLinkAttributionManagerTest {
   }
 
   // -------------------------------------------------------------------------
-  // AC9: UTM expiry
+  // UTM expiry
   // -------------------------------------------------------------------------
 
   @Test
