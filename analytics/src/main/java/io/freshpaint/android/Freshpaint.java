@@ -134,7 +134,7 @@ public class Freshpaint {
 
   @Private final boolean nanosecondTimestamps;
 
-  // Whether to fire the app_install (first-open) event on first launch. Set by Builder.
+  // Whether to fire the Application Installed (first-open) event on first launch. Set by Builder.
   @Private final boolean trackFirstOpen;
 
   /**
@@ -296,7 +296,7 @@ public class Freshpaint {
   }
 
   // -------------------------------------------------------------------------
-  // Deep-link attribution (FRP-45)
+  // Deep-link attribution
   // -------------------------------------------------------------------------
 
   /**
@@ -312,8 +312,8 @@ public class Freshpaint {
   }
 
   /**
-   * Returns {@code true} if the {@code app_install} first-open event has already been tracked (i.e.
-   * {@code FIRST_OPEN_TRACKED_KEY} is set in SharedPreferences).
+   * Returns {@code true} if the {@code Application Installed} first-open event has already been
+   * tracked (i.e. {@code FIRST_OPEN_TRACKED_KEY} is set in SharedPreferences).
    */
   @Private
   boolean isFirstOpenTracked() {
@@ -367,8 +367,8 @@ public class Freshpaint {
   /**
    * Package-private overload that accepts a caller-supplied {@code nowMillis} timestamp. The no-arg
    * public method delegates here with {@link System#currentTimeMillis()}. Exposed for tests that
-   * need to control the clock (e.g. to assert UTM expiry in the {@code app_install} payload without
-   * depending on wall-clock time).
+   * need to control the clock (e.g. to assert UTM expiry in the {@code Application Installed}
+   * payload without depending on wall-clock time).
    */
   @VisibleForTesting
   void trackApplicationLifecycleEvents(long nowMillis) {
@@ -383,7 +383,7 @@ public class Freshpaint {
     int previousBuild = sharedPreferences.getInt(BUILD_KEY, -1);
     boolean firstOpenTracked = sharedPreferences.getBoolean(FIRST_OPEN_TRACKED_KEY, false);
 
-    // Check and track app_install (first install) or Application Updated.
+    // Check and track Application Installed (first install) or Application Updated.
     if (previousBuild == -1) {
       if (trackFirstOpen && !firstOpenTracked) {
         AnalyticsContext.Device device = analyticsContext.device();
@@ -409,7 +409,8 @@ public class Freshpaint {
                 // properties.limit_ad_tracking with context.device on dispatch.
                 .putValue("limit_ad_tracking", limitAdTracking)
                 .putValue("os_version", Build.VERSION.RELEASE)
-                .putValue("app_version", currentVersion);
+                .putValue("version", currentVersion)
+                .putValue("build", String.valueOf(currentBuild));
         // Omit advertisingId when not yet resolved: explicit null vs. absent key are handled
         // differently by some MMP backends. AttributionMiddleware reconciles
         // properties.advertisingId with context.device at dispatch when the GAID worker completes.
@@ -431,15 +432,15 @@ public class Freshpaint {
         Options installOpts = getDefaultOptions();
 
         putAllIntoContext(installOpts, irData);
-        // Merge deep-link attribution data (FRP-45). If a deep link fired before app_install,
-        // trackDeepLink() will have persisted click IDs and UTM params via commit() on the main
-        // thread before this executor task runs. Deep-link values overwrite IR values for
+        // Merge deep-link attribution data. If a deep link fired before Application
+        // Installed, trackDeepLink() will have persisted click IDs and UTM params via commit() on
+        // the main thread before this executor task runs. Deep-link values overwrite IR values for
         // overlapping keys (e.g. $gclid) since the deep link represents a more direct signal.
         // nowMillis is caller-supplied so tests can control the UTM expiry window.
         Map<String, Object> dlData =
             DeepLinkAttributionManager.getStoredProperties(sharedPreferences, nowMillis);
         putAllIntoContext(installOpts, dlData);
-        track("app_install", installProps, installOpts);
+        track("Application Installed", installProps, installOpts);
       }
     } else if (currentBuild != previousBuild) {
       track(
@@ -457,7 +458,7 @@ public class Freshpaint {
     editor.putInt(BUILD_KEY, currentBuild);
     // Written on every path (fresh install, upgrade, subsequent launch) so that upgrade-path
     // users who skip previousBuild==-1 are also guarded against future re-fires. This key means
-    // "app_install will not fire again", not "app_install was fired on this device".
+    // "Application Installed will not fire again", not "Application Installed was fired on this device".
     editor.putBoolean(FIRST_OPEN_TRACKED_KEY, true);
     // apply() updates the in-memory SharedPreferences cache synchronously before returning, so
     // isFirstOpenTracked() reads the new value immediately on the same thread. The async disk
@@ -958,9 +959,9 @@ public class Freshpaint {
   public void reset() {
     SharedPreferences sharedPreferences = Utils.getFreshpaintSharedPreferences(application, tag);
     // LIB-1578: only remove traits, preserve BUILD, VERSION, and FIRST_OPEN_TRACKED keys in order
-    // to fix over-sending of 'app_install' events and under-sending of 'Application Updated'
-    // events. FIRST_OPEN_TRACKED_KEY is intentionally preserved so that app_install is not
-    // re-fired after a user reset (matching the original Application Installed behavior).
+    // to fix over-sending of 'Application Installed' events and under-sending of 'Application Updated'
+    // events. FIRST_OPEN_TRACKED_KEY is intentionally preserved so that Application Installed is not
+    // re-fired after a user reset (matching the original Segment SDK behavior).
     SharedPreferences.Editor editor = sharedPreferences.edit();
     editor.remove(TRAITS_KEY + "-" + tag);
     editor.apply();
@@ -1348,7 +1349,7 @@ public class Freshpaint {
     }
 
     /**
-     * Automatically track application lifecycle events, including "app_install" (first-open),
+     * Automatically track application lifecycle events, including "Application Installed" (first-open),
      * "Application Updated" and "Application Opened".
      */
     public Builder trackApplicationLifecycleEvents() {
@@ -1375,8 +1376,8 @@ public class Freshpaint {
     }
 
     /**
-     * Enable or disable firing the first-open install event ({@code app_install}) on the initial
-     * launch. Enabled by default.
+     * Enable or disable firing the first-open install event ({@code Application Installed}) on the
+     * initial launch. Enabled by default.
      */
     public Builder trackFirstOpen(boolean trackFirstOpen) {
       this.trackFirstOpen = trackFirstOpen;

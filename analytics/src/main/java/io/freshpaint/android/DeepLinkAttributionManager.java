@@ -35,7 +35,7 @@ import java.util.Map;
  * AnalyticsActivityLifecycleCallbacks#trackDeepLink}.
  *
  * <p>All SharedPreferences keys use the {@code "dl."} prefix to avoid collisions with the Install
- * Referrer namespace ({@code "ir."} from FRP-44).
+ * Referrer namespace ({@code "ir."}).
  *
  * <p>Click IDs persist indefinitely. UTM parameters expire after 24 hours; expiry is evaluated at
  * read time using a caller-supplied {@code now} timestamp to keep the class testable without mocks.
@@ -45,7 +45,7 @@ import java.util.Map;
  * <p><b>Naming convention:</b> all ad-platform click IDs are stored and returned with a {@code $}
  * prefix (e.g. {@code $gclid}, {@code $fbclid}). The Freshpaint-native click ID ({@code
  * fp_click_id}) is stored and returned <em>without</em> the {@code $} prefix, matching the Install
- * Referrer convention established in FRP-44.
+ * Referrer convention.
  */
 final class DeepLinkAttributionManager {
 
