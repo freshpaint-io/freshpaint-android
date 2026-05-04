@@ -225,6 +225,52 @@ public class AttributionMiddlewareTest {
     assertThat(trackPayload.properties().get("advertisingId")).isEqualTo("resolved-gaid");
   }
 
+  /**
+   * Race-condition scenario: snapshot captured {@code android_id} (GAID was null at snapshot time)
+   * but GAID resolved before dispatch. The reconciliation path must add {@code advertisingId} AND
+   * remove the stale {@code android_id} — both identifiers must never appear together in {@code
+   * properties}.
+   */
+  @Test
+  public void reconciliationRemovesAndroidIdWhenGaidResolvesAfterSnapshot() {
+    // Source device has resolved GAID (simulates worker completing before dispatch)
+    AnalyticsContext sourceContext =
+        buildSourceContext(
+            "test-device-id",
+            "resolved-gaid",
+            /* adTrackingEnabled= */ true,
+            /* androidId= */ null);
+
+    AnalyticsContext payloadContext = buildPayloadContext("test-device-id");
+
+    // Snapshot properties: GAID was null when track() was called, so android_id was captured
+    LinkedHashMap<String, Object> propsMap = new LinkedHashMap<>();
+    propsMap.put("limit_ad_tracking", true);
+    propsMap.put("android_id", "snapshot-android-id");
+
+    TrackPayload trackPayload =
+        new TrackPayload.Builder()
+            .event("Application Installed")
+            .anonymousId("anon")
+            .timestamp(new Date(0))
+            .context(payloadContext)
+            .properties(propsMap)
+            .build();
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(trackPayload);
+
+    new AttributionMiddleware(sourceContext).intercept(chain);
+
+    verify(chain).proceed(trackPayload);
+    // Reconciliation must add advertisingId and remove android_id — never both together
+    assertThat(trackPayload.properties().get("advertisingId")).isEqualTo("resolved-gaid");
+    assertThat(trackPayload.properties()).doesNotContainKey("android_id");
+    // context.device must also be clean
+    assertThat(trackPayload.context().device()).containsEntry("advertisingId", "resolved-gaid");
+    assertThat(trackPayload.context().device()).doesNotContainKey("android_id");
+  }
+
   @Test
   public void addsAdvertisingIdToAppInstallPropertiesWhenAbsentButResolved() {
     AnalyticsContext sourceContext =
@@ -357,11 +403,11 @@ public class AttributionMiddlewareTest {
   // ---------------------------------------------------------------------------
 
   /**
-   * When the source device has a valid android_id, the middleware must propagate it to the payload
-   * device at key {@code "android_id"}.
+   * When GAID is available, {@code android_id} must be omitted — the two identifiers are mutually
+   * exclusive per Google policy.
    */
   @Test
-  public void androidIdPropagatedToPayloadDeviceWhenValid() {
+  public void androidIdAbsentFromPayloadWhenGaidPresent() {
     AnalyticsContext sourceContext =
         buildSourceContext(
             "dev-id",
@@ -384,7 +430,40 @@ public class AttributionMiddlewareTest {
 
     AnalyticsContext.Device resultDevice = payloadContext.device();
     assertThat(resultDevice).isNotNull();
-    assertThat(resultDevice).containsEntry("android_id", "test-android-id-abc");
+    assertThat(resultDevice).containsEntry("advertisingId", "gaid-1234");
+    assertThat(resultDevice).doesNotContainKey("android_id");
+  }
+
+  /**
+   * When GAID is unavailable (null), {@code android_id} is used as fallback and must appear in the
+   * payload device.
+   */
+  @Test
+  public void androidIdUsedAsFallbackWhenGaidUnavailable() {
+    AnalyticsContext sourceContext =
+        buildSourceContext(
+            "dev-id",
+            /* gaid= */ null,
+            /* adTrackingEnabled= */ false,
+            /* androidId= */ "fallback-android-id");
+
+    AnalyticsContext payloadContext = buildPayloadContext("dev-id");
+
+    BasePayload payload = mock(BasePayload.class);
+    when(payload.context()).thenReturn(payloadContext);
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(payload);
+
+    AttributionMiddleware middleware = new AttributionMiddleware(sourceContext);
+    middleware.intercept(chain);
+
+    verify(chain).proceed(payload);
+
+    AnalyticsContext.Device resultDevice = payloadContext.device();
+    assertThat(resultDevice).isNotNull();
+    assertThat(resultDevice).containsEntry("android_id", "fallback-android-id");
+    assertThat(resultDevice).doesNotContainKey("advertisingId");
   }
 
   /**
@@ -420,11 +499,12 @@ public class AttributionMiddlewareTest {
   // ---------------------------------------------------------------------------
 
   /**
-   * When all three fields (android_id, context id, gaid) are set, the middleware must propagate all
-   * three independently — no field overwrites another.
+   * When GAID is present, the payload device has {@code id} and {@code advertisingId} but NOT
+   * {@code android_id} — GAID takes precedence and the two advertising identifiers are mutually
+   * exclusive.
    */
   @Test
-  public void androidIdDoesNotConflictWithDeviceIdOrGaid() {
+  public void gaidTakesPrecedenceOverAndroidIdAndDeviceIdCoexists() {
     AnalyticsContext sourceContext =
         buildSourceContext(
             "keystore-uuid",
@@ -447,10 +527,9 @@ public class AttributionMiddlewareTest {
 
     AnalyticsContext.Device resultDevice = payloadContext.device();
     assertThat(resultDevice).isNotNull();
-    // All three must coexist at their own distinct keys
     assertThat(resultDevice).containsEntry("id", "keystore-uuid");
     assertThat(resultDevice).containsEntry("advertisingId", "test-gaid-5678");
-    assertThat(resultDevice).containsEntry("android_id", "valid-android-id");
+    assertThat(resultDevice).doesNotContainKey("android_id");
   }
 
   // ---------------------------------------------------------------------------

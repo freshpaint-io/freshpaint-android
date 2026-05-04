@@ -243,9 +243,9 @@ public class AnalyticsContext extends ValueMap {
     device.put(Device.DEVICE_MODEL_KEY, Build.MODEL);
     device.put(Device.DEVICE_NAME_KEY, Build.DEVICE);
     device.put(Device.DEVICE_TYPE_KEY, "android");
-    // android_id is captured as an explicit attribution signal alongside context device id.
-    // Gated on collectDeviceID to honour the hardware-identifier opt-out. Placeholder values are
-    // filtered inside putAndroidId().
+    // android_id is captured for use as fallback when GAID is unavailable. It is gated on
+    // collectDeviceID to honour the hardware-identifier opt-out; placeholder values are
+    // filtered inside putAndroidId(). AttributionMiddleware forwards it only when GAID is absent.
     if (collectDeviceID) {
       String rawAndroidId =
           Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
