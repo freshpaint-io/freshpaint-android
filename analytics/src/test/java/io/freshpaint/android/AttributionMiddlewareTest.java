@@ -494,6 +494,45 @@ public class AttributionMiddlewareTest {
     assertThat(resultDevice).doesNotContainKey("android_id");
   }
 
+  /**
+   * Production scenario: {@code fillAndEnqueue()} does a shallow {@code putAll} of the global
+   * {@link AnalyticsContext}, so the payload device map already contains {@code android_id} (written
+   * by {@code putDevice()} at SDK init) before the middleware runs. The middleware must explicitly
+   * remove {@code android_id} from the payload device when GAID is available — not merely skip
+   * writing it — otherwise both identifiers reach the network layer.
+   */
+  @Test
+  public void androidIdRemovedFromPayloadDeviceWhenItPreExistsAndGaidIsPresent() {
+    AnalyticsContext sourceContext =
+        buildSourceContext(
+            "dev-id",
+            "gaid-1234",
+            /* adTrackingEnabled= */ true,
+            /* androidId= */ "preexisting-android-id");
+
+    // Simulate the shallow-copy: payload device already has android_id from putDevice().
+    LinkedHashMap<String, Object> payloadDeviceMap = new LinkedHashMap<>();
+    payloadDeviceMap.put("id", "dev-id");
+    payloadDeviceMap.put("android_id", "preexisting-android-id");
+    LinkedHashMap<String, Object> payloadContextMap = new LinkedHashMap<>();
+    payloadContextMap.put("device", payloadDeviceMap);
+    AnalyticsContext payloadContext = new AnalyticsContext(payloadContextMap);
+
+    BasePayload payload = mock(BasePayload.class);
+    when(payload.context()).thenReturn(payloadContext);
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(payload);
+
+    new AttributionMiddleware(sourceContext).intercept(chain);
+
+    verify(chain).proceed(payload);
+
+    AnalyticsContext.Device resultDevice = payloadContext.device();
+    assertThat(resultDevice).containsEntry("advertisingId", "gaid-1234");
+    assertThat(resultDevice).doesNotContainKey("android_id");
+  }
+
   // ---------------------------------------------------------------------------
   // android_id does not conflict with context id or gaid
   // ---------------------------------------------------------------------------

@@ -86,6 +86,10 @@ class AttributionMiddleware implements Middleware {
         String deviceId = sourceDevice.getString(AnalyticsContext.Device.DEVICE_ID_KEY);
         if (gaid != null) {
           payloadDevice.put(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY, gaid);
+          // The payload device is a shallow-copied reference of the global AnalyticsContext.Device,
+          // which may already contain android_id from putDevice() at SDK init. Remove it explicitly
+          // so the two identifiers never coexist in the same payload.
+          payloadDevice.remove(AnalyticsContext.Device.DEVICE_ANDROID_ID_KEY);
         } else {
           String androidId = sourceDevice.getString(AnalyticsContext.Device.DEVICE_ANDROID_ID_KEY);
           if (androidId != null) {
