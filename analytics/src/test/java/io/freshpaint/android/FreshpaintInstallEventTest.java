@@ -609,6 +609,71 @@ public class FreshpaintInstallEventTest {
   }
 
   /**
+   * When the device context has a valid GAID, {@code android_id} must be absent from the {@code
+   * Application Installed} event properties — the two identifiers are mutually exclusive.
+   */
+  @Test
+  public void appInstall_advertisingIdPresent_androidIdAbsent_whenGaidAvailable() {
+    Middleware captureMiddleware =
+        chain -> {
+          captured.add(chain.payload());
+          chain.proceed(chain.payload());
+        };
+
+    Traits traits = Traits.create();
+    Traits.Cache traitsCache = mock(Traits.Cache.class);
+    when(traitsCache.get()).thenReturn(traits);
+    AnalyticsContext analyticsContext = io.freshpaint.android.Utils.createContext(traits);
+
+    // Populate device with both GAID and android_id — only GAID must appear in the event.
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+    device.putAdvertisingInfo("resolved-gaid-abc", /* adTrackingEnabled= */ true);
+    device.putAndroidId("should-not-appear-id");
+    analyticsContext.put("device", device);
+
+    BooleanPreference optOut = new BooleanPreference(fakePrefs, "opt-out", false);
+    Freshpaint fp =
+        new Freshpaint(
+            application,
+            mock(ExecutorService.class),
+            mock(Stats.class),
+            traitsCache,
+            analyticsContext,
+            new Options(),
+            Logger.with(Freshpaint.LogLevel.NONE),
+            "test",
+            Collections.emptyList(),
+            mock(Client.class),
+            Cartographer.INSTANCE,
+            mock(ProjectSettings.Cache.class),
+            "test-key",
+            20,
+            30_000L,
+            300,
+            new TestUtils.SynchronousExecutor(),
+            false,
+            new CountDownLatch(0),
+            false,
+            false,
+            false,
+            optOut,
+            Crypto.none(),
+            Collections.singletonList(captureMiddleware),
+            Collections.emptyMap(),
+            TestUtils.testProjectSettings(),
+            mock(Lifecycle.class),
+            false,
+            true);
+
+    fp.trackApplicationLifecycleEvents();
+
+    assertThat(tracksOf(captured)).hasSize(1);
+    Properties props = tracksOf(captured).get(0).properties();
+    assertThat(props).containsEntry("advertisingId", "resolved-gaid-abc");
+    assertThat(props).doesNotContainKey("android_id");
+  }
+
+  /**
    * When the device context has no valid android_id (null), the {@code android_id} key must be
    * absent from the {@code Application Installed} event properties.
    */

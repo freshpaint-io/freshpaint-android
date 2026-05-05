@@ -416,10 +416,7 @@ public class Freshpaint {
         // properties.advertisingId with context.device at dispatch when the GAID worker completes.
         if (gaid != null) {
           installProps.putValue(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY, gaid);
-        }
-        // android_id is captured synchronously at SDK init (putDevice), so it is available here
-        // unless the device returned a placeholder value (filtered by Device.putAndroidId).
-        if (androidId != null) {
+        } else if (androidId != null) {
           installProps.putValue("android_id", androidId);
         }
         // Merge Install Referrer data collected by trackAttributionInformation(). On first
@@ -1510,7 +1507,7 @@ public class Freshpaint {
           AnalyticsContext.create(application, traitsCache.get(), collectDeviceID);
       CountDownLatch advertisingIdLatch = new CountDownLatch(1);
       analyticsContext.attachAdvertisingId(
-          application, advertisingIdLatch, logger, networkExecutor);
+          application, advertisingIdLatch, logger, networkExecutor, collectDeviceID);
 
       List<Integration.Factory> factories = new ArrayList<>(1 + this.factories.size());
       factories.add(FreshpaintIntegration.FACTORY);

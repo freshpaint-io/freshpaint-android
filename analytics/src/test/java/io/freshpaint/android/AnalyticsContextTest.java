@@ -267,11 +267,11 @@ public class AnalyticsContextTest {
   }
 
   // ---------------------------------------------------------------------------
-  // putDevice() — android_id capture via Settings.Secure
+  // putDevice() — android_id is NOT captured (responsibility moved to GetAdvertisingIdWorker)
   // ---------------------------------------------------------------------------
 
   @Test
-  public void putDevice_collectDeviceIdTrue_capturesValidAndroidId() {
+  public void putDevice_doesNotCaptureAndroidId_collectDeviceIdTrue() {
     Context context = RuntimeEnvironment.application;
     Settings.Secure.putString(
         context.getContentResolver(), Settings.Secure.ANDROID_ID, "abcdef1234567890");
@@ -281,7 +281,7 @@ public class AnalyticsContextTest {
     ctx.putDevice(context, /* collectDeviceID= */ true);
 
     assertThat(ctx.device()).isNotNull();
-    assertThat(ctx.device()).containsEntry("android_id", "abcdef1234567890");
+    assertThat(ctx.device()).doesNotContainKey("android_id");
   }
 
   @Test

@@ -153,13 +153,17 @@ public class AnalyticsContext extends ValueMap {
   }
 
   void attachAdvertisingId(
-      Context context, CountDownLatch latch, Logger logger, ExecutorService executor) {
+      Context context,
+      CountDownLatch latch,
+      Logger logger,
+      ExecutorService executor,
+      boolean collectDeviceId) {
     // This is done as an extra step so we don't run into errors like this for testing
     // http://pastebin.com/gyWJKWiu.
     if (Utils.isOnClassPath("com.google.android.gms.ads.identifier.AdvertisingIdClient")) {
       // This needs to be done each time since the settings may have been updated.
       try {
-        executor.submit(new GetAdvertisingIdWorker(this, latch, logger, context));
+        executor.submit(new GetAdvertisingIdWorker(this, latch, logger, context, collectDeviceId));
       } catch (java.util.concurrent.RejectedExecutionException e) {
         logger.debug("networkExecutor is shut down; skipping GAID fetch.");
         latch.countDown();
@@ -243,14 +247,6 @@ public class AnalyticsContext extends ValueMap {
     device.put(Device.DEVICE_MODEL_KEY, Build.MODEL);
     device.put(Device.DEVICE_NAME_KEY, Build.DEVICE);
     device.put(Device.DEVICE_TYPE_KEY, "android");
-    // android_id is captured as an explicit attribution signal alongside context device id.
-    // Gated on collectDeviceID to honour the hardware-identifier opt-out. Placeholder values are
-    // filtered inside putAndroidId().
-    if (collectDeviceID) {
-      String rawAndroidId =
-          Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
-      device.putAndroidId(rawAndroidId);
-    }
     put(DEVICE_KEY, device);
   }
 
@@ -471,17 +467,27 @@ public class AnalyticsContext extends ValueMap {
     }
 
     /**
+     * Set advertising info and an {@code android_id} fallback atomically under the device monitor.
+     * Use this overload from {@link GetAdvertisingIdWorker} when GAID is unavailable so that no
+     * reader can observe a state where {@code adTrackingEnabled} is updated but {@code android_id}
+     * is not yet written.
+     */
+    synchronized void putAdvertisingInfo(
+        String advertisingId, boolean adTrackingEnabled, String rawAndroidIdFallback) {
+      putAdvertisingInfo(advertisingId, adTrackingEnabled);
+      putAndroidId(rawAndroidIdFallback);
+    }
+
+    /**
      * Store the Android ID for this device if it is not a known placeholder value.
      *
      * <p>Placeholder detection delegates to {@link Utils#isPlaceholderAndroidId(String)} — the
      * single source of truth shared with {@link Utils#getDeviceId(Context)}.
      *
-     * <p>Not synchronized: {@code android_id} is written exactly once at SDK init (inside {@link
-     * AnalyticsContext#putDevice}), before any executor task or middleware invocation. If the
-     * capture path ever becomes async, synchronization will be required here — see {@link
-     * #putAdvertisingInfo} for the pattern.
+     * <p>Synchronized to match {@link #putAdvertisingInfo} — both methods share the device
+     * monitor so callers and {@link AttributionMiddleware} see a consistent device state.
      */
-    void putAndroidId(String androidId) {
+    synchronized void putAndroidId(String androidId) {
       if (!Utils.isPlaceholderAndroidId(androidId)) {
         put(DEVICE_ANDROID_ID_KEY, androidId);
       }

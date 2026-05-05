@@ -225,6 +225,47 @@ public class AttributionMiddlewareTest {
     assertThat(trackPayload.properties().get("advertisingId")).isEqualTo("resolved-gaid");
   }
 
+  /**
+   * Race-condition scenario: the install-event snapshot ran before the GAID worker completed, so
+   * it captured {@code android_id} as fallback. By dispatch time the worker has resolved GAID.
+   * The reconciliation path must add {@code advertisingId} AND remove the stale {@code android_id}
+   * so both identifiers never appear together in {@code properties}.
+   */
+  @Test
+  public void reconciliationRemovesAndroidIdWhenGaidResolvesAfterSnapshot() {
+    AnalyticsContext sourceContext =
+        buildSourceContext(
+            "test-device-id",
+            "resolved-gaid",
+            /* adTrackingEnabled= */ true,
+            /* androidId= */ null);
+
+    AnalyticsContext payloadContext = buildPayloadContext("test-device-id");
+
+    LinkedHashMap<String, Object> propsMap = new LinkedHashMap<>();
+    propsMap.put("limit_ad_tracking", true);
+    propsMap.put("android_id", "snapshot-android-id");
+
+    TrackPayload trackPayload =
+        new TrackPayload.Builder()
+            .event("Application Installed")
+            .anonymousId("anon")
+            .timestamp(new Date(0))
+            .context(payloadContext)
+            .properties(propsMap)
+            .build();
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(trackPayload);
+
+    new AttributionMiddleware(sourceContext).intercept(chain);
+
+    verify(chain).proceed(trackPayload);
+    assertThat(trackPayload.properties().get("advertisingId")).isEqualTo("resolved-gaid");
+    assertThat(trackPayload.properties()).doesNotContainKey("android_id");
+    assertThat(trackPayload.context().device()).containsEntry("advertisingId", "resolved-gaid");
+  }
+
   @Test
   public void addsAdvertisingIdToAppInstallPropertiesWhenAbsentButResolved() {
     AnalyticsContext sourceContext =
@@ -353,21 +394,22 @@ public class AttributionMiddlewareTest {
   }
 
   // ---------------------------------------------------------------------------
-  // android_id enrichment
+  // Identifier mutual exclusion (enforced by GetAdvertisingIdWorker, verified at middleware)
   // ---------------------------------------------------------------------------
 
   /**
-   * When the source device has a valid android_id, the middleware must propagate it to the payload
-   * device at key {@code "android_id"}.
+   * When GAID is available in the source device (as set by the worker), {@code android_id} must be
+   * absent from the payload device. The worker guarantees these are mutually exclusive; the
+   * middleware confirms the invariant holds through dispatch.
    */
   @Test
-  public void androidIdPropagatedToPayloadDeviceWhenValid() {
+  public void androidIdAbsentFromPayloadWhenGaidPresent() {
     AnalyticsContext sourceContext =
         buildSourceContext(
             "dev-id",
             "gaid-1234",
             /* adTrackingEnabled= */ true,
-            /* androidId= */ "test-android-id-abc");
+            /* androidId= */ null);
 
     AnalyticsContext payloadContext = buildPayloadContext("dev-id");
 
@@ -384,7 +426,8 @@ public class AttributionMiddlewareTest {
 
     AnalyticsContext.Device resultDevice = payloadContext.device();
     assertThat(resultDevice).isNotNull();
-    assertThat(resultDevice).containsEntry("android_id", "test-android-id-abc");
+    assertThat(resultDevice).containsEntry("advertisingId", "gaid-1234");
+    assertThat(resultDevice).doesNotContainKey("android_id");
   }
 
   /**
@@ -416,21 +459,21 @@ public class AttributionMiddlewareTest {
   }
 
   // ---------------------------------------------------------------------------
-  // android_id does not conflict with context id or gaid
+  // GAID and device.id coexist; android_id absent when GAID present
   // ---------------------------------------------------------------------------
 
   /**
-   * When all three fields (android_id, context id, gaid) are set, the middleware must propagate all
-   * three independently — no field overwrites another.
+   * When GAID is present, the payload device has {@code id} and {@code advertisingId} but NOT
+   * {@code android_id} — the worker ensures these are mutually exclusive.
    */
   @Test
-  public void androidIdDoesNotConflictWithDeviceIdOrGaid() {
+  public void gaidTakesPrecedenceOverAndroidIdAndDeviceIdCoexists() {
     AnalyticsContext sourceContext =
         buildSourceContext(
             "keystore-uuid",
             "test-gaid-5678",
             /* adTrackingEnabled= */ true,
-            /* androidId= */ "valid-android-id");
+            /* androidId= */ null);
 
     AnalyticsContext payloadContext = buildPayloadContext("keystore-uuid");
 
@@ -447,27 +490,24 @@ public class AttributionMiddlewareTest {
 
     AnalyticsContext.Device resultDevice = payloadContext.device();
     assertThat(resultDevice).isNotNull();
-    // All three must coexist at their own distinct keys
     assertThat(resultDevice).containsEntry("id", "keystore-uuid");
     assertThat(resultDevice).containsEntry("advertisingId", "test-gaid-5678");
-    assertThat(resultDevice).containsEntry("android_id", "valid-android-id");
+    assertThat(resultDevice).doesNotContainKey("android_id");
   }
 
   // ---------------------------------------------------------------------------
-  // collectDeviceID=false suppresses android_id
+  // putDevice never captures android_id (capture is the worker's responsibility)
   // ---------------------------------------------------------------------------
 
   /**
-   * When {@code collectDeviceID=false}, {@link AnalyticsContext#putDevice} must NOT capture {@code
-   * android_id} — the hardware-identifier opt-out governs both {@code device.id} and {@code
-   * android_id}. Context is never accessed in this path (the Settings.Secure read is gated), so a
-   * mock Context is safe to pass.
+   * {@link AnalyticsContext#putDevice} must never write {@code android_id} — capture was moved to
+   * {@link GetAdvertisingIdWorker} so the decision is deferred until the {@code limit_ad_tracking}
+   * state is known.
    */
   @Test
-  public void putDevice_collectDeviceIdFalse_doesNotCaptureAndroidId() {
+  public void putDevice_doesNotCaptureAndroidId() {
     Traits traits = Traits.create();
     AnalyticsContext ctx = Utils.createContext(traits);
-    // context is not accessed when collectDeviceID=false (Settings.Secure block is skipped)
     ctx.putDevice(mock(Context.class), /* collectDeviceID= */ false);
     assertThat(ctx.device()).isNotNull();
     assertThat(ctx.device()).doesNotContainKey("android_id");
