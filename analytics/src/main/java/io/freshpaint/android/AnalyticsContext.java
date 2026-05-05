@@ -467,16 +467,27 @@ public class AnalyticsContext extends ValueMap {
     }
 
     /**
+     * Set advertising info and an {@code android_id} fallback atomically under the device monitor.
+     * Use this overload from {@link GetAdvertisingIdWorker} when GAID is unavailable so that no
+     * reader can observe a state where {@code adTrackingEnabled} is updated but {@code android_id}
+     * is not yet written.
+     */
+    synchronized void putAdvertisingInfo(
+        String advertisingId, boolean adTrackingEnabled, String rawAndroidIdFallback) {
+      putAdvertisingInfo(advertisingId, adTrackingEnabled);
+      putAndroidId(rawAndroidIdFallback);
+    }
+
+    /**
      * Store the Android ID for this device if it is not a known placeholder value.
      *
      * <p>Placeholder detection delegates to {@link Utils#isPlaceholderAndroidId(String)} — the
      * single source of truth shared with {@link Utils#getDeviceId(Context)}.
      *
-     * <p>Called from {@link GetAdvertisingIdWorker#run()} as the GAID fallback when ad tracking is
-     * allowed but no GAID is available. Visibility to subsequent middleware reads is guaranteed by
-     * the happens-before edge of {@link java.util.concurrent.CountDownLatch#countDown()}.
+     * <p>Synchronized to match {@link #putAdvertisingInfo} — both methods share the device
+     * monitor so callers and {@link AttributionMiddleware} see a consistent device state.
      */
-    void putAndroidId(String androidId) {
+    synchronized void putAndroidId(String androidId) {
       if (!Utils.isPlaceholderAndroidId(androidId)) {
         put(DEVICE_ANDROID_ID_KEY, androidId);
       }

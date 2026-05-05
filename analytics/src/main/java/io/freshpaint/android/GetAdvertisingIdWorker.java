@@ -135,10 +135,10 @@ class GetAdvertisingIdWorker implements Runnable {
         // GAID available and tracking allowed — GAID only, no android_id.
         device.putAdvertisingInfo(gaid, true);
       } else if (collectDeviceId) {
-        // Tracking allowed but no GAID — android_id as fallback.
-        device.putAdvertisingInfo(null, true);
+        // Tracking allowed but no GAID — android_id as fallback. The three-arg overload writes
+        // all fields atomically under the device monitor so no reader sees a partial state.
         String rawAndroidId = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
-        device.putAndroidId(rawAndroidId);
+        device.putAdvertisingInfo(null, true, rawAndroidId);
       } else {
         // Tracking allowed, no GAID, collectDeviceId=false — no identifiers stored.
         device.putAdvertisingInfo(null, true);

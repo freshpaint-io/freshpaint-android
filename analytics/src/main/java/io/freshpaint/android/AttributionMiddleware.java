@@ -103,6 +103,10 @@ class AttributionMiddleware implements Middleware {
               merged = mutablePropertiesCopy(trackProps);
             }
             merged.putValue(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY, gaid);
+            // A snapshot taken before the worker completed may have captured android_id as
+            // fallback. If GAID resolved before dispatch the stale android_id must be removed
+            // so both identifiers never reach MMP backends in the same payload.
+            merged.remove(AnalyticsContext.Device.DEVICE_ANDROID_ID_KEY);
           }
           if (merged != null) {
             trackPayload.put(TRACK_PROPERTIES_KEY, merged);

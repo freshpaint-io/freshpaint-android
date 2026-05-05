@@ -225,6 +225,47 @@ public class AttributionMiddlewareTest {
     assertThat(trackPayload.properties().get("advertisingId")).isEqualTo("resolved-gaid");
   }
 
+  /**
+   * Race-condition scenario: the install-event snapshot ran before the GAID worker completed, so
+   * it captured {@code android_id} as fallback. By dispatch time the worker has resolved GAID.
+   * The reconciliation path must add {@code advertisingId} AND remove the stale {@code android_id}
+   * so both identifiers never appear together in {@code properties}.
+   */
+  @Test
+  public void reconciliationRemovesAndroidIdWhenGaidResolvesAfterSnapshot() {
+    AnalyticsContext sourceContext =
+        buildSourceContext(
+            "test-device-id",
+            "resolved-gaid",
+            /* adTrackingEnabled= */ true,
+            /* androidId= */ null);
+
+    AnalyticsContext payloadContext = buildPayloadContext("test-device-id");
+
+    LinkedHashMap<String, Object> propsMap = new LinkedHashMap<>();
+    propsMap.put("limit_ad_tracking", true);
+    propsMap.put("android_id", "snapshot-android-id");
+
+    TrackPayload trackPayload =
+        new TrackPayload.Builder()
+            .event("Application Installed")
+            .anonymousId("anon")
+            .timestamp(new Date(0))
+            .context(payloadContext)
+            .properties(propsMap)
+            .build();
+
+    Middleware.Chain chain = mock(Middleware.Chain.class);
+    when(chain.payload()).thenReturn(trackPayload);
+
+    new AttributionMiddleware(sourceContext).intercept(chain);
+
+    verify(chain).proceed(trackPayload);
+    assertThat(trackPayload.properties().get("advertisingId")).isEqualTo("resolved-gaid");
+    assertThat(trackPayload.properties()).doesNotContainKey("android_id");
+    assertThat(trackPayload.context().device()).containsEntry("advertisingId", "resolved-gaid");
+  }
+
   @Test
   public void addsAdvertisingIdToAppInstallPropertiesWhenAbsentButResolved() {
     AnalyticsContext sourceContext =
