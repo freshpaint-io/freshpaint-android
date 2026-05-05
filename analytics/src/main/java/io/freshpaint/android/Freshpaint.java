@@ -1507,7 +1507,7 @@ public class Freshpaint {
           AnalyticsContext.create(application, traitsCache.get(), collectDeviceID);
       CountDownLatch advertisingIdLatch = new CountDownLatch(1);
       analyticsContext.attachAdvertisingId(
-          application, advertisingIdLatch, logger, networkExecutor);
+          application, advertisingIdLatch, logger, networkExecutor, collectDeviceID);
 
       List<Integration.Factory> factories = new ArrayList<>(1 + this.factories.size());
       factories.add(FreshpaintIntegration.FACTORY);

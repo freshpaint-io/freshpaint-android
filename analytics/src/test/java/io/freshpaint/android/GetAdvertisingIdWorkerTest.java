@@ -28,6 +28,7 @@ import static org.robolectric.annotation.Config.NONE;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.provider.Settings;
 import android.provider.Settings.Secure;
 import io.freshpaint.android.integrations.Logger;
 import java.util.concurrent.CountDownLatch;
@@ -54,7 +55,8 @@ public class GetAdvertisingIdWorkerTest {
 
     GetAdvertisingIdWorker worker =
         new GetAdvertisingIdWorker(
-            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context);
+            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context,
+            /* collectDeviceId= */ true);
     worker.run();
     latch.await();
 
@@ -62,6 +64,7 @@ public class GetAdvertisingIdWorkerTest {
         .containsEntry("advertisingId", "df07c7dc-cea7-4a89-b328-810ff5acb15d");
     assertThat(analyticsContext.device()).containsEntry("adTrackingEnabled", true);
     assertThat(analyticsContext.device()).containsEntry("limit_ad_tracking", false);
+    assertThat(analyticsContext.device()).doesNotContainKey("android_id");
   }
 
   @Test
@@ -76,11 +79,13 @@ public class GetAdvertisingIdWorkerTest {
 
     GetAdvertisingIdWorker worker =
         new GetAdvertisingIdWorker(
-            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context);
+            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context,
+            /* collectDeviceId= */ true);
     worker.run();
     latch.await();
 
     assertThat(analyticsContext.device()).doesNotContainKey("advertisingId");
+    assertThat(analyticsContext.device()).doesNotContainKey("android_id");
     assertThat(analyticsContext.device()).containsEntry("adTrackingEnabled", false);
     assertThat(analyticsContext.device()).containsEntry("limit_ad_tracking", true);
   }
@@ -97,14 +102,67 @@ public class GetAdvertisingIdWorkerTest {
 
     GetAdvertisingIdWorker worker =
         new GetAdvertisingIdWorker(
-            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context);
+            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context,
+            /* collectDeviceId= */ true);
     worker.run();
 
     assertThat(latch.getCount()).isEqualTo(0);
-    // When both GAID sources fail, the conservative privacy-safe default must be explicitly
-    // written.
+    // When both GAID sources fail, conservative default: no identifiers, limit_ad_tracking=true.
     assertThat(analyticsContext.device()).doesNotContainKey("advertisingId");
+    assertThat(analyticsContext.device()).doesNotContainKey("android_id");
     assertThat(analyticsContext.device()).containsEntry("adTrackingEnabled", false);
     assertThat(analyticsContext.device()).containsEntry("limit_ad_tracking", true);
+  }
+
+  @Test
+  public void androidIdFallback_whenGaidUnavailableAndTrackingAllowed_collectDeviceIdTrue()
+      throws Exception {
+    // limit_ad_tracking=0 (allowed), no advertising_id set → GAID unavailable fallback path.
+    Context context = RuntimeEnvironment.application;
+    ContentResolver contentResolver = context.getContentResolver();
+    Secure.putInt(contentResolver, "limit_ad_tracking", 0);
+    // advertising_id NOT set → Secure.getString returns null → gaid=null, adTrackingEnabled=true
+    Secure.putString(contentResolver, Settings.Secure.ANDROID_ID, "test-android-id-fallback");
+
+    CountDownLatch latch = new CountDownLatch(1);
+    Traits traits = Traits.create();
+    AnalyticsContext analyticsContext = AnalyticsContext.create(context, traits, true);
+
+    GetAdvertisingIdWorker worker =
+        new GetAdvertisingIdWorker(
+            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context,
+            /* collectDeviceId= */ true);
+    worker.run();
+    latch.await();
+
+    assertThat(analyticsContext.device()).doesNotContainKey("advertisingId");
+    assertThat(analyticsContext.device()).containsEntry("android_id", "test-android-id-fallback");
+    assertThat(analyticsContext.device()).containsEntry("adTrackingEnabled", true);
+    assertThat(analyticsContext.device()).containsEntry("limit_ad_tracking", false);
+  }
+
+  @Test
+  public void androidIdFallback_notCaptured_whenCollectDeviceIdFalse() throws Exception {
+    // Same scenario as above but collectDeviceId=false → android_id must not be stored.
+    Context context = RuntimeEnvironment.application;
+    ContentResolver contentResolver = context.getContentResolver();
+    Secure.putInt(contentResolver, "limit_ad_tracking", 0);
+    Secure.putString(contentResolver, Settings.Secure.ANDROID_ID, "test-android-id-fallback");
+
+    CountDownLatch latch = new CountDownLatch(1);
+    Traits traits = Traits.create();
+    AnalyticsContext analyticsContext = AnalyticsContext.create(context, traits, false);
+
+    GetAdvertisingIdWorker worker =
+        new GetAdvertisingIdWorker(
+            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context,
+            /* collectDeviceId= */ false);
+    worker.run();
+    latch.await();
+
+    assertThat(analyticsContext.device()).doesNotContainKey("advertisingId");
+    assertThat(analyticsContext.device()).doesNotContainKey("android_id");
+    assertThat(analyticsContext.device()).containsEntry("adTrackingEnabled", true);
+    assertThat(analyticsContext.device()).containsEntry("limit_ad_tracking", false);
   }
 }

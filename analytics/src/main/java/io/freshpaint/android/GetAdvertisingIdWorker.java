@@ -23,6 +23,7 @@
  */
 package io.freshpaint.android;
 
+import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.provider.Settings.Secure;
@@ -41,13 +42,19 @@ class GetAdvertisingIdWorker implements Runnable {
   private final CountDownLatch latch;
   private final Logger logger;
   private final Context context;
+  private final boolean collectDeviceId;
 
   GetAdvertisingIdWorker(
-      AnalyticsContext analyticsContext, CountDownLatch latch, Logger logger, Context context) {
+      AnalyticsContext analyticsContext,
+      CountDownLatch latch,
+      Logger logger,
+      Context context,
+      boolean collectDeviceId) {
     this.analyticsContext = analyticsContext;
     this.latch = latch;
     this.logger = logger;
     this.context = context;
+    this.collectDeviceId = collectDeviceId;
   }
 
   private Pair<String, Boolean> getGooglePlayServicesAdvertisingID() throws Exception {
@@ -90,6 +97,7 @@ class GetAdvertisingIdWorker implements Runnable {
     return Pair.create(advertisingId, true);
   }
 
+  @SuppressLint("HardwareIds")
   @Override
   public void run() {
     Pair<String, Boolean> info = null;
@@ -112,14 +120,29 @@ class GetAdvertisingIdWorker implements Runnable {
         return;
       }
       if (info == null) {
+        // Both sources unavailable — conservatively treat as limited; no identifiers stored.
         logger.debug(
             "Unable to collect advertising ID from Amazon Fire OS and Google Play Services.");
-        // Conservatively mark limit_ad_tracking=true when GAID status cannot be determined.
-        // adTrackingEnabled=false → putAdvertisingInfo sets limit_ad_tracking = !false = true.
         device.putAdvertisingInfo(null, /* adTrackingEnabled= */ false);
         return;
       }
-      device.putAdvertisingInfo(info.first, info.second);
+      boolean adTrackingEnabled = info.second;
+      String gaid = info.first;
+      if (!adTrackingEnabled) {
+        // limit_ad_tracking = true — store neither GAID nor android_id.
+        device.putAdvertisingInfo(null, false);
+      } else if (gaid != null) {
+        // GAID available and tracking allowed — GAID only, no android_id.
+        device.putAdvertisingInfo(gaid, true);
+      } else if (collectDeviceId) {
+        // Tracking allowed but no GAID — android_id as fallback.
+        device.putAdvertisingInfo(null, true);
+        String rawAndroidId = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
+        device.putAndroidId(rawAndroidId);
+      } else {
+        // Tracking allowed, no GAID, collectDeviceId=false — no identifiers stored.
+        device.putAdvertisingInfo(null, true);
+      }
     } finally {
       latch.countDown();
     }

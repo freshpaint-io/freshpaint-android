@@ -30,20 +30,18 @@ import io.freshpaint.android.integrations.TrackPayload;
  * A {@link Middleware} that enriches every outgoing event with attribution fields from the live
  * {@link AnalyticsContext.Device}, read non-blockingly — event dispatch is never blocked.
  *
- * <p>{@code advertisingId} (GAID) and {@code android_id} are mutually exclusive: when GAID is
- * available it is written and {@code android_id} is omitted; when GAID is unavailable (not yet
- * resolved, limit-ad-tracking enabled, or Play Services absent) {@code android_id} is used as
- * fallback. This prevents both identifiers from appearing in the same request, which violates
- * Google's policy.
+ * <p>{@code advertisingId} (GAID) and {@code android_id} are mutually exclusive by the time this
+ * middleware runs: {@link GetAdvertisingIdWorker} writes at most one of them to the device based on
+ * the resolved {@code limit_ad_tracking} state and GAID availability.
  *
  * <p>For {@link TrackPayload}s that already include {@code limit_ad_tracking} in {@code properties}
  * (e.g. {@code Application Installed}), this value is overwritten to match {@code
  * context.device.limit_ad_tracking} so it cannot disagree with the device block after the GAID
  * worker has updated the context.
  *
- * <p>For {@code Application Installed} only, {@code properties.advertisingId} is set or updated from the live
- * device map when available at dispatch time (same key as {@code context.device}), matching the
- * {@code limit_ad_tracking} fix (snapshot at {@code track()} vs live device at middleware).
+ * <p>For {@code Application Installed} only, {@code properties.advertisingId} is set or updated
+ * from the live device map when available at dispatch time, reconciling a snapshot taken before the
+ * GAID worker completed.
  */
 class AttributionMiddleware implements Middleware {
 
@@ -86,15 +84,6 @@ class AttributionMiddleware implements Middleware {
         String deviceId = sourceDevice.getString(AnalyticsContext.Device.DEVICE_ID_KEY);
         if (gaid != null) {
           payloadDevice.put(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY, gaid);
-          // The payload device is a shallow-copied reference of the global AnalyticsContext.Device,
-          // which may already contain android_id from putDevice() at SDK init. Remove it explicitly
-          // so the two identifiers never coexist in the same payload.
-          payloadDevice.remove(AnalyticsContext.Device.DEVICE_ANDROID_ID_KEY);
-        } else {
-          String androidId = sourceDevice.getString(AnalyticsContext.Device.DEVICE_ANDROID_ID_KEY);
-          if (androidId != null) {
-            payloadDevice.put(AnalyticsContext.Device.DEVICE_ANDROID_ID_KEY, androidId);
-          }
         }
         payloadDevice.put(AnalyticsContext.Device.DEVICE_LIMIT_AD_TRACKING_KEY, limitAdTracking);
         if (deviceId != null) {
@@ -114,9 +103,6 @@ class AttributionMiddleware implements Middleware {
               merged = mutablePropertiesCopy(trackProps);
             }
             merged.putValue(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY, gaid);
-            // If the snapshot captured android_id (GAID was null at snapshot time but resolved
-            // before dispatch), remove it now to maintain mutual exclusion in properties.
-            merged.remove(AnalyticsContext.Device.DEVICE_ANDROID_ID_KEY);
           }
           if (merged != null) {
             trackPayload.put(TRACK_PROPERTIES_KEY, merged);

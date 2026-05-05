@@ -153,13 +153,17 @@ public class AnalyticsContext extends ValueMap {
   }
 
   void attachAdvertisingId(
-      Context context, CountDownLatch latch, Logger logger, ExecutorService executor) {
+      Context context,
+      CountDownLatch latch,
+      Logger logger,
+      ExecutorService executor,
+      boolean collectDeviceId) {
     // This is done as an extra step so we don't run into errors like this for testing
     // http://pastebin.com/gyWJKWiu.
     if (Utils.isOnClassPath("com.google.android.gms.ads.identifier.AdvertisingIdClient")) {
       // This needs to be done each time since the settings may have been updated.
       try {
-        executor.submit(new GetAdvertisingIdWorker(this, latch, logger, context));
+        executor.submit(new GetAdvertisingIdWorker(this, latch, logger, context, collectDeviceId));
       } catch (java.util.concurrent.RejectedExecutionException e) {
         logger.debug("networkExecutor is shut down; skipping GAID fetch.");
         latch.countDown();
@@ -243,14 +247,6 @@ public class AnalyticsContext extends ValueMap {
     device.put(Device.DEVICE_MODEL_KEY, Build.MODEL);
     device.put(Device.DEVICE_NAME_KEY, Build.DEVICE);
     device.put(Device.DEVICE_TYPE_KEY, "android");
-    // android_id is captured for use as fallback when GAID is unavailable. It is gated on
-    // collectDeviceID to honour the hardware-identifier opt-out; placeholder values are
-    // filtered inside putAndroidId(). AttributionMiddleware forwards it only when GAID is absent.
-    if (collectDeviceID) {
-      String rawAndroidId =
-          Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
-      device.putAndroidId(rawAndroidId);
-    }
     put(DEVICE_KEY, device);
   }
 
@@ -476,10 +472,9 @@ public class AnalyticsContext extends ValueMap {
      * <p>Placeholder detection delegates to {@link Utils#isPlaceholderAndroidId(String)} — the
      * single source of truth shared with {@link Utils#getDeviceId(Context)}.
      *
-     * <p>Not synchronized: {@code android_id} is written exactly once at SDK init (inside {@link
-     * AnalyticsContext#putDevice}), before any executor task or middleware invocation. If the
-     * capture path ever becomes async, synchronization will be required here — see {@link
-     * #putAdvertisingInfo} for the pattern.
+     * <p>Called from {@link GetAdvertisingIdWorker#run()} as the GAID fallback when ad tracking is
+     * allowed but no GAID is available. Visibility to subsequent middleware reads is guaranteed by
+     * the happens-before edge of {@link java.util.concurrent.CountDownLatch#countDown()}.
      */
     void putAndroidId(String androidId) {
       if (!Utils.isPlaceholderAndroidId(androidId)) {
