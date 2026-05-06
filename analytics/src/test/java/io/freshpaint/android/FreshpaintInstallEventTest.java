@@ -51,9 +51,9 @@ import org.junit.Test;
  * Unit tests for the {@code Application Installed} first-open event fired from {@link
  * Freshpaint#trackApplicationLifecycleEvents()}.
  *
- * <p>These tests use pure JVM + Mockito (no Robolectric) following the pattern established in
- * A capture {@link Middleware} intercepts payloads synchronously before they reach the
- * Android Handler, allowing direct assertions on dispatched events.
+ * <p>These tests use pure JVM + Mockito (no Robolectric) following the pattern established in A
+ * capture {@link Middleware} intercepts payloads synchronously before they reach the Android
+ * Handler, allowing direct assertions on dispatched events.
  */
 public class FreshpaintInstallEventTest {
 

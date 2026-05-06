@@ -38,7 +38,6 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
-import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -484,8 +483,8 @@ public class AnalyticsContext extends ValueMap {
      * <p>Placeholder detection delegates to {@link Utils#isPlaceholderAndroidId(String)} — the
      * single source of truth shared with {@link Utils#getDeviceId(Context)}.
      *
-     * <p>Synchronized to match {@link #putAdvertisingInfo} — both methods share the device
-     * monitor so callers and {@link AttributionMiddleware} see a consistent device state.
+     * <p>Synchronized to match {@link #putAdvertisingInfo} — both methods share the device monitor
+     * so callers and {@link AttributionMiddleware} see a consistent device state.
      */
     synchronized void putAndroidId(String androidId) {
       if (!Utils.isPlaceholderAndroidId(androidId)) {

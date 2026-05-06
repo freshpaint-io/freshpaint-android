@@ -207,8 +207,8 @@ public class MmpIntegrationTest {
   /**
    * When GAID is resolved and Install Referrer data is pre-populated (as {@code
    * trackAttributionInformation()} would do on a real device), the {@code Application Installed}
-   * event contains all attribution fields: {@code advertisingId}, {@code limit_ad_tracking},
-   * {@code install_referrer}, parsed UTM params, and click IDs.
+   * event contains all attribution fields: {@code advertisingId}, {@code limit_ad_tracking}, {@code
+   * install_referrer}, parsed UTM params, and click IDs.
    */
   @Test
   public void it1_fullFirstOpen_withGaidAndInstallReferrer() {
@@ -289,8 +289,8 @@ public class MmpIntegrationTest {
   // -------------------------------------------------------------------------
 
   /**
-   * A clean organic install with no Install Referrer and no deep link. {@code Application Installed}
-   * fires with exactly the required fields and no attribution fields.
+   * A clean organic install with no Install Referrer and no deep link. {@code Application
+   * Installed} fires with exactly the required fields and no attribution fields.
    */
   @Test
   public void it3_organicInstall_noReferrerNoDeepLink() {
@@ -549,7 +549,8 @@ public class MmpIntegrationTest {
     assertThat(tracks).hasSize(1);
     assertThat(tracks.get(0).event()).isEqualTo("Application Updated");
 
-    boolean appInstallFired = tracks.stream().anyMatch(p -> "Application Installed".equals(p.event()));
+    boolean appInstallFired =
+        tracks.stream().anyMatch(p -> "Application Installed".equals(p.event()));
     assertThat(appInstallFired).isFalse();
   }
 
@@ -616,9 +617,8 @@ public class MmpIntegrationTest {
 
   /**
    * When {@code first_open_tracked=true} ({@code Application Installed} already fired on a previous
-   * launch) and a
-   * deep link is opened, {@code Deep Link Opened} must carry stored attribution ($gclid, UTM, url)
-   * in {@code context} only — proving that {@link
+   * launch) and a deep link is opened, {@code Deep Link Opened} must carry stored attribution
+   * ($gclid, UTM, url) in {@code context} only — proving that {@link
    * AnalyticsActivityLifecycleCallbacks#trackDeepLink} enriches via {@link
    * Freshpaint#getDeepLinkAttributionProperties} and {@link Options#putContext}.
    *

@@ -55,7 +55,10 @@ public class GetAdvertisingIdWorkerTest {
 
     GetAdvertisingIdWorker worker =
         new GetAdvertisingIdWorker(
-            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context,
+            analyticsContext,
+            latch,
+            Logger.with(Freshpaint.LogLevel.VERBOSE),
+            context,
             /* collectDeviceId= */ true);
     worker.run();
     latch.await();
@@ -79,7 +82,10 @@ public class GetAdvertisingIdWorkerTest {
 
     GetAdvertisingIdWorker worker =
         new GetAdvertisingIdWorker(
-            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context,
+            analyticsContext,
+            latch,
+            Logger.with(Freshpaint.LogLevel.VERBOSE),
+            context,
             /* collectDeviceId= */ true);
     worker.run();
     latch.await();
@@ -102,7 +108,10 @@ public class GetAdvertisingIdWorkerTest {
 
     GetAdvertisingIdWorker worker =
         new GetAdvertisingIdWorker(
-            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context,
+            analyticsContext,
+            latch,
+            Logger.with(Freshpaint.LogLevel.VERBOSE),
+            context,
             /* collectDeviceId= */ true);
     worker.run();
 
@@ -130,7 +139,10 @@ public class GetAdvertisingIdWorkerTest {
 
     GetAdvertisingIdWorker worker =
         new GetAdvertisingIdWorker(
-            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context,
+            analyticsContext,
+            latch,
+            Logger.with(Freshpaint.LogLevel.VERBOSE),
+            context,
             /* collectDeviceId= */ true);
     worker.run();
     latch.await();
@@ -155,7 +167,10 @@ public class GetAdvertisingIdWorkerTest {
 
     GetAdvertisingIdWorker worker =
         new GetAdvertisingIdWorker(
-            analyticsContext, latch, Logger.with(Freshpaint.LogLevel.VERBOSE), context,
+            analyticsContext,
+            latch,
+            Logger.with(Freshpaint.LogLevel.VERBOSE),
+            context,
             /* collectDeviceId= */ false);
     worker.run();
     latch.await();

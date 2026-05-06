@@ -455,7 +455,8 @@ public class Freshpaint {
     editor.putInt(BUILD_KEY, currentBuild);
     // Written on every path (fresh install, upgrade, subsequent launch) so that upgrade-path
     // users who skip previousBuild==-1 are also guarded against future re-fires. This key means
-    // "Application Installed will not fire again", not "Application Installed was fired on this device".
+    // "Application Installed will not fire again", not "Application Installed was fired on this
+    // device".
     editor.putBoolean(FIRST_OPEN_TRACKED_KEY, true);
     // apply() updates the in-memory SharedPreferences cache synchronously before returning, so
     // isFirstOpenTracked() reads the new value immediately on the same thread. The async disk
@@ -956,8 +957,10 @@ public class Freshpaint {
   public void reset() {
     SharedPreferences sharedPreferences = Utils.getFreshpaintSharedPreferences(application, tag);
     // LIB-1578: only remove traits, preserve BUILD, VERSION, and FIRST_OPEN_TRACKED keys in order
-    // to fix over-sending of 'Application Installed' events and under-sending of 'Application Updated'
-    // events. FIRST_OPEN_TRACKED_KEY is intentionally preserved so that Application Installed is not
+    // to fix over-sending of 'Application Installed' events and under-sending of 'Application
+    // Updated'
+    // events. FIRST_OPEN_TRACKED_KEY is intentionally preserved so that Application Installed is
+    // not
     // re-fired after a user reset (matching the original Segment SDK behavior).
     SharedPreferences.Editor editor = sharedPreferences.edit();
     editor.remove(TRAITS_KEY + "-" + tag);
@@ -1346,8 +1349,8 @@ public class Freshpaint {
     }
 
     /**
-     * Automatically track application lifecycle events, including "Application Installed" (first-open),
-     * "Application Updated" and "Application Opened".
+     * Automatically track application lifecycle events, including "Application Installed"
+     * (first-open), "Application Updated" and "Application Opened".
      */
     public Builder trackApplicationLifecycleEvents() {
       this.trackApplicationLifecycleEvents = true;

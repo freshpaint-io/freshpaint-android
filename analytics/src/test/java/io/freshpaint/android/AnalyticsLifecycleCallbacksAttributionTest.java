@@ -40,15 +40,15 @@ import org.mockito.InOrder;
  * Pure-JVM tests for the combined executor task in {@link
  * AnalyticsActivityLifecycleCallbacks#onCreate}. No Robolectric required.
  *
- * <p>{@code trackAttributionInformation()} runs before {@code
- * trackApplicationLifecycleEvents()} when attribution is enabled.
+ * <p>{@code trackAttributionInformation()} runs before {@code trackApplicationLifecycleEvents()}
+ * when attribution is enabled.
  *
  * <p>{@code trackApplicationLifecycleEvents()} fires directly (not via executor) and {@code
  * trackAttributionInformation()} is never called when attribution is disabled.
  *
- * <p>when {@code trackAttributionInformation()} throws, {@code
- * trackApplicationLifecycleEvents()} still fires and the exception is logged.
- */ 
+ * <p>when {@code trackAttributionInformation()} throws, {@code trackApplicationLifecycleEvents()}
+ * still fires and the exception is logged.
+ */
 public class AnalyticsLifecycleCallbacksAttributionTest {
 
   private AnalyticsActivityLifecycleCallbacks buildCallbacks(

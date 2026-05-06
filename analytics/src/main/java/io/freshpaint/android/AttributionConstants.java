@@ -26,9 +26,8 @@ package io.freshpaint.android;
 import androidx.annotation.Nullable;
 
 /**
- * Shared attribution constants used by Install Referrer and deep-link attribution
- * Centralising the click-id list here ensures both sources use the same set and prevents
- * divergence.
+ * Shared attribution constants used by Install Referrer and deep-link attribution Centralising the
+ * click-id list here ensures both sources use the same set and prevents divergence.
  */
 final class AttributionConstants {
 

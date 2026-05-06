@@ -83,8 +83,8 @@ public class AttributionMiddlewareTest {
   // ---------------------------------------------------------------------------
 
   /**
-   * source device has gaid + limit_ad_tracking=false + context id → payload device must
-   * receive all three values, including {@code "id"}.
+   * source device has gaid + limit_ad_tracking=false + context id → payload device must receive all
+   * three values, including {@code "id"}.
    */
   @Test
   public void enrichesPayloadDeviceWithGaidAndLimitAdTracking() {
@@ -152,9 +152,10 @@ public class AttributionMiddlewareTest {
   }
 
   /**
-   * When a track event carries {@code limit_ad_tracking} in properties (as {@code Application Installed}
-   * does) but the live device map has since been updated (e.g. GAID finished), properties must
-   * match {@code context.device.limit_ad_tracking} so the payload is self-consistent.
+   * When a track event carries {@code limit_ad_tracking} in properties (as {@code Application
+   * Installed} does) but the live device map has since been updated (e.g. GAID finished),
+   * properties must match {@code context.device.limit_ad_tracking} so the payload is
+   * self-consistent.
    */
   @Test
   public void syncsLimitAdTrackingInTrackPropertiesWhenKeyPresent() {
@@ -226,10 +227,10 @@ public class AttributionMiddlewareTest {
   }
 
   /**
-   * Race-condition scenario: the install-event snapshot ran before the GAID worker completed, so
-   * it captured {@code android_id} as fallback. By dispatch time the worker has resolved GAID.
-   * The reconciliation path must add {@code advertisingId} AND remove the stale {@code android_id}
-   * so both identifiers never appear together in {@code properties}.
+   * Race-condition scenario: the install-event snapshot ran before the GAID worker completed, so it
+   * captured {@code android_id} as fallback. By dispatch time the worker has resolved GAID. The
+   * reconciliation path must add {@code advertisingId} AND remove the stale {@code android_id} so
+   * both identifiers never appear together in {@code properties}.
    */
   @Test
   public void reconciliationRemovesAndroidIdWhenGaidResolvesAfterSnapshot() {
@@ -406,10 +407,7 @@ public class AttributionMiddlewareTest {
   public void androidIdAbsentFromPayloadWhenGaidPresent() {
     AnalyticsContext sourceContext =
         buildSourceContext(
-            "dev-id",
-            "gaid-1234",
-            /* adTrackingEnabled= */ true,
-            /* androidId= */ null);
+            "dev-id", "gaid-1234", /* adTrackingEnabled= */ true, /* androidId= */ null);
 
     AnalyticsContext payloadContext = buildPayloadContext("dev-id");
 
