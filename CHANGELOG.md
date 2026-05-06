@@ -1,13 +1,21 @@
 Changelog
 =========
 
-Version 3.0.0 - (15 Apr, 2026)
+Version 2.1.0 - (6 May, 2026)
 
 ### Added
-- Added comprehensive Android MMP attribution support, including install and campaign attribution context for downstream analysis.
+- MMP attribution support: stable device ID (Keystore-backed UUID), GAID collection via `ExecutorService`, Google Play Install Referrer integration, and deep link attribution for 24 ad platforms and UTM params.
+- `AttributionMiddleware`: enriches every event with device identifiers and attribution context.
+- Enhanced `Application Installed` lifecycle event with full MMP attribution payload (`install_timestamp`, `device_id`, `gaid`, `android_id`, `limit_ad_tracking`, `os_version`, `app_version`, and referrer/click ID fields).
+- `android_id` surfaced in device context as fallback identifier when GAID is unavailable.
+- Click IDs and UTM params moved into `context` in the event JSON.
+- Event payload flattened to match React Native SDK structure.
+- `userAgent` added to analytics context payload.
 
-### Breaking Changes
-- Renamed the first-install lifecycle event from `Application Installed` to `app_install`.
+### Changed
+- GAID identifier logic updated for Google policy compliance: only GAID is collected when available; `android_id` is used as a fallback when GAID is unavailable; no identifier is collected or sent when the user has opted out of ad tracking (`limit_ad_tracking = true`).
+- `Device.putAndroidId()` write made atomic to prevent race conditions.
+- `trackAttributionInformation` wrapped in try-catch to prevent attribution failures from suppressing lifecycle events.
 
 Version 2.0.0 - (10 Jul, 2025)
 
