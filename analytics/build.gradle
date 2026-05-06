@@ -54,9 +54,6 @@ dependencies {
 
   testImplementation 'org.assertj:assertj-core:3.26.3'
 
-  // Keystore-backed EncryptedSharedPreferences for stable device ID
-  implementation 'androidx.security:security-crypto:1.0.0'
-
   // Google Play Install Referrer API — bundled so host apps get UTM/campaign support without an
   // extra Gradle line. Host apps may exclude this artifact if they truly do not need it.
   implementation 'com.android.installreferrer:installreferrer:2.2'

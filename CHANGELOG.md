@@ -4,7 +4,7 @@ Changelog
 Version 2.1.0 - (6 May, 2026)
 
 ### Added
-- MMP attribution support: stable device ID (Keystore-backed UUID), GAID collection via `ExecutorService`, Google Play Install Referrer integration, and deep link attribution for 24 ad platforms and UTM params.
+- MMP attribution support: GAID collection via `ExecutorService`, Google Play Install Referrer integration, and deep link attribution for 24 ad platforms and UTM params.
 - `AttributionMiddleware`: enriches every event with device identifiers and attribution context.
 - Enhanced `Application Installed` lifecycle event with full MMP attribution payload (`install_timestamp`, `device_id`, `gaid`, `android_id`, `limit_ad_tracking`, `os_version`, `app_version`, and referrer/click ID fields).
 - `android_id` surfaced in device context as fallback identifier when GAID is unavailable.
