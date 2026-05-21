@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 2.1.0 - (6 May, 2026)
+Version 2.1.0 - (20 May, 2026)
 
 ### Added
 - MMP attribution support: GAID collection via `ExecutorService`, Google Play Install Referrer integration, and deep link attribution for 24 ad platforms and UTM params.
@@ -11,11 +11,32 @@ Version 2.1.0 - (6 May, 2026)
 - Click IDs and UTM params moved into `context` in the event JSON.
 - Event payload flattened to match React Native SDK structure.
 - `userAgent` added to analytics context payload.
+- New Builder option `trackFirstOpen(boolean)` (default `true`) to gate the first-open install event.
 
 ### Changed
 - GAID identifier logic updated for Google policy compliance: only GAID is collected when available; `android_id` is used as a fallback when GAID is unavailable; no identifier is collected or sent when the user has opted out of ad tracking (`limit_ad_tracking = true`).
 - `Device.putAndroidId()` write made atomic to prevent race conditions.
 - `trackAttributionInformation` wrapped in try-catch to prevent attribution failures from suppressing lifecycle events.
+
+### Upgrade notes
+
+These are consumer-visible changes from 2.0.x. Existing installs are not affected by the install-event flow (the first-open path is guarded by `previousBuild == -1`).
+
+- **`AD_ID` permission is now declared in the SDK manifest.** Android's manifest merger adds `<uses-permission android:name="com.google.android.gms.permission.AD_ID"/>` to every host app that depends on the SDK. Apps targeting API 33+ must declare ad/analytics use in the Play Console Data Safety form. Apps in "Designed for Families" (or any app that must comply with COPPA / not collect GAID) must opt out by adding to their own manifest:
+  ```xml
+  <uses-permission
+      android:name="com.google.android.gms.permission.AD_ID"
+      tools:node="remove"/>
+  ```
+- **`com.android.installreferrer:installreferrer:2.2` is now bundled** as a transitive `implementation` dependency so UTM/campaign attribution works out of the box. Apps without Google Play Services should exclude it:
+  ```groovy
+  implementation('io.freshpaint.android:analytics:2.1.0') {
+    exclude group: 'com.android.installreferrer'
+  }
+  ```
+- **`Builder.trackAttributionInformation()` is no longer a no-op.** In 2.0.x this flag did nothing. In 2.1.0 it performs a Google Play Install Referrer fetch (≤5 s, on a background executor — never the main thread) and persists referrer fields into the `Application Installed` event `context`. If you set this flag in 2.0.x and do not want referrer collection, remove the call.
+- **Click IDs and UTM params now live in event `context`, not `properties`.** Any downstream consumer (dashboards, warehousing, alerting) that read `properties.utm_*` / `properties.$gclid` must move to `context.utm_*` / `context.$gclid`. The Freshpaint backend has been updated for this.
+- **`reset()` preserves the first-open guard.** Calling `Freshpaint.reset()` will not cause `Application Installed` to fire again on the next launch (matches the original Segment SDK behavior).
 
 Version 2.0.0 - (10 Jul, 2025)
 
