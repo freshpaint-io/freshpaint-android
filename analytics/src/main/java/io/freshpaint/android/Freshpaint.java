@@ -33,11 +33,13 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import io.freshpaint.android.integrations.AliasPayload;
@@ -52,6 +54,7 @@ import io.freshpaint.android.internal.Private;
 import io.freshpaint.android.internal.Utils;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -92,6 +95,7 @@ public class Freshpaint {
   @Private static final Properties EMPTY_PROPERTIES = new Properties();
   private static final String VERSION_KEY = "version";
   private static final String BUILD_KEY = "build";
+  private static final String FIRST_OPEN_TRACKED_KEY = "first_open_tracked";
   private static final String TRACKED_ATTRIBUTION_KEY = "tracked_attribution";
   private static final String TRAITS_KEY = "traits";
 
@@ -129,6 +133,9 @@ public class Freshpaint {
   protected final int sessionTimeoutSeconds;
 
   @Private final boolean nanosecondTimestamps;
+
+  // Whether to fire the Application Installed (first-open) event on first launch. Set by Builder.
+  @Private final boolean trackFirstOpen;
 
   /**
    * Return a reference to the global default {@link Freshpaint} instance.
@@ -213,7 +220,8 @@ public class Freshpaint {
       @NonNull Map<String, List<Middleware>> destinationMiddleware,
       @NonNull final ValueMap defaultProjectSettings,
       @NonNull Lifecycle lifecycle,
-      boolean nanosecondTimestamps) {
+      boolean nanosecondTimestamps,
+      boolean trackFirstOpen) {
     this.application = application;
     this.networkExecutor = networkExecutor;
     this.stats = stats;
@@ -238,6 +246,7 @@ public class Freshpaint {
     this.destinationMiddleware = destinationMiddleware;
     this.lifecycle = lifecycle;
     this.nanosecondTimestamps = nanosecondTimestamps;
+    this.trackFirstOpen = trackFirstOpen;
 
     namespaceSharedPreferences();
 
@@ -286,31 +295,150 @@ public class Freshpaint {
     lifecycle.addObserver(activityLifecycleCallback);
   }
 
+  // -------------------------------------------------------------------------
+  // Deep-link attribution
+  // -------------------------------------------------------------------------
+
+  /**
+   * Persists deep-link attribution data (click IDs and UTM params) extracted from the Intent URI to
+   * SharedPreferences. Called from {@link AnalyticsActivityLifecycleCallbacks#trackDeepLink} on the
+   * main thread; uses {@code commit()} so data is visible to the {@code analyticsExecutor}
+   * background thread immediately.
+   */
+  @Private
+  void storeDeepLinkAttribution(Map<String, String> queryParams, long now) {
+    SharedPreferences prefs = Utils.getFreshpaintSharedPreferences(application, tag);
+    DeepLinkAttributionManager.store(queryParams, prefs, now);
+  }
+
+  /**
+   * Returns {@code true} if the {@code Application Installed} first-open event has already been
+   * tracked (i.e. {@code FIRST_OPEN_TRACKED_KEY} is set in SharedPreferences).
+   */
+  @Private
+  boolean isFirstOpenTracked() {
+    SharedPreferences prefs = Utils.getFreshpaintSharedPreferences(application, tag);
+    return prefs.getBoolean(FIRST_OPEN_TRACKED_KEY, false);
+  }
+
+  /**
+   * Returns stored deep-link attribution properties ready to be merged into an event payload. UTM
+   * params are omitted when they have expired (older than 24 hours from {@code now}).
+   */
+  @Private
+  Map<String, Object> getDeepLinkAttributionProperties(long now) {
+    SharedPreferences prefs = Utils.getFreshpaintSharedPreferences(application, tag);
+    return DeepLinkAttributionManager.getStoredProperties(prefs, now);
+  }
+
+  private static void putAllIntoContext(Options options, Map<String, Object> values) {
+    for (Map.Entry<String, Object> entry : values.entrySet()) {
+      options.putContext(entry.getKey(), entry.getValue());
+    }
+  }
+
   @Private
   void trackAttributionInformation() {
-    // Freshpaint doesn't support tracking attirbution information.
-    return;
+    // Both this method and trackApplicationLifecycleEvents() call
+    // Utils.getFreshpaintSharedPreferences(application, tag), which resolves to
+    // context.getSharedPreferences("analytics-android-" + tag, MODE_PRIVATE). Android returns
+    // the same SharedPreferences instance for the same name+mode pair, so data written here by
+    // collectAndStore() is visible to getStoredProperties() in trackApplicationLifecycleEvents().
+    //
+    // The two idempotency guards (TRACKED_ATTRIBUTION_KEY here and KEY_IR_COLLECTED inside
+    // collectAndStore) are complementary, not redundant: KEY_IR_COLLECTED prevents a redundant
+    // Play Store call if the process is killed between collectAndStore() completing and
+    // TRACKED_ATTRIBUTION_KEY being written. Both guards use the same SharedPreferences file.
+    SharedPreferences prefs = Utils.getFreshpaintSharedPreferences(application, tag);
+    if (prefs.getBoolean(TRACKED_ATTRIBUTION_KEY, false)) {
+      return;
+    }
+    // Blocks the calling thread up to 5 seconds waiting for the Play Store service.
+    // Must only be called from a background thread (analyticsExecutor).
+    InstallReferrerManager.collectAndStore(application, prefs, 5_000L, logger);
+    prefs.edit().putBoolean(TRACKED_ATTRIBUTION_KEY, true).apply();
   }
 
   @Private
   void trackApplicationLifecycleEvents() {
+    trackApplicationLifecycleEvents(System.currentTimeMillis());
+  }
+
+  /**
+   * Package-private overload that accepts a caller-supplied {@code nowMillis} timestamp. The no-arg
+   * public method delegates here with {@link System#currentTimeMillis()}. Exposed for tests that
+   * need to control the clock (e.g. to assert UTM expiry in the {@code Application Installed}
+   * payload without depending on wall-clock time).
+   */
+  @VisibleForTesting
+  void trackApplicationLifecycleEvents(long nowMillis) {
     // Get the current version.
     PackageInfo packageInfo = getPackageInfo(application);
     String currentVersion = packageInfo.versionName;
     int currentBuild = packageInfo.versionCode;
 
-    // Get the previous recorded version.
+    // Get the previous recorded version and first-open flag.
     SharedPreferences sharedPreferences = Utils.getFreshpaintSharedPreferences(application, tag);
     String previousVersion = sharedPreferences.getString(VERSION_KEY, null);
     int previousBuild = sharedPreferences.getInt(BUILD_KEY, -1);
+    boolean firstOpenTracked = sharedPreferences.getBoolean(FIRST_OPEN_TRACKED_KEY, false);
 
-    // Check and track Application Installed or Application Updated.
+    // Check and track Application Installed (first install) or Application Updated.
     if (previousBuild == -1) {
-      track(
-          "Application Installed",
-          new Properties() //
-              .putValue(VERSION_KEY, currentVersion)
-              .putValue(BUILD_KEY, String.valueOf(currentBuild)));
+      if (trackFirstOpen && !firstOpenTracked) {
+        AnalyticsContext.Device device = analyticsContext.device();
+        // Advertising ID is snapshotted here, before track() submits to analyticsExecutor and
+        // before waitForAdvertisingId() runs. properties.advertisingId may be absent on first
+        // launch if the GAID worker hasn't completed yet. This is intentional:
+        // context.device.advertisingId
+        // (attached to all payloads by AttributionMiddleware after the latch) will carry the
+        // resolved value. Do not add a latch wait here — it would deadlock the calling thread.
+        String gaid =
+            device != null
+                ? device.getString(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY)
+                : null;
+        String androidId =
+            device != null ? device.getString(AnalyticsContext.Device.DEVICE_ANDROID_ID_KEY) : null;
+        boolean limitAdTracking =
+            device == null
+                || device.getBoolean(AnalyticsContext.Device.DEVICE_LIMIT_AD_TRACKING_KEY, true);
+        Properties installProps =
+            new Properties()
+                .putValue("install_timestamp", Utils.toISO8601String(new Date()))
+                // May be stale vs. context.device until GAID resolves; AttributionMiddleware aligns
+                // properties.limit_ad_tracking with context.device on dispatch.
+                .putValue("limit_ad_tracking", limitAdTracking)
+                .putValue("os_version", Build.VERSION.RELEASE)
+                .putValue("version", currentVersion)
+                .putValue("build", String.valueOf(currentBuild));
+        // Omit advertisingId when not yet resolved: explicit null vs. absent key are handled
+        // differently by some MMP backends. AttributionMiddleware reconciles
+        // properties.advertisingId with context.device at dispatch when the GAID worker completes.
+        if (gaid != null) {
+          installProps.putValue(AnalyticsContext.Device.DEVICE_ADVERTISING_ID_KEY, gaid);
+        } else if (androidId != null) {
+          installProps.putValue("android_id", androidId);
+        }
+        // Merge Install Referrer data collected by trackAttributionInformation(). On first
+        // launch when trackAttributionInformation == true, this data is available because the
+        // combined executor task runs trackAttributionInformation() before
+        // trackApplicationLifecycleEvents(). When trackAttributionInformation == false, the
+        // map is empty and no fields are added.
+        Map<String, Object> irData = InstallReferrerManager.getStoredProperties(sharedPreferences);
+
+        Options installOpts = getDefaultOptions();
+
+        putAllIntoContext(installOpts, irData);
+        // Merge deep-link attribution data. If a deep link fired before Application
+        // Installed, trackDeepLink() will have persisted click IDs and UTM params via commit() on
+        // the main thread before this executor task runs. Deep-link values overwrite IR values for
+        // overlapping keys (e.g. $gclid) since the deep link represents a more direct signal.
+        // nowMillis is caller-supplied so tests can control the UTM expiry window.
+        Map<String, Object> dlData =
+            DeepLinkAttributionManager.getStoredProperties(sharedPreferences, nowMillis);
+        putAllIntoContext(installOpts, dlData);
+        track("Application Installed", installProps, installOpts);
+      }
     } else if (currentBuild != previousBuild) {
       track(
           "Application Updated",
@@ -321,10 +449,19 @@ public class Freshpaint {
               .putValue("previous_" + BUILD_KEY, String.valueOf(previousBuild)));
     }
 
-    // Update the recorded version.
+    // Update the recorded version and first-open flag atomically.
     SharedPreferences.Editor editor = sharedPreferences.edit();
     editor.putString(VERSION_KEY, currentVersion);
     editor.putInt(BUILD_KEY, currentBuild);
+    // Written on every path (fresh install, upgrade, subsequent launch) so that upgrade-path
+    // users who skip previousBuild==-1 are also guarded against future re-fires. This key means
+    // "Application Installed will not fire again", not "Application Installed was fired on this
+    // device".
+    editor.putBoolean(FIRST_OPEN_TRACKED_KEY, true);
+    // apply() updates the in-memory SharedPreferences cache synchronously before returning, so
+    // isFirstOpenTracked() reads the new value immediately on the same thread. The async disk
+    // write is sufficient here — unlike store() in DeepLinkAttributionManager, this write does
+    // not need to be visible to a background thread before the next line.
     editor.apply();
   }
 
@@ -819,8 +956,12 @@ public class Freshpaint {
    */
   public void reset() {
     SharedPreferences sharedPreferences = Utils.getFreshpaintSharedPreferences(application, tag);
-    // LIB-1578: only remove traits, preserve BUILD and VERSION keys in order to to fix over-sending
-    // of 'Application Installed' events and under-sending of 'Application Updated' events
+    // LIB-1578: only remove traits, preserve BUILD, VERSION, and FIRST_OPEN_TRACKED keys in order
+    // to fix over-sending of 'Application Installed' events and under-sending of 'Application
+    // Updated'
+    // events. FIRST_OPEN_TRACKED_KEY is intentionally preserved so that Application Installed is
+    // not
+    // re-fired after a user reset (matching the original Segment SDK behavior).
     SharedPreferences.Editor editor = sharedPreferences.edit();
     editor.remove(TRAITS_KEY + "-" + tag);
     editor.apply();
@@ -1014,12 +1155,16 @@ public class Freshpaint {
     private ExecutorService executor;
     private ConnectionFactory connectionFactory;
     private final List<Integration.Factory> factories = new ArrayList<>();
-    private List<Middleware> sourceMiddleware;
+
+    /** Always non-null; {@link #useSourceMiddleware(Middleware)} rejects null entries. */
+    private List<Middleware> sourceMiddleware = new ArrayList<>();
+
     private Map<String, List<Middleware>> destinationMiddleware;
     private boolean trackApplicationLifecycleEvents = false;
     private boolean recordScreenViews = false;
     private boolean trackAttributionInformation = false;
     private boolean trackDeepLinks = false;
+    private boolean trackFirstOpen = true;
     private boolean nanosecondTimestamps = false;
     private Crypto crypto;
     private ValueMap defaultProjectSettings = new ValueMap();
@@ -1204,8 +1349,8 @@ public class Freshpaint {
     }
 
     /**
-     * Automatically track application lifecycle events, including "Application Installed",
-     * "Application Updated" and "Application Opened".
+     * Automatically track application lifecycle events, including "Application Installed"
+     * (first-open), "Application Updated" and "Application Opened".
      */
     public Builder trackApplicationLifecycleEvents() {
       this.trackApplicationLifecycleEvents = true;
@@ -1231,6 +1376,15 @@ public class Freshpaint {
     }
 
     /**
+     * Enable or disable firing the first-open install event ({@code Application Installed}) on the
+     * initial launch. Enabled by default.
+     */
+    public Builder trackFirstOpen(boolean trackFirstOpen) {
+      this.trackFirstOpen = trackFirstOpen;
+      return this;
+    }
+
+    /**
      * @see #useSourceMiddleware(Middleware)
      * @deprecated Use {@link #useSourceMiddleware(Middleware)} instead.
      */
@@ -1245,9 +1399,6 @@ public class Freshpaint {
      */
     public Builder useSourceMiddleware(Middleware middleware) {
       Utils.assertNotNull(middleware, "middleware");
-      if (sourceMiddleware == null) {
-        sourceMiddleware = new ArrayList<>();
-      }
       if (sourceMiddleware.contains(middleware)) {
         throw new IllegalStateException("Source Middleware is already registered.");
       }
@@ -1358,13 +1509,17 @@ public class Freshpaint {
       AnalyticsContext analyticsContext =
           AnalyticsContext.create(application, traitsCache.get(), collectDeviceID);
       CountDownLatch advertisingIdLatch = new CountDownLatch(1);
-      analyticsContext.attachAdvertisingId(application, advertisingIdLatch, logger);
+      analyticsContext.attachAdvertisingId(
+          application, advertisingIdLatch, logger, networkExecutor, collectDeviceID);
 
       List<Integration.Factory> factories = new ArrayList<>(1 + this.factories.size());
       factories.add(FreshpaintIntegration.FACTORY);
       factories.addAll(this.factories);
 
-      List<Middleware> srcMiddleware = Utils.immutableCopyOf(this.sourceMiddleware);
+      List<Middleware> srcMiddlewareList = new ArrayList<>();
+      srcMiddlewareList.add(new AttributionMiddleware(analyticsContext));
+      srcMiddlewareList.addAll(this.sourceMiddleware);
+      List<Middleware> srcMiddleware = Utils.immutableCopyOf(srcMiddlewareList);
       Map<String, List<Middleware>> destMiddleware =
           Utils.isNullOrEmpty(this.destinationMiddleware)
               ? Collections.<String, List<Middleware>>emptyMap()
@@ -1404,7 +1559,8 @@ public class Freshpaint {
           destMiddleware,
           defaultProjectSettings,
           lifecycle,
-          nanosecondTimestamps);
+          nanosecondTimestamps,
+          trackFirstOpen);
     }
   }
 

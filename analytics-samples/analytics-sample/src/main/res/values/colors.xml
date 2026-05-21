@@ -1,7 +1,7 @@
 <!--
   ~ The MIT License (MIT)
   ~
-  ~ Copyright (c) 2014 Segment, Inc.
+  ~ Copyright (c) 2026 Freshpaint, Inc.
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -22,21 +22,22 @@
   ~ SOFTWARE.
   -->
 
-<menu
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:context="io.freshpaint.android.sample.io.freshpaint.android.sample.MainActivity">
-
-  <item android:id="@+id/action_view_docs"
-      android:title="@string/action_view_docs"
-      android:orderInCategory="100"
-      app:showAsAction="never"/>
-
-  <item
-      android:id="@+id/action_flush_toolbar"
-      android:title="@string/flush"
-      android:orderInCategory="10"
-      app:showAsAction="ifRoom|withText"/>
-
-</menu>
+<resources>
+  <color name="sample_primary">#0F4C81</color>
+  <color name="sample_primary_dark">#083154</color>
+  <color name="sample_accent">#28C2A0</color>
+  <color name="sample_background">#F3F7FB</color>
+  <color name="sample_surface">#FFFFFFFF</color>
+  <color name="sample_outline">#D7E2F0</color>
+  <color name="sample_outline_strong">#9FB7D4</color>
+  <color name="sample_text_primary">#162334</color>
+  <color name="sample_text_secondary">#526173</color>
+  <color name="sample_hero_top">#0F4C81</color>
+  <color name="sample_hero_bottom">#1A6AAF</color>
+  <color name="sample_success">#178A55</color>
+  <color name="sample_success_bg">#E8F7EF</color>
+  <color name="sample_warning">#B54708</color>
+  <color name="sample_warning_bg">#FFF2E0</color>
+  <color name="sample_info_bg">#EAF2FB</color>
+  <color name="sample_toolbar_subtitle">#D5E6F8</color>
+</resources>

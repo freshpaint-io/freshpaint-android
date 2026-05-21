@@ -32,12 +32,21 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class AnalyticsActivityLifecycleCallbacks
     implements Application.ActivityLifecycleCallbacks, DefaultLifecycleObserver {
+  /**
+   * Context key for the full deep-link URL in {@link #trackDeepLink}. Unlike attribution keys from
+   * {@link DeepLinkAttributionManager}, this is intentionally not {@code $}-prefixed (Segment-style
+   * reserved field for the link itself).
+   */
+  static final String DEEP_LINK_URL_CONTEXT_KEY = "url";
+
   private Freshpaint freshpaint;
   private ExecutorService analyticsExecutor;
   private Boolean shouldTrackApplicationLifecycleEvents;
@@ -97,16 +106,33 @@ class AnalyticsActivityLifecycleCallbacks
         && shouldTrackApplicationLifecycleEvents) {
       numberOfActivities.set(0);
       firstLaunch.set(true);
-      freshpaint.trackApplicationLifecycleEvents();
 
       if (trackAttributionInformation) {
+        // When attribution tracking is enabled, collect Install Referrer data first (blocks up
+        // to 5 s on a background thread), then fire trackApplicationLifecycleEvents() so that
+        // the app_install payload includes the referrer fields.
+        //
+        // Accepted tradeoff: Application Updated also fires on the executor thread and may be
+        // delayed up to 5 s when an upgrade coincides with attribution tracking being enabled.
+        // This delay is acceptable for the attribution use case.
         analyticsExecutor.submit(
             new Runnable() {
               @Override
               public void run() {
-                freshpaint.trackAttributionInformation();
+                try {
+                  freshpaint.trackAttributionInformation();
+                } catch (Exception e) {
+                  freshpaint
+                      .getLogger()
+                      .error(
+                          e,
+                          "trackAttributionInformation failed; lifecycle events will still fire.");
+                }
+                freshpaint.trackApplicationLifecycleEvents();
               }
             });
+      } else {
+        freshpaint.trackApplicationLifecycleEvents();
       }
     }
   }
@@ -128,15 +154,32 @@ class AnalyticsActivityLifecycleCallbacks
 
     Properties properties = new Properties();
     Uri uri = intent.getData();
+    Map<String, String> queryParams = new LinkedHashMap<>();
     for (String parameter : uri.getQueryParameterNames()) {
       String value = uri.getQueryParameter(parameter);
       if (value != null && !value.trim().isEmpty()) {
-        properties.put(parameter, value);
+        queryParams.put(parameter, value);
       }
     }
 
-    properties.put("url", uri.toString());
-    freshpaint.track("Deep Link Opened", properties);
+    // Store deep-link attribution data. commit() runs synchronously on the main thread;
+    // the trade-off is a small disk-write latency here in exchange for a guaranteed-visible read
+    // on the analyticsExecutor thread. apply() cannot substitute: the executor may be scheduled
+    // before apply()'s async flush completes, leaving getStoredProperties() reading stale data.
+    long now = System.currentTimeMillis();
+    freshpaint.storeDeepLinkAttribution(queryParams, now);
+
+    // Attribution (UTM, click IDs, Facebook campaign fields, etc.) and the deep-link URL live only
+    // in context — not duplicated in properties. Storage was updated above; read back the same
+    // snapshot the integrations consume.
+    Options dlOpts = freshpaint.getDefaultOptions();
+    dlOpts.putContext(DEEP_LINK_URL_CONTEXT_KEY, uri.toString());
+    for (Map.Entry<String, Object> entry :
+        freshpaint.getDeepLinkAttributionProperties(now).entrySet()) {
+      dlOpts.putContext(entry.getKey(), entry.getValue());
+    }
+
+    freshpaint.track("Deep Link Opened", properties, dlOpts);
   }
 
   @Override

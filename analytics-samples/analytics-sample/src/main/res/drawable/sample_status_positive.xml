@@ -1,7 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ The MIT License (MIT)
   ~
-  ~ Copyright (c) 2014 Segment, Inc.
+  ~ Copyright (c) 2026 Freshpaint, Inc.
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -21,22 +22,7 @@
   ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   ~ SOFTWARE.
   -->
-
-<menu
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:context="io.freshpaint.android.sample.io.freshpaint.android.sample.MainActivity">
-
-  <item android:id="@+id/action_view_docs"
-      android:title="@string/action_view_docs"
-      android:orderInCategory="100"
-      app:showAsAction="never"/>
-
-  <item
-      android:id="@+id/action_flush_toolbar"
-      android:title="@string/flush"
-      android:orderInCategory="10"
-      app:showAsAction="ifRoom|withText"/>
-
-</menu>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+  <corners android:radius="12dp"/>
+  <solid android:color="@color/sample_success_bg"/>
+</shape>

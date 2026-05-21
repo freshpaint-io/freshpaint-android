@@ -27,7 +27,6 @@ import static android.Manifest.permission.INTERNET;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,6 +35,7 @@ import android.app.Application;
 import io.freshpaint.android.integrations.TrackPayload;
 import io.freshpaint.android.internal.Utils;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.Collections;
 import java.util.List;
@@ -45,8 +45,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
-import org.mockito.ArgumentMatcher;
 import org.json.JSONObject;
+import org.mockito.ArgumentMatcher;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.RuntimeEnvironment;
@@ -54,6 +54,28 @@ import org.robolectric.Shadows;
 import org.robolectric.shadows.ShadowApplication;
 
 public final class TestUtils {
+
+  private static final String DEFAULT_PROJECT_SETTINGS_JSON =
+      "{\n"
+          + "  \"integrations\": {\n"
+          + "    \"test\": {\n"
+          + "      \"foo\": \"bar\"\n"
+          + "    }\n"
+          + "  },\n"
+          + "  \"plan\": {\n"
+          + "    \n"
+          + "  }\n"
+          + "}";
+
+  public static ValueMap testProjectSettings() {
+    try {
+      ValueMap settings = new ValueMap();
+      settings.putAll(Cartographer.INSTANCE.fromJson(DEFAULT_PROJECT_SETTINGS_JSON));
+      return settings;
+    } catch (IOException e) {
+      throw new AssertionError(e);
+    }
+  }
 
   public static final String PROJECT_SETTINGS_JSON_SAMPLE =
       "{\n"
@@ -157,7 +179,6 @@ public final class TestUtils {
     throw new AssertionError("no instances");
   }
 
-
   private static class JSONObjectMatcher extends TypeSafeMatcher<JSONObject> {
 
     private final JSONObject expected;
@@ -210,6 +231,23 @@ public final class TestUtils {
     @Override
     public void execute(Runnable command) {
       command.run();
+    }
+  }
+
+  /**
+   * Extends {@link SynchronousExecutor} to drain the Robolectric main looper after each task.
+   * Required under {@code @LooperMode(PAUSED)} so that {@code HANDLER.post()} runnables execute
+   * before {@code verify()} calls in tests.
+   *
+   * <p><b>Prerequisite:</b> The test class must use {@code @LooperMode(LooperMode.Mode.PAUSED)}
+   * (the Robolectric 4.x default). Under {@code LEGACY} looper mode the shadow looper behaves
+   * differently and {@code idle()} may not drain posted tasks as expected.
+   */
+  public static class LooperDrainingExecutor extends SynchronousExecutor {
+    @Override
+    public void execute(Runnable command) {
+      super.execute(command);
+      Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
     }
   }
 

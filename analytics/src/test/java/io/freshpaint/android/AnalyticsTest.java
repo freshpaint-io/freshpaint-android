@@ -68,39 +68,27 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.data.MapEntry;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
-import org.mockito.ArgumentMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
+@LooperMode(LooperMode.Mode.PAUSED)
 public class AnalyticsTest {
-
-  private static final String SETTINGS =
-      "{\n"
-          + "  \"integrations\": {\n"
-          + "    \"test\": {\n"
-          + "      \"foo\": \"bar\"\n"
-          + "    }\n"
-          + "  },\n"
-          + "  \"plan\": {\n"
-          + "    \n"
-          + "  }\n"
-          + "}";
 
   @Mock Traits.Cache traitsCache;
   @Spy Utils.AnalyticsNetworkExecutorService networkExecutor;
-  @Spy ExecutorService analyticsExecutor = new TestUtils.SynchronousExecutor();
+  @Spy ExecutorService analyticsExecutor = new TestUtils.LooperDrainingExecutor();
   @Mock Client client;
   @Mock Stats stats;
   @Mock ProjectSettings.Cache projectSettingsCache;
@@ -147,7 +135,7 @@ public class AnalyticsTest {
           }
         };
     when(projectSettingsCache.get()) //
-        .thenReturn(ProjectSettings.create(Cartographer.INSTANCE.fromJson(SETTINGS)));
+        .thenReturn(ProjectSettings.create(TestUtils.testProjectSettings()));
 
     SharedPreferences sharedPreferences =
         RuntimeEnvironment.application.getSharedPreferences("analytics-test-qaz", MODE_PRIVATE);
@@ -181,9 +169,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     // Used by singleton tests.
     TestUtils.grantPermission(RuntimeEnvironment.application, Manifest.permission.INTERNET);
@@ -751,6 +740,14 @@ public class AnalyticsTest {
   }
 
   @Test
+  public void buildWithoutSourceMiddlewareDoesNotThrow() {
+    Freshpaint.singleton = null;
+    // Regression: build() copies source middleware via addAll; the list is always non-null
+    // (field initializer) so omitting useSourceMiddleware() must not NPE.
+    new Freshpaint.Builder(RuntimeEnvironment.application, "test-no-middleware").build().shutdown();
+  }
+
+  @Test
   public void getSnapshotInvokesStats() throws Exception {
     freshpaint.getSnapshot();
     verify(stats).createSnapshot();
@@ -815,9 +812,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     callback.get().onCreate(mockLifecycleOwner);
 
@@ -829,14 +827,18 @@ public class AnalyticsTest {
                   public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Application Installed")
                         && //
-                        payload.properties().getString("version").equals("1.0.0")
+                        payload.properties().containsKey("install_timestamp")
                         && //
-                        payload.properties().getString("build").equals(String.valueOf(100));
+                        payload.properties().containsKey("limit_ad_tracking")
+                        && //
+                        payload.properties().containsKey("os_version")
+                        && //
+                        payload.properties().containsKey("version");
                   }
                 }));
 
     callback.get().onCreate(mockLifecycleOwner);
-    verifyNoMoreInteractions(integration); // Application Installed is not duplicated
+    verifyNoMoreInteractions(integration); // Application Installed is not fired twice
   }
 
   @Test
@@ -903,9 +905,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     callback.get().onCreate(mockLifecycleOwner);
 
@@ -974,15 +977,17 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     Activity activity = mock(Activity.class);
     PackageManager packageManager = mock(PackageManager.class);
     ActivityInfo info = mock(ActivityInfo.class);
 
     when(activity.getPackageManager()).thenReturn(packageManager);
+    when(activity.getComponentName()).thenReturn(new ComponentName("com.foo", "com.foo.Activity"));
     //noinspection WrongConstant
     when(packageManager.getActivityInfo(any(ComponentName.class), eq(PackageManager.GET_META_DATA)))
         .thenReturn(info);
@@ -1047,9 +1052,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     final String expectedUrl = "app://track.com/open?utm_id=12345&gclid=abcd&nope=";
 
@@ -1069,9 +1075,12 @@ public class AnalyticsTest {
                   @Override
                   public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Deep Link Opened")
-                        && payload.properties().getString("url").equals(expectedUrl)
-                        && payload.properties().getString("gclid").equals("abcd")
-                        && payload.properties().getString("utm_id").equals("12345");
+                        && payload
+                            .context()
+                            .get(AnalyticsActivityLifecycleCallbacks.DEEP_LINK_URL_CONTEXT_KEY)
+                            .equals(expectedUrl)
+                        && payload.context().get("$gclid").equals("abcd")
+                        && payload.properties().isEmpty();
                   }
                 }));
   }
@@ -1122,9 +1131,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     final String expectedUrl = "app://track.com/open?utm_id=12345&gclid=abcd&nope=";
 
@@ -1144,9 +1154,11 @@ public class AnalyticsTest {
                   @Override
                   public boolean matches(TrackPayload payload) {
                     return payload.event().equals("Deep Link Opened")
-                        && payload.properties().getString("url").equals(expectedUrl)
-                        && payload.properties().getString("gclid").equals("abcd")
-                        && payload.properties().getString("utm_id").equals("12345");
+                        && payload
+                                .context()
+                                .get(AnalyticsActivityLifecycleCallbacks.DEEP_LINK_URL_CONTEXT_KEY)
+                            != null
+                        && payload.context().get("$gclid") != null;
                   }
                 }));
   }
@@ -1197,9 +1209,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     Activity activity = mock(Activity.class);
 
@@ -1264,9 +1277,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     Activity activity = mock(Activity.class);
 
@@ -1334,9 +1348,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     Activity activity = mock(Activity.class);
     Bundle bundle = new Bundle();
@@ -1411,9 +1426,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     callback.get().onCreate(mockLifecycleOwner);
     callback.get().onStart(mockLifecycleOwner);
@@ -1480,9 +1496,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     Activity backgroundedActivity = mock(Activity.class);
     when(backgroundedActivity.isChangingConfigurations()).thenReturn(false);
@@ -1549,9 +1566,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     callback.get().onCreate(mockLifecycleOwner);
     callback.get().onStart(mockLifecycleOwner);
@@ -1639,9 +1657,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     assertThat(freshpaint.shutdown).isFalse();
     freshpaint.shutdown();
@@ -1736,9 +1755,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     assertThat(freshpaint.shutdown).isFalse();
     freshpaint.shutdown();
@@ -1813,8 +1833,9 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
+            true,
             true);
 
     freshpaint.track("event");
@@ -1855,9 +1876,10 @@ public class AnalyticsTest {
             Crypto.none(),
             Collections.<Middleware>emptyList(),
             Collections.<String, List<Middleware>>emptyMap(),
-            new ValueMap(),
+            TestUtils.testProjectSettings(),
             lifecycle,
-            false);
+            false,
+            true);
 
     freshpaint.track("event");
     ArgumentCaptor<TrackPayload> payload = ArgumentCaptor.forClass(TrackPayload.class);

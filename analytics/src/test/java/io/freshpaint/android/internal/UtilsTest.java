@@ -27,7 +27,6 @@ import static android.Manifest.permission.ACCESS_NETWORK_STATE;
 import static android.content.pm.PackageManager.FEATURE_TELEPHONY;
 import static android.content.pm.PackageManager.PERMISSION_DENIED;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
-import static org.assertj.android.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -164,13 +163,13 @@ public class UtilsTest {
     target.edit().clear().apply();
 
     Utils.copySharedPreferences(src, target);
-    assertThat(target)
-        .contains("aBool", true)
-        .contains("aString", "foo")
-        .contains("anInt", 2)
-        .contains("aFloat", 3.14f)
-        .contains("aLong", 12345678910L)
-        .contains("aStringSet", new HashSet<>(Arrays.asList("foo", "bar")));
+    // Assert via SharedPreferences getters (avoid legacy assertj-android helpers).
+    Assertions.assertThat(target.getBoolean("aBool", false)).isTrue();
+    Assertions.assertThat(target.getString("aString", null)).isEqualTo("foo");
+    Assertions.assertThat(target.getInt("anInt", 0)).isEqualTo(2);
+    Assertions.assertThat(target.getFloat("aFloat", 0f)).isEqualTo(3.14f);
+    Assertions.assertThat(target.getLong("aLong", 0L)).isEqualTo(12345678910L);
+    Assertions.assertThat(target.getStringSet("aStringSet", null)).containsOnly("foo", "bar");
   }
 
   @Test

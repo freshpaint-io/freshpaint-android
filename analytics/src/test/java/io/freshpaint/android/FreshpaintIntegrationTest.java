@@ -95,11 +95,23 @@ public class FreshpaintIntegrationTest {
   @Before
   public void setUp() throws IOException {
     queueFile = new QueueFile(new File(folder.getRoot(), "queue-file"));
+    // Robolectric 4.x captures android.util.Log calls in ShadowLog. Reset before each test so
+    // that performEnqueue()'s Log.d("Session", ...) calls don't accumulate across tests and
+    // cause the tearDown() isEmpty() assertion to fail.
+    ShadowLog.reset();
   }
 
   @After
   public void tearDown() {
-    assertThat(ShadowLog.getLogs()).isEmpty();
+    // Robolectric 4.x records every android.util.Log call in ShadowLog. Expected noise (do not
+    // treat as failures) under this test runner:
+    //   - Tag "Session", DEBUG — FreshpaintIntegration.performEnqueue() session bookkeeping
+    //   - Tag "Freshpaint", DEBUG/VERBOSE — SDK lifecycle / integration logging
+    // We intentionally do not assert an empty ShadowLog: those lines are normal. WARN and above
+    // still fail the test so new SDK warnings or errors are not silently ignored.
+    long warnOrWorse =
+        ShadowLog.getLogs().stream().filter(l -> l.type >= android.util.Log.WARN).count();
+    assertThat(warnOrWorse).as("Expected no WARN/ERROR log entries from SDK internals").isZero();
   }
 
   @Test
@@ -134,23 +146,29 @@ public class FreshpaintIntegrationTest {
 
     freshpaintIntegration.performEnqueue(trackPayload);
 
-    String expected =
-        "{"
-            + "\"channel\":\"mobile\","
-            + "\"type\":\"track\","
-            + "\"messageId\":\"a161304c-498c-4830-9291-fcfb8498877b\","
-            + "\"timestamp\":\"2014-12-15T20:32:44.000Z\","
-            + "\"context\":{},"
-            + "\"integrations\":{\"All\":false,\"foo\":true},"
-            + "\"userId\":\"userId\","
-            + "\"anonymousId\":null,"
-            + "\"event\":\"foo\","
-            + "\"properties\":{}"
-            + "}";
     ArgumentCaptor<byte[]> captor = ArgumentCaptor.forClass(byte[].class);
     verify(payloadQueue).add(captor.capture());
     String got = new String(captor.getValue(), FreshpaintIntegration.UTF_8);
-    assertThat(got).isEqualTo(expected);
+
+    Map<String, Object> parsed = Cartographer.INSTANCE.fromJson(got);
+    assertThat(parsed.get("channel")).isEqualTo("mobile");
+    assertThat(parsed.get("type")).isEqualTo("track");
+    assertThat(parsed.get("messageId")).isEqualTo("a161304c-498c-4830-9291-fcfb8498877b");
+    assertThat(parsed.get("timestamp")).isEqualTo("2014-12-15T20:32:44.000Z");
+    assertThat(parsed.get("userId")).isEqualTo("userId");
+    assertThat(parsed.get("event")).isEqualTo("foo");
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> parsedIntegrations = (Map<String, Object>) parsed.get("integrations");
+    assertThat(parsedIntegrations).containsEntry("All", false).containsEntry("foo", true);
+    assertThat(parsedIntegrations).doesNotContainKey("Freshpaint");
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> properties = (Map<String, Object>) parsed.get("properties");
+    assertThat(properties.get("$session_id")).isInstanceOf(String.class);
+    assertThat((String) properties.get("$session_id")).isNotEmpty();
+    assertThat(properties).containsKey("$is_first_event_in_session");
+    assertThat(properties.get("$is_first_event_in_session")).isInstanceOf(Boolean.class);
   }
 
   @Test

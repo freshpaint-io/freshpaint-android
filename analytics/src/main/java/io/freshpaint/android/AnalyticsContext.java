@@ -51,6 +51,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Context is a dictionary of free-form information about the state of the device. Context is
@@ -150,12 +151,22 @@ public class AnalyticsContext extends ValueMap {
     super(delegate);
   }
 
-  void attachAdvertisingId(Context context, CountDownLatch latch, Logger logger) {
+  void attachAdvertisingId(
+      Context context,
+      CountDownLatch latch,
+      Logger logger,
+      ExecutorService executor,
+      boolean collectDeviceId) {
     // This is done as an extra step so we don't run into errors like this for testing
     // http://pastebin.com/gyWJKWiu.
     if (Utils.isOnClassPath("com.google.android.gms.ads.identifier.AdvertisingIdClient")) {
       // This needs to be done each time since the settings may have been updated.
-      new GetAdvertisingIdTask(this, latch, logger).execute(context);
+      try {
+        executor.submit(new GetAdvertisingIdWorker(this, latch, logger, context, collectDeviceId));
+      } catch (java.util.concurrent.RejectedExecutionException e) {
+        logger.debug("networkExecutor is shut down; skipping GAID fetch.");
+        latch.countDown();
+      }
     } else {
       logger.debug(
           "Not collecting advertising ID because "
@@ -226,6 +237,7 @@ public class AnalyticsContext extends ValueMap {
   }
 
   /** Fill this instance with device info from the provided {@link Context}. */
+  @SuppressLint("HardwareIds")
   void putDevice(Context context, boolean collectDeviceID) {
     Device device = new Device();
     String identifier = collectDeviceID ? Utils.getDeviceId(context) : traits().anonymousId();
@@ -237,6 +249,14 @@ public class AnalyticsContext extends ValueMap {
     put(DEVICE_KEY, device);
   }
 
+  /**
+   * Returns the {@link Device} attached to this context. The returned instance is always the same
+   * object (memoized): {@link #putDevice} stores a {@code Device} instance at {@link #DEVICE_KEY},
+   * and {@code ValueMap.coerceToValueMap} returns it via the identity branch when the stored value
+   * already implements the target class. This invariant is relied upon by {@link
+   * AttributionMiddleware} to ensure that {@code synchronized(sourceDevice)} and {@code
+   * synchronized putAdvertisingInfo()} share the same monitor.
+   */
   public Device device() {
     return getValueMap(DEVICE_KEY, Device.class);
   }
@@ -417,6 +437,8 @@ public class AnalyticsContext extends ValueMap {
     @Private static final String DEVICE_TOKEN_KEY = "token";
     @Private static final String DEVICE_ADVERTISING_ID_KEY = "advertisingId";
     @Private static final String DEVICE_AD_TRACKING_ENABLED_KEY = "adTrackingEnabled";
+    @Private static final String DEVICE_LIMIT_AD_TRACKING_KEY = "limit_ad_tracking";
+    @Private static final String DEVICE_ANDROID_ID_KEY = "android_id";
 
     @Private
     Device() {}
@@ -433,11 +455,41 @@ public class AnalyticsContext extends ValueMap {
     }
 
     /** Set the advertising information for this device. */
-    void putAdvertisingInfo(String advertisingId, boolean adTrackingEnabled) {
+    synchronized void putAdvertisingInfo(String advertisingId, boolean adTrackingEnabled) {
       if (adTrackingEnabled && !Utils.isNullOrEmpty(advertisingId)) {
         put(DEVICE_ADVERTISING_ID_KEY, advertisingId);
+      } else {
+        remove(DEVICE_ADVERTISING_ID_KEY);
       }
       put(DEVICE_AD_TRACKING_ENABLED_KEY, adTrackingEnabled);
+      put(DEVICE_LIMIT_AD_TRACKING_KEY, !adTrackingEnabled);
+    }
+
+    /**
+     * Set advertising info and an {@code android_id} fallback atomically under the device monitor.
+     * Use this overload from {@link GetAdvertisingIdWorker} when GAID is unavailable so that no
+     * reader can observe a state where {@code adTrackingEnabled} is updated but {@code android_id}
+     * is not yet written.
+     */
+    synchronized void putAdvertisingInfo(
+        String advertisingId, boolean adTrackingEnabled, String rawAndroidIdFallback) {
+      putAdvertisingInfo(advertisingId, adTrackingEnabled);
+      putAndroidId(rawAndroidIdFallback);
+    }
+
+    /**
+     * Store the Android ID for this device if it is not a known placeholder value.
+     *
+     * <p>Placeholder detection delegates to {@link Utils#isPlaceholderAndroidId(String)} — the
+     * single source of truth shared with {@link Utils#getDeviceId(Context)}.
+     *
+     * <p>Synchronized to match {@link #putAdvertisingInfo} — both methods share the device monitor
+     * so callers and {@link AttributionMiddleware} see a consistent device state.
+     */
+    synchronized void putAndroidId(String androidId) {
+      if (!Utils.isPlaceholderAndroidId(androidId)) {
+        put(DEVICE_ANDROID_ID_KEY, androidId);
+      }
     }
 
     /** Set a device token. */

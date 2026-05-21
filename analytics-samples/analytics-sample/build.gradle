@@ -4,6 +4,21 @@ apply from: rootProject.file('gradle/android.gradle')
 
 def WEBHOOK_AUTH_USERNAME = ""
 def RUN_E2E_TESTS = false
+def FRESHPAINT_SAMPLE_WRITE_KEY = ""
+def rootLocalPropertiesFile = rootProject.file('local.properties')
+
+def MMP_STORE_FILE = ""
+def MMP_STORE_PASSWORD = ""
+def MMP_KEY_ALIAS = ""
+def MMP_KEY_PASSWORD = ""
+if (rootLocalPropertiesFile.exists()) {
+  def signingProps = new Properties()
+  rootLocalPropertiesFile.withInputStream { stream -> signingProps.load(stream) }
+  MMP_STORE_FILE     = signingProps.getProperty("mmp.storeFile", "")
+  MMP_STORE_PASSWORD = signingProps.getProperty("mmp.storePassword", "")
+  MMP_KEY_ALIAS      = signingProps.getProperty("mmp.keyAlias", "")
+  MMP_KEY_PASSWORD   = signingProps.getProperty("mmp.keyPassword", "")
+}
 
 // e2e_test.properties is a file with a single line: WEBHOOK_AUTH_USERNAME=<token>
 def e2eTestPropertiesFile = file('e2e_test.properties')
@@ -14,6 +29,25 @@ if (e2eTestPropertiesFile.exists()) {
   RUN_E2E_TESTS = true
 }
 
+if (project.hasProperty("freshpaint.sample.writeKey")) {
+  FRESHPAINT_SAMPLE_WRITE_KEY = project.property("freshpaint.sample.writeKey")
+} else if (rootLocalPropertiesFile.exists()) {
+  def localProps = new Properties()
+  rootLocalPropertiesFile.withInputStream { stream -> localProps.load(stream) }
+  def localWriteKey = localProps.getProperty("freshpaint.sample.writeKey")
+  if (localWriteKey != null) {
+    FRESHPAINT_SAMPLE_WRITE_KEY = localWriteKey
+  }
+} else {
+  def envWriteKey = System.getenv("FRESHPAINT_SAMPLE_WRITE_KEY")
+  if (envWriteKey != null) {
+    FRESHPAINT_SAMPLE_WRITE_KEY = envWriteKey
+  }
+}
+
+def escapedSampleWriteKey =
+    FRESHPAINT_SAMPLE_WRITE_KEY.replace("\\", "\\\\").replace("\"", "\\\"")
+
 android {
   buildFeatures {
     buildConfig true
@@ -21,9 +55,34 @@ android {
 
   namespace 'io.freshpaint.android.sample'
 
+  if (MMP_STORE_FILE) {
+    signingConfigs {
+      release {
+        storeFile file(MMP_STORE_FILE)
+        storePassword MMP_STORE_PASSWORD
+        keyAlias MMP_KEY_ALIAS
+        keyPassword MMP_KEY_PASSWORD
+      }
+    }
+  }
+
+  buildTypes {
+    release {
+      if (MMP_STORE_FILE) {
+        signingConfig signingConfigs.release
+      }
+    }
+  }
+
   lintOptions {
     // Since this is just a sample app, it's ok to ignore these warnings.
     disable 'IconMissingDensityFolder', 'GoogleAppIndexingWarning', 'AllowBackup'
+  }
+
+  packagingOptions {
+    // play-services-basement:10.2.6 and tink-android:1.5.0 (via security-crypto) both
+    // include this file. Exclude to resolve the duplicate resource merge conflict.
+    exclude 'build-data.properties'
   }
 
   defaultConfig {
@@ -31,12 +90,15 @@ android {
 
     buildConfigField 'String', 'WEBHOOK_AUTH_USERNAME', "\"$WEBHOOK_AUTH_USERNAME\""
     buildConfigField 'boolean', 'RUN_E2E_TESTS', "$RUN_E2E_TESTS"
+    buildConfigField 'String', 'FRESHPAINT_SAMPLE_WRITE_KEY', "\"$escapedSampleWriteKey\""
   }
 }
 
 dependencies {
   implementation project(':analytics')
   implementation project(':analytics-wear')
+  implementation 'androidx.appcompat:appcompat:1.7.1'
+  implementation 'com.google.android.material:material:1.12.0'
 
   implementation 'io.github.inflationx:calligraphy3:3.1.1'
   implementation 'io.github.inflationx:viewpump:2.1.1'

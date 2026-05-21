@@ -32,6 +32,8 @@ import static org.robolectric.annotation.Config.NONE;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.os.Build;
+import android.provider.Settings;
 import com.google.common.collect.ImmutableMap;
 import io.freshpaint.android.core.BuildConfig;
 import java.util.Map;
@@ -71,34 +73,39 @@ public class AnalyticsContextTest {
         .containsKey("timezone") // value depends on where the tests are run
         .containsKey("traits");
 
+    String packageName = RuntimeEnvironment.application.getPackageName();
     assertThat(context.getValueMap("app")) //
-        .containsEntry("name", "org.robolectric.default")
-        .containsEntry("version", "undefined")
-        .containsEntry("namespace", "org.robolectric.default")
+        .containsEntry("namespace", packageName)
         .containsEntry("build", "0");
 
     assertThat(context.getValueMap("device")) //
-        .containsEntry("id", "unknown")
-        .containsEntry("manufacturer", "unknown")
-        .containsEntry("model", "unknown")
-        .containsEntry("name", "unknown")
+        .containsEntry("manufacturer", Build.MANUFACTURER)
+        .containsEntry("model", Build.MODEL)
+        .containsEntry("name", Build.DEVICE)
         .containsEntry("type", "android");
 
     assertThat(context.getValueMap("library")) //
         .containsEntry("name", "analytics-android")
         .containsEntry("version", BuildConfig.VERSION_NAME);
 
-    // TODO: mock network state?
-    assertThat(context.getValueMap("network")).isEmpty();
+    // Robolectric 4.x: TelephonyManager.getNetworkOperatorName() returns "" instead of null,
+    // so "carrier" is present as an empty string. No wifi/bluetooth/cellular since
+    // ConnectivityManager is not mocked in this test.
+    assertThat(context.getValueMap("network")).containsOnlyKeys("carrier");
 
     assertThat(context.getValueMap("os")) //
         .containsEntry("name", "Android") //
-        .containsEntry("version", "4.1.2_r1");
+        .containsEntry("version", Build.VERSION.RELEASE);
 
+    android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+    ((android.view.WindowManager)
+            RuntimeEnvironment.application.getSystemService(Context.WINDOW_SERVICE))
+        .getDefaultDisplay()
+        .getMetrics(dm);
     assertThat(context.getValueMap("screen")) //
-        .containsEntry("density", 1.5f) //
-        .containsEntry("width", 480) //
-        .containsEntry("height", 800);
+        .containsEntry("density", dm.density) //
+        .containsEntry("width", dm.widthPixels) //
+        .containsEntry("height", dm.heightPixels);
   }
 
   @Test
@@ -107,9 +114,9 @@ public class AnalyticsContextTest {
 
     assertThat(context.getValueMap("device")) //
         .containsEntry("id", traits.anonymousId())
-        .containsEntry("manufacturer", "unknown")
-        .containsEntry("model", "unknown")
-        .containsEntry("name", "unknown")
+        .containsEntry("manufacturer", Build.MANUFACTURER)
+        .containsEntry("model", Build.MODEL)
+        .containsEntry("name", Build.DEVICE)
         .containsEntry("type", "android");
   }
 
@@ -176,6 +183,44 @@ public class AnalyticsContextTest {
     device.putAdvertisingInfo("adId", true);
     assertThat(device).containsEntry("advertisingId", "adId");
     assertThat(device).containsEntry("adTrackingEnabled", true);
+    assertThat(device).containsEntry("limit_ad_tracking", false);
+  }
+
+  /**
+   * Pins the memoization invariant relied upon by AttributionMiddleware for correct
+   * synchronization: analyticsContext.device() must return the same object instance on every call
+   * so that synchronized(sourceDevice) in the middleware and synchronized putAdvertisingInfo() in
+   * GetAdvertisingIdWorker share the same monitor.
+   */
+  @Test
+  public void deviceReturnsSameInstance() {
+    AnalyticsContext ctx = AnalyticsContext.create(RuntimeEnvironment.application, traits, true);
+    assertThat(ctx.device()).isSameAs(ctx.device());
+  }
+
+  @Test
+  public void deviceLimitAdTrackingEnabled() {
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+
+    device.putAdvertisingInfo(null, false);
+    assertThat(device).doesNotContainKey("advertisingId");
+    assertThat(device).containsEntry("adTrackingEnabled", false);
+    assertThat(device).containsEntry("limit_ad_tracking", true);
+  }
+
+  @Test
+  public void devicePutAdvertisingInfoClearsPreviousGaid() {
+    AnalyticsContext.Device device = new AnalyticsContext.Device();
+
+    // First call sets a valid GAID
+    device.putAdvertisingInfo("some-gaid", true);
+    assertThat(device).containsEntry("advertisingId", "some-gaid");
+
+    // Second call with tracking disabled must remove the previously set GAID
+    device.putAdvertisingInfo(null, false);
+    assertThat(device).doesNotContainKey("advertisingId");
+    assertThat(device).containsEntry("adTrackingEnabled", false);
+    assertThat(device).containsEntry("limit_ad_tracking", true);
   }
 
   @Test
@@ -219,6 +264,24 @@ public class AnalyticsContextTest {
 
     context.putReferrer(referrer);
     assertThat(context).containsEntry("referrer", referrer);
+  }
+
+  // ---------------------------------------------------------------------------
+  // putDevice() — android_id is NOT captured (responsibility moved to GetAdvertisingIdWorker)
+  // ---------------------------------------------------------------------------
+
+  @Test
+  public void putDevice_doesNotCaptureAndroidId_collectDeviceIdTrue() {
+    Context context = RuntimeEnvironment.application;
+    Settings.Secure.putString(
+        context.getContentResolver(), Settings.Secure.ANDROID_ID, "abcdef1234567890");
+
+    Traits traits = Traits.create();
+    AnalyticsContext ctx = Utils.createContext(traits);
+    ctx.putDevice(context, /* collectDeviceID= */ true);
+
+    assertThat(ctx.device()).isNotNull();
+    assertThat(ctx.device()).doesNotContainKey("android_id");
   }
 
   @Test

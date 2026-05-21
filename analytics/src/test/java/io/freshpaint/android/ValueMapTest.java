@@ -190,9 +190,9 @@ public class ValueMapTest {
     } catch (AssertionError exception) {
       assertThat(exception) //
           .hasMessage(
-              "Could not create instance of com.segment.analytics.ValueMapTest.AmplitudeSettings.\n"
+              "Could not create instance of io.freshpaint.android.ValueMapTest.AmplitudeSettings.\n"
                   + "java.lang.NoSuchMethodException: "
-                  + "com.segment.analytics.ValueMapTest$AmplitudeSettings.<init>(java.util.Map)");
+                  + "io.freshpaint.android.ValueMapTest$AmplitudeSettings.<init>(java.util.Map)");
     }
   }
 
