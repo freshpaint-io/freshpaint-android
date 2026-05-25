@@ -42,24 +42,24 @@ dependencies {
   implementation 'androidx.lifecycle:lifecycle-common-java8:2.10.0'
 
   testImplementation 'junit:junit:4.13.2'
-  testImplementation 'org.robolectric:robolectric:4.14.1'
+  testImplementation 'org.robolectric:robolectric:4.16.1'
   // assertj-android 1.2.0 targets assertj-core 1.x and breaks at runtime with assertj-core 3.x;
   // use org.assertj.core assertions + Android getters instead (see UtilsTest.copySharedPreferences).
   // Not bumping to 5.21.0 because mockito requires bitebuddy and Java 24, which breaks the app.
-  testImplementation 'org.mockito:mockito-core:5.1.0'
+  testImplementation 'org.mockito:mockito-core:5.23.0'
   // Pinned to 3.9.1 for Kotlin 2.0.21 compatibility (3.16.4 requires Kotlin 2.2.0)
-  testImplementation 'com.squareup.okio:okio:3.9.1'
+  testImplementation 'com.squareup.okio:okio:3.17.0'
   testImplementation 'com.squareup.okhttp:mockwebserver:2.7.5'
   testImplementation 'com.squareup.burst:burst-junit4:1.2.0'
 
-  testImplementation 'org.assertj:assertj-core:3.26.3'
+  testImplementation 'org.assertj:assertj-core:3.27.7'
 
   // Google Play Install Referrer API — bundled so host apps get UTM/campaign support without an
   // extra Gradle line. Host apps may exclude this artifact if they truly do not need it.
   implementation 'com.android.installreferrer:installreferrer:2.2'
 
   // Conservative core dependencies
-  implementation "androidx.core:core-ktx:1.16.0"
+  implementation "androidx.core:core-ktx:1.18.0"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
 
