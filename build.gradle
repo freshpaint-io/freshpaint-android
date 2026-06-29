@@ -1,7 +1,7 @@
 apply from: rootProject.file('gradle/versioning.gradle')
 
 buildscript {
-  ext.kotlin_version = '2.0.21'
+  ext.kotlin_version = '2.4.0'
   repositories {
     gradlePluginPortal()
     google()
@@ -72,7 +72,7 @@ ext {
 }
 
 ext.deps = [
-  supportAnnotations: 'androidx.annotation:annotation:1.7.1'
+  supportAnnotations: 'androidx.annotation:annotation:1.10.0'
 ]
 
 apply plugin: 'com.diffplug.spotless'
