@@ -1,5 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 // apply plugin: 'com.getkeepsafe.dexcount'
 
 apply from: rootProject.file('gradle/android.gradle')
@@ -20,17 +19,13 @@ android {
     targetCompatibility rootProject.ext.targetCompatibilityVersion
   }
 
-  kotlinOptions {
-    jvmTarget = '17'
-  }
-
   buildFeatures {
     buildConfig true
   }
 
-  tasks.withType(Javadoc).all { task ->
-      task.failOnError = false
-      task.exclude '**/R.html', '**/BuildConfig.html'
+  tasks.withType(Javadoc).configureEach { task ->
+    task.failOnError = false
+    task.exclude '**/R.html', '**/BuildConfig.html'
   }
 }
 
@@ -45,8 +40,7 @@ dependencies {
   testImplementation 'org.robolectric:robolectric:4.14.1'
   // assertj-android 1.2.0 targets assertj-core 1.x and breaks at runtime with assertj-core 3.x;
   // use org.assertj.core assertions + Android getters instead (see UtilsTest.copySharedPreferences).
-  // Not bumping to 5.21.0 because mockito requires bitebuddy and Java 24, which breaks the app.
-  testImplementation 'org.mockito:mockito-core:5.1.0'
+  testImplementation 'org.mockito:mockito-core:5.14.0'
   // Pinned to 3.9.1 for Kotlin 2.0.21 compatibility (3.16.4 requires Kotlin 2.2.0)
   testImplementation 'com.squareup.okio:okio:3.9.1'
   testImplementation 'com.squareup.okhttp:mockwebserver:2.7.5'
@@ -58,12 +52,17 @@ dependencies {
   // extra Gradle line. Host apps may exclude this artifact if they truly do not need it.
   implementation 'com.android.installreferrer:installreferrer:2.2'
 
-  // Conservative core dependencies
-  implementation "androidx.core:core-ktx:1.16.0"
+  // core-ktx 1.19.0 requires compileSdk 37 and Robolectric does not yet support SDK 37.
+  // 1.18.0 is the highest version compatible with compileSdk 36 and Robolectric 4.14.1.
+  implementation "androidx.core:core-ktx:1.18.0"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
 
-apply from: rootProject.file('gradle/mvn-publish.gradle')
+// medivhPublisher accesses AGP SoftwareComponent eagerly, which AGP 9 only creates lazily.
+// Apply publishing config only during release builds when the component is guaranteed available.
+if (project.hasProperty('release')) {
+  apply from: rootProject.file('gradle/mvn-publish.gradle')
+}
 
 repositories {
   google()
