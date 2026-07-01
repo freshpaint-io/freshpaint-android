@@ -27,18 +27,12 @@ afterEvaluate { project ->
 
     task androidJavadocs(type: Javadoc) {
       source = android.sourceSets.main.java.source
-      classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-
-      // Add library variant classpath for newer AGP compatibility
+      // android.getBootClasspath() was removed in AGP 9; boot classpath comes from the compile task
       try {
-        classpath += project.android.libraryVariants.toList().first().javaCompileProvider.get().classpath
+        def compileTask = project.tasks.named("compileReleaseJavaWithJavac").get()
+        classpath += compileTask.classpath
       } catch (Exception e) {
-        // Fallback for older AGP versions or different configurations
-        try {
-          classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
-        } catch (Exception fallbackException) {
-          logger.warn("Could not add library variant classpath: ${fallbackException.message}")
-        }
+        logger.warn("Could not resolve Javadoc classpath: ${e.message}")
       }
     }
 
