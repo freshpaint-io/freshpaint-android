@@ -5,6 +5,8 @@ apply from: rootProject.file('gradle/android.gradle')
 
 android {
   namespace "io.freshpaint.android.core"
+  compileSdk rootProject.ext.compileSdkVersion
+
   defaultConfig {
     consumerProguardFiles 'proguard-rules-lib.txt'
     versionCode rootProject.ext.versionCode
