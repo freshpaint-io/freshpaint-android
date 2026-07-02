@@ -1,12 +1,12 @@
-// Attaches a JAR to the archives artifact for a library
-android.libraryVariants.all { variant ->
-  // Only attach a jar for non-debug build types.
-  if (!variant.buildType.isDebuggable()) {
-    def name = variant.buildType.name
-    def task = project.tasks.create "jar${name.capitalize()}", Jar
-    task.dependsOn variant.javaCompile
-    // Include Java classes
-    task.from variant.javaCompile.destinationDir
-    artifacts.add('archives', task);
+// Attaches a JAR to the archives artifact for the release variant of a library.
+// AGP 9 removed android.libraryVariants; uses androidComponents.onVariants instead.
+androidComponents {
+  onVariants(selector().withBuildType('release')) { variant ->
+    def compileTask = tasks.named("compile${variant.name.capitalize()}JavaWithJavac")
+    def jarTask = tasks.register("jar${variant.buildType.capitalize()}", Jar) { jar ->
+      jar.dependsOn(compileTask)
+      jar.from(compileTask.flatMap { it.destinationDirectory })
+    }
+    artifacts.add('archives', jarTask)
   }
 }

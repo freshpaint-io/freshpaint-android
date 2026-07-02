@@ -15,5 +15,8 @@ dependencies {
   api project(':analytics')
 }
 
-apply from: rootProject.file('gradle/attach-jar.gradle')
-apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
+// attach-jar and mvn-push only needed for publishing; skip during normal builds
+if (project.hasProperty('release')) {
+  apply from: rootProject.file('gradle/attach-jar.gradle')
+  apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
+}

@@ -1,16 +1,16 @@
 apply plugin: 'com.diffplug.spotless'
 
 android {
-  compileSdkVersion rootProject.ext.compileSdkVersion
+  compileSdk rootProject.ext.compileSdkVersion
 
   defaultConfig {
-    minSdkVersion rootProject.ext.minSdkVersion
-    targetSdkVersion rootProject.ext.targetSdkVersion
+    minSdk rootProject.ext.minSdkVersion
+    targetSdk rootProject.ext.targetSdkVersion
     versionCode rootProject.ext.versionCode
     versionName rootProject.ext.versionName
   }
 
-  packagingOptions {
+  packaging {
     exclude 'LICENSE.txt'
   }
 
@@ -25,9 +25,8 @@ android {
     targetCompatibility rootProject.ext.targetCompatibilityVersion
   }
 
-  lintOptions {
+  lint {
     textReport true
-    textOutput 'stdout'
     disable 'InvalidPackage', 'GradleCompatible'
   }
 
