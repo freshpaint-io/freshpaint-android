@@ -1,12 +1,34 @@
-apply plugin: 'tech.medivh.plugin.publisher'
+apply plugin: 'com.vanniktech.maven.publish'
 apply plugin: 'signing'
-apply from: rootProject.file('gradle/versioning.gradle')
 
+// Signing expects a base64-encoded ASCII-armored PGP key:
+// gpg --armor --export-secret-keys LAST-8-CHARS-OF-KEY-ID > privkey.sec.asc
+// cat privkey.sec.asc | base64
+signing {
+    def signingKeyB64 = System.getenv("SIGNING_KEY_B64")
+    def signingPassword = System.getenv("SIGNING_PASSWORD")
+    def signingKey = signingKeyB64 ? new String(Base64.decoder.decode(signingKeyB64)) : null
 
-medivhPublisher {
-    groupId = GROUP
-    artifactId = POM_ARTIFACT_ID
-    version = getVersionName()
+    if (signingKey) {
+        logger.info('Signing key supplied! Using in memory PgpKeys')
+        useInMemoryPgpKeys(signingKey, signingPassword)
+    } else {
+        logger.warn('**********************************')
+        logger.warn('Signing failed: no SIGNING_KEY_B64 provided')
+        logger.warn('Please provide SIGNING_KEY_B64 and SIGNING_PASSWORD as environment variables')
+        logger.warn('**********************************')
+    }
+}
+
+mavenPublishing {
+    publishToMavenCentral()
+
+    def signingKeyB64 = System.getenv("SIGNING_KEY_B64")
+    if (signingKeyB64) {
+        signAllPublications()
+    }
+
+    coordinates(GROUP, POM_ARTIFACT_ID, VERSION_NAME)
 
     pom {
         name = POM_NAME
@@ -37,30 +59,3 @@ medivhPublisher {
         }
     }
 }
-
-// Signing expects a base 64 encoded version of an ascii armored PGP key
-// gpg --armor --export-secret-keys LAST-8-CHARS-OF-KEY-ID > privkey.sec.asc
-// cat privkey.sec.asc | base64
-signing {
-    def signingKeyB64 = System.getenv("SIGNING_KEY_B64")
-    def signingPassword = System.getenv("SIGNING_PASSWORD")
-    def signingKey = signingKeyB64 ? new String(Base64.decoder.decode(signingKeyB64)) : null
-
-    if (signingKey) {
-        logger.info('Signing key supplied! Using in memory PgpKeys')
-        // Only for debugging!!
-//        logger.info('**********************************')
-//        logger.lifecycle("SigningKeyB64 ${signingKeyB64.take(20)}")
-//        logger.lifecycle("SigningKey ${signingKey.take(50)}")
-//        logger.lifecycle("SigningPassword ${signingPassword}")
-//        logger.info('**********************************')
-
-        useInMemoryPgpKeys(signingKey, signingPassword)
-    } else {
-        logger.warn('**********************************')
-        logger.warn('Signing failed: no SIGNING_KEY_B64 provided')
-        logger.warn('Please provide SIGNING_KEY_B64 and SIGNING_PASSWORD as environment variables')
-        logger.warn('**********************************')
-    }
-}
-

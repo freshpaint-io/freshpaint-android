@@ -13,8 +13,11 @@ Releasing
 
  06.17.2025 Commands
  ===================
- 
+
  To deploy the `freshpaint` package, run:
  1. `./gradlew clean`
  2. `./gradlew :analytics:bundleReleaseAar -Prelease`
- 3. `./gradlew :analytics:publishAllPublicationsToSonatypeRepository -Prelease`
+ 3. `./gradlew :analytics:publishAllPublicationsToMavenCentralRepository -Prelease -PmavenCentralUsername=<token> -PmavenCentralPassword=<token> --configure-on-demand`
+
+ Credentials: generate a user token at https://central.sonatype.com/account
+ Signing: set SIGNING_KEY_B64 and SIGNING_PASSWORD environment variables before running step 3.
