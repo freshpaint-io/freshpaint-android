@@ -57,8 +57,7 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
 
-// medivhPublisher accesses AGP SoftwareComponent eagerly, which AGP 9 only creates lazily.
-// Apply publishing config only during release builds when the component is guaranteed available.
+// Publishing config is only needed for release builds and must not affect normal CI builds.
 if (project.hasProperty('release')) {
   apply from: rootProject.file('gradle/mvn-publish.gradle')
 }
