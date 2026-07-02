@@ -113,6 +113,5 @@ dependencies {
   androidTestImplementation 'androidx.test:rules:1.7.0'
   androidTestImplementation 'com.segment.backo:backo:1.0.0'
 
-    // Bumped to a stable version: Cannot bump forward due to bytebuddy.
   androidTestImplementation 'org.assertj:assertj-core:3.27.7'
 }
