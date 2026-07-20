@@ -40,7 +40,7 @@ dependencies {
   testImplementation 'org.robolectric:robolectric:4.16.1'
   // assertj-android 1.2.0 targets assertj-core 1.x and breaks at runtime with assertj-core 3.x;
   // use org.assertj.core assertions + Android getters instead (see UtilsTest.copySharedPreferences).
-  testImplementation 'org.mockito:mockito-core:5.14.0'
+  testImplementation 'org.mockito:mockito-core:5.23.0'
   testImplementation 'com.squareup.okio:okio:3.17.0'
   testImplementation 'com.squareup.okhttp:mockwebserver:2.7.5'
   testImplementation 'com.squareup.burst:burst-junit4:1.2.0'
@@ -53,7 +53,7 @@ dependencies {
 
   // core-ktx 1.19.0 requires compileSdk 37 and Robolectric does not yet support SDK 37.
   // 1.18.0 is the highest version compatible with compileSdk 36 and Robolectric 4.14.1.
-  implementation "androidx.core:core-ktx:1.18.0"
+  implementation "androidx.core:core-ktx:1.19.0"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
 
