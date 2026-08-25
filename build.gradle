@@ -1,7 +1,7 @@
 apply from: rootProject.file('gradle/versioning.gradle')
 
 buildscript {
-  ext.kotlin_version = '2.4.0'
+  ext.kotlin_version = '2.4.10'
   repositories {
     gradlePluginPortal()
     google()
@@ -13,7 +13,7 @@ buildscript {
 
   dependencies {
     classpath 'com.vanniktech:gradle-maven-publish-plugin:0.35.0'
-    classpath 'com.android.tools.build:gradle:9.1.1'
+    classpath 'com.android.tools.build:gradle:9.3.2'
     // Cannot bump: Breaks functionality.
     classpath 'com.diffplug.spotless:spotless-plugin-gradle:7.0.4'
     classpath 'com.getkeepsafe.dexcount:dexcount-gradle-plugin:4.0.0'
