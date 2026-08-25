@@ -40,8 +40,8 @@ dependencies {
   testImplementation 'org.robolectric:robolectric:4.16.1'
   // assertj-android 1.2.0 targets assertj-core 1.x and breaks at runtime with assertj-core 3.x;
   // use org.assertj.core assertions + Android getters instead (see UtilsTest.copySharedPreferences).
-  testImplementation 'org.mockito:mockito-core:5.14.0'
-  testImplementation 'com.squareup.okio:okio:3.17.0'
+  testImplementation 'org.mockito:mockito-core:5.23.0'
+  testImplementation 'com.squareup.okio:okio:3.18.1'
   testImplementation 'com.squareup.okhttp:mockwebserver:2.7.5'
   testImplementation 'com.squareup.burst:burst-junit4:1.2.0'
 
