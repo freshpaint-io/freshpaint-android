@@ -97,7 +97,7 @@ android {
 dependencies {
   implementation project(':analytics')
   implementation project(':analytics-wear')
-  implementation 'androidx.appcompat:appcompat:1.7.1'
+  implementation 'androidx.appcompat:appcompat:1.8.0'
   implementation 'com.google.android.material:material:1.14.0'
 
   implementation 'io.github.inflationx:calligraphy3:3.1.1'
