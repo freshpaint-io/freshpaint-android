@@ -1,7 +1,7 @@
 apply from: rootProject.file('gradle/versioning.gradle')
 
 buildscript {
-  ext.kotlin_version = '2.4.10'
+  ext.kotlin_version = '2.4.20'
   repositories {
     gradlePluginPortal()
     google()
