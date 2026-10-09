@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+### Changed
+- `freshpaint-wear` now depends on `com.google.android.gms:play-services-wearable:20.0.1` (was 19.0.0). Apps using `freshpaint-wear` receive this version transitively, and it requires `minSdk` 23 or higher, which the SDK already requires.
+
 Version 2.1.0 - (20 May, 2026)
 
 ### Added
