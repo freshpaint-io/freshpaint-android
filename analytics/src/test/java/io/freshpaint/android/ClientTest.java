@@ -31,9 +31,6 @@ import static org.mockito.Mockito.when;
 import static org.robolectric.annotation.Config.NONE;
 
 import android.net.Uri;
-import com.squareup.okhttp.mockwebserver.MockResponse;
-import com.squareup.okhttp.mockwebserver.MockWebServer;
-import com.squareup.okhttp.mockwebserver.RecordedRequest;
 import io.freshpaint.android.internal.Private;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -41,6 +38,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.assertj.core.api.AbstractAssert;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
@@ -72,7 +72,7 @@ public class ClientTest {
               @Override
               protected HttpURLConnection openConnection(String url) throws IOException {
                 String path = Uri.parse(url).getPath();
-                URL mockServerURL = server.getUrl(path);
+                URL mockServerURL = server.url(path).url();
                 return super.openConnection(mockServerURL.toString());
               }
             });
