@@ -122,11 +122,11 @@ analytics/src/main/java/io/freshpaint/android/
 
 ### Key Technical Details
 
-- **Min SDK**: API 21 (Lollipop), API 25 for Wear
+- **Min SDK**: API 23 (Marshmallow), API 25 for Wear
 - **Target SDK**: API 35
-- **Compile SDK**: 35
+- **Compile SDK**: 36
 - **Java Version**: Java 17 (source & target compatibility)
-- **Kotlin**: 2.0.21
+- **Kotlin**: 2.4.10
 - **Threading**: Uses `ExecutorService` for network operations
 - **Lifecycle**: Integrates with AndroidX Lifecycle for process state tracking
 - **Persistence**: Disk-based event queue survives app restarts

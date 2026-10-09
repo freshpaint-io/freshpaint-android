@@ -9,9 +9,7 @@ android {
 dependencies {
   api project(':analytics')
 
-  // TODO: we should update this dependency.
-  //noinspection GradleDependency
-  api 'com.google.android.gms:play-services-wearable:19.0.0'
+  api 'com.google.android.gms:play-services-wearable:20.0.1'
 }
 
 apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
