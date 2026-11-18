@@ -42,7 +42,7 @@ dependencies {
   // use org.assertj.core assertions + Android getters instead (see UtilsTest.copySharedPreferences).
   testImplementation 'org.mockito:mockito-core:5.23.0'
   testImplementation 'com.squareup.okio:okio:3.18.1'
-  testImplementation 'com.squareup.okhttp:mockwebserver:2.7.5'
+  testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
   testImplementation 'com.squareup.burst:burst-junit4:1.2.0'
 
   testImplementation 'org.assertj:assertj-core:3.27.7'
